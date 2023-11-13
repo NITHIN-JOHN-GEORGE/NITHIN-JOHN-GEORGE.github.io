@@ -1,1 +1,0 @@
-# NITHIN-JOHN-GEORGE.github.io
