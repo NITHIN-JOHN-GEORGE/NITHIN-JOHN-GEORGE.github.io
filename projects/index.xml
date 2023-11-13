@@ -7,84 +7,39 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language><atom:link href="https://nithin-john-george.github.io/projects/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Obsidian Publish using GitHub Action</title>
-      <link>https://nithin-john-george.github.io/projects/obsidian-publish-github-action/</link>
+      <title>Service Autohealer Using Shell Script</title>
+      <link>https://nithin-john-george.github.io/projects/auto-heal-script/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nithin-john-george.github.io/projects/obsidian-publish-github-action/</guid>
-      <description>A custom GitHub Action to publish Obsidian notes as a website</description>
+      <guid>https://nithin-john-george.github.io/projects/auto-heal-script/</guid>
+      <description>Shell script which will automatically try to start service when down and send email</description>
     </item>
     
     <item>
-      <title>Kindle to Notion</title>
-      <link>https://nithin-john-george.github.io/projects/kindle-to-notion/</link>
+      <title>Disk CPU Memory Monitor Using Shell Scripting</title>
+      <link>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nithin-john-george.github.io/projects/kindle-to-notion/</guid>
-      <description>A way to seamlessly transfer your Kindle highlights to Notion Database!</description>
+      <guid>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</guid>
+      <description>Shell Script which can be used to monitor CPU , Memory , Disk Space of an Linux Server based on the Threshold</description>
     </item>
     
     <item>
-      <title>Automated Image Captioning (Bachelor Thesis)</title>
-      <link>https://nithin-john-george.github.io/projects/automated-image-captioning/</link>
+      <title>Apache Web Server Log Parsing Tool Using Shell Scripting</title>
+      <link>https://nithin-john-george.github.io/projects/apache-log-parser-shell-script/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nithin-john-george.github.io/projects/automated-image-captioning/</guid>
-      <description>Can computers summarize the contents of an image?</description>
+      <guid>https://nithin-john-george.github.io/projects/apache-log-parser-shell-script/</guid>
+      <description>It&amp;#39;s a bash script to parse an apache access log file.to count most visited Unique Ip , to see http status codes ,request method and most viewed unique URLS manually</description>
     </item>
     
     <item>
-      <title>Todo List App</title>
-      <link>https://nithin-john-george.github.io/projects/todo-list-app/</link>
+      <title>Generating Multiple Server Inventory Using Shell Scripting</title>
+      <link>https://nithin-john-george.github.io/projects/server-inventory-shell-script/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nithin-john-george.github.io/projects/todo-list-app/</guid>
-      <description>A Todo list web application built using React</description>
-    </item>
-    
-    <item>
-      <title>Face Landmarks Detection using CNN</title>
-      <link>https://nithin-john-george.github.io/projects/face-landmarks-detection/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/projects/face-landmarks-detection/</guid>
-      <description>Can computers really understand the human face?</description>
-    </item>
-    
-    <item>
-      <title>Gaze-tracking Goggles</title>
-      <link>https://nithin-john-george.github.io/projects/gaze-tracking-goggles/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/projects/gaze-tracking-goggles/</guid>
-      <description>Smart Goggles for Gaze Analysis</description>
-    </item>
-    
-    <item>
-      <title>OpenQuad</title>
-      <link>https://nithin-john-george.github.io/projects/openquad/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/projects/openquad/</guid>
-      <description>Open-souce platform for drone automation</description>
-    </item>
-    
-    <item>
-      <title>Search and Reconnaissance Robot</title>
-      <link>https://nithin-john-george.github.io/projects/search-and-reconnaissance-robot/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/projects/search-and-reconnaissance-robot/</guid>
-      <description>An all-terrain robot for disaster management!</description>
-    </item>
-    
-    <item>
-      <title>SEBART-Pro</title>
-      <link>https://nithin-john-george.github.io/projects/sebart-pro/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/projects/sebart-pro/</guid>
-      <description>A smart self-balancing robot!</description>
+      <guid>https://nithin-john-george.github.io/projects/server-inventory-shell-script/</guid>
+      <description>It&amp;#39;s a bash script to show a complete inventory of an Linux OS and it might be useful for Linux system/support engineers who lot of servers in daily life . Instead of manually executing all the commands on each of server which is hell lot of task to do , you can execute this script and this script generates all needed inventory to a file which you can mail to your manager</description>
     </item>
     
   </channel>
