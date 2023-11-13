@@ -1,20 +1,11 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
-    <title>Nithin John George</title>
-    <link>https://nithin-john-george.github.io/</link>
-    <description>Recent content on Nithin John George</description>
+    <title>Projects on Nithin John George</title>
+    <link>https://nithin-john-george.github.io/projects/</link>
+    <description>Recent content in Projects on Nithin John George</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://nithin-john-george.github.io/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>What happens when you type ls -a in the shell</title>
-      <link>https://nithin-john-george.github.io/blog/internals-of-ls-a-command/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/blog/internals-of-ls-a-command/</guid>
-      <description>What happens internally when we type ls -l command in the shell ? How It Works and What You Need to Know?</description>
-    </item>
-    
+    <language>en-us</language><atom:link href="https://nithin-john-george.github.io/projects/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Service Autohealer Using Shell Script</title>
       <link>https://nithin-john-george.github.io/projects/auto-heal-script/</link>
@@ -50,34 +41,6 @@
       <guid>https://nithin-john-george.github.io/projects/server-inventory-shell-script/</guid>
       <description>It&amp;#39;s a bash script to show a complete inventory of an Linux OS and it might be useful for Linux system/support engineers who lot of servers in daily life . Instead of manually executing all the commands on each of server which is hell lot of task to do , you can execute this script and this script generates all needed inventory to a file which you can mail to your manager</description>
     </item>
-    
-    <item>
-      <title>Devops SDE-2 (Cloud Infrastructure)</title>
-      <link>https://nithin-john-george.github.io/experience/porter/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/experience/porter/</guid>
-      <description>Porter Head Office - Banglore</description>
-    </item>
-    
-    <item>
-      <title>DevOps Engineer</title>
-      <link>https://nithin-john-george.github.io/experience/aptonworks/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/experience/aptonworks/</guid>
-      <description>AptonWorks PVT LTD, Infopark, Koratty, Thrissur, Kerala, India</description>
-    </item>
-    
-    <item>
-      <title>System Engineer</title>
-      <link>https://nithin-john-george.github.io/experience/geojit/</link>
-      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
-      
-      <guid>https://nithin-john-george.github.io/experience/geojit/</guid>
-      <description>Geojit Financial Services (Head Office), Civil Line Rd, Padivattom, Kochi, Kerala</description>
-    </item>
-    
     
   </channel>
 </rss>
