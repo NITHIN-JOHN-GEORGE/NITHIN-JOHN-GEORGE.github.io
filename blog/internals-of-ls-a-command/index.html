@@ -5,12 +5,14 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <meta name="robots" content="index, follow">
-<title>Tags | Nithin John George</title>
-<meta name="keywords" content="">
-<meta name="description" content="">
+<title>What happens when you type ls -a in the shell | Nithin John George</title>
+<meta name="keywords" content="Linux">
+<meta name="description" content="What happens internally when we type ls -l command in the shell ? How It Works and What You Need to Know?">
 <meta name="author" content="">
-<link rel="canonical" href="https://nithin-john-george.github.io/tags/">
+<link rel="canonical" href="https://nithin-john-george.github.io/blog/internals-of-ls-a-command/">
 <link crossorigin="anonymous" href="/assets/css/stylesheet.min.a72801f0f40a8d7f71aa1cafd1c2f2a993a1f26ca1cfd38fdba65d5b9b0f08a0.css" integrity="sha256-pygB8PQKjX9xqhyv0cLyqZOh8myhz9OP26ZdW5sPCKA=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.5b9ae0304f93db6cc493f51846f012428af399c614b4f2fbdb7fa59dd4d5ef5b.js" integrity="sha256-W5rgME&#43;T22zEk/UYRvASQorzmcYUtPL723&#43;lndTV71s="
+    onload="hljs.initHighlightingOnLoad();"></script>
 <link rel="icon" href="https://nithin-john-george.github.io/favicon.ico">
 <link rel="icon" type="image/png" sizes="16x16" href="https://nithin-john-george.github.io/favicon-16x16.png">
 <link rel="icon" type="image/png" sizes="32x32" href="https://nithin-john-george.github.io/favicon-32x32.png">
@@ -18,7 +20,6 @@
 <link rel="mask-icon" href="https://nithin-john-george.github.io/safari-pinned-tab.svg">
 <meta name="theme-color" content="#2e2e33">
 <meta name="msapplication-TileColor" content="#2e2e33">
-<link rel="alternate" type="application/rss+xml" href="https://nithin-john-george.github.io/tags/index.xml">
 <noscript>
     <style>
         #theme-toggle,
@@ -55,18 +56,72 @@
         }
 
     </style>
-</noscript><meta property="og:title" content="Tags" />
-<meta property="og:description" content="" />
-<meta property="og:type" content="website" />
-<meta property="og:url" content="https://nithin-john-george.github.io/tags/" />
+</noscript><meta property="og:title" content="What happens when you type ls -a in the shell" />
+<meta property="og:description" content="What happens internally when we type ls -l command in the shell ? How It Works and What You Need to Know?" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nithin-john-george.github.io/blog/internals-of-ls-a-command/" />
+<meta property="og:image" content="https://nithin-john-george.github.io/blog/internals-of-ls-a-command/ls-l-command.png" /><meta property="article:section" content="blog" />
 
-<meta name="twitter:card" content="summary"/>
-<meta name="twitter:title" content="Tags"/>
-<meta name="twitter:description" content=""/>
 
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://nithin-john-george.github.io/blog/internals-of-ls-a-command/ls-l-command.png" />
+<meta name="twitter:title" content="What happens when you type ls -a in the shell"/>
+<meta name="twitter:description" content="What happens internally when we type ls -l command in the shell ? How It Works and What You Need to Know?"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "https://nithin-john-george.github.io/blog/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "What happens when you type ls -a in the shell",
+      "item": "https://nithin-john-george.github.io/blog/internals-of-ls-a-command/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "What happens when you type ls -a in the shell",
+  "name": "What happens when you type ls -a in the shell",
+  "description": "What happens internally when we type ls -l command in the shell ? How It Works and What You Need to Know?",
+  "keywords": [
+    "Linux"
+  ],
+  "articleBody": "",
+  "wordCount" : "0",
+  "inLanguage": "en",
+  "image":"https://nithin-john-george.github.io/blog/internals-of-ls-a-command/ls-l-command.png","datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://nithin-john-george.github.io/blog/internals-of-ls-a-command/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Nithin John George",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://nithin-john-george.github.io/favicon.ico"
+    }
+  }
+}
+</script>
 </head>
 
-<body class="list" id="top">
+<body class="" id="top">
 <script>
     if (localStorage.getItem("pref-theme") === "dark") {
         document.body.classList.add('dark');
@@ -140,15 +195,34 @@
     </nav>
 </header>
 <main class="main">
-<header class="page-header">
-    <h1>Tags</h1>
-</header>
 
-<ul class="terms-tags">
-    <li>
-        <a href="https://nithin-john-george.github.io/tags/linux/">Linux <sup><strong><sup>1</sup></strong></sup> </a>
-    </li>
-</ul>
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://nithin-john-george.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://nithin-john-george.github.io/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      What happens when you type ls -a in the shell
+    </h1>
+    <div class="post-description">
+      What happens internally when we type ls -l command in the shell ? How It Works and What You Need to Know?
+    </div>
+    <div class="post-meta">
+
+
+Apr 2023
+
+</div>
+  </header> 
+<figure class="entry-cover"><img loading="lazy" src="https://nithin-john-george.github.io/blog/internals-of-ls-a-command/ls-l-command.png" alt="">
+        
+</figure>
+
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://nithin-john-george.github.io/tags/linux/">Linux</a></li>
+    </ul>
+  </footer>
+</article>
     </main>
     
 <footer class="footer">
@@ -213,6 +287,53 @@
         }
     })
 
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
 </script>
 </body>
 
