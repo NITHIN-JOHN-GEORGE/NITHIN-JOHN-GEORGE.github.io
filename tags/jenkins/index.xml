@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Jenkins on Nithin John George</title>
+    <link>https://nithin-john-george.github.io/tags/jenkins/</link>
+    <description>Recent content in Jenkins on Nithin John George</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="https://nithin-john-george.github.io/tags/jenkins/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>End to End CI/CD pipeline for java based application on K8s</title>
+      <link>https://nithin-john-george.github.io/projects/end-to-end-ci-cd-pipeline/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/projects/end-to-end-ci-cd-pipeline/</guid>
+      <description>Project on End to End CI/CD pipeline for java based application using Git,Github,Jenkins,Maven,Sonarqube,Nexus,Slack,Docker and Kuberenets with ECR as private docker registry and Zero Downtime Deployment.</description>
+    </item>
+    
+  </channel>
+</rss>

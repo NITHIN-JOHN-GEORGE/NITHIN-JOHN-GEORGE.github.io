@@ -7,21 +7,30 @@
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language><atom:link href="https://nithin-john-george.github.io/projects/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Service Autohealer Using Shell Script</title>
-      <link>https://nithin-john-george.github.io/projects/auto-heal-script/</link>
+      <title>Production-Grade VPC with Environment-Specific Terraform Configuration</title>
+      <link>https://nithin-john-george.github.io/projects/terraform-vpc/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nithin-john-george.github.io/projects/auto-heal-script/</guid>
-      <description>Shell script which will automatically try to start service when down and send email</description>
+      <guid>https://nithin-john-george.github.io/projects/terraform-vpc/</guid>
+      <description>This Terraform setup creates a high-availability (HA) VPC in AWS leveraging an environment-sensitive count mechanism</description>
     </item>
     
     <item>
-      <title>Disk CPU Memory Monitor Using Shell Scripting</title>
-      <link>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</link>
+      <title>Apache Web Server Log Parsing Tool Using Python (Enhanced Version)</title>
+      <link>https://nithin-john-george.github.io/projects/apache-log-parser-python/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
-      <guid>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</guid>
-      <description>Shell Script which can be used to monitor CPU , Memory , Disk Space of an Linux Server based on the Threshold</description>
+      <guid>https://nithin-john-george.github.io/projects/apache-log-parser-python/</guid>
+      <description>As part of this DevOps project, we showcase how Python scripting can be used to parse Apache access logs in real-world scenarios. Two years ago, I posted a 🔗 [Shell Script](https://github.com/NITHIN-JOHN-GEORGE/apache_log_parser) for performing this operation. The following is a Python implementation of the same</description>
+    </item>
+    
+    <item>
+      <title>End to End CI/CD pipeline for java based application on K8s</title>
+      <link>https://nithin-john-george.github.io/projects/end-to-end-ci-cd-pipeline/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/projects/end-to-end-ci-cd-pipeline/</guid>
+      <description>Project on End to End CI/CD pipeline for java based application using Git,Github,Jenkins,Maven,Sonarqube,Nexus,Slack,Docker and Kuberenets with ECR as private docker registry and Zero Downtime Deployment.</description>
     </item>
     
     <item>
@@ -34,12 +43,39 @@
     </item>
     
     <item>
+      <title>Disk CPU Memory Monitor Using Shell Scripting</title>
+      <link>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</guid>
+      <description>Shell Script which can be used to monitor CPU , Memory , Disk Space of an Linux Server based on the Threshold</description>
+    </item>
+    
+    <item>
       <title>Generating Multiple Server Inventory Using Shell Scripting</title>
       <link>https://nithin-john-george.github.io/projects/server-inventory-shell-script/</link>
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://nithin-john-george.github.io/projects/server-inventory-shell-script/</guid>
       <description>It&amp;#39;s a bash script to show a complete inventory of an Linux OS and it might be useful for Linux system/support engineers who lot of servers in daily life . Instead of manually executing all the commands on each of server which is hell lot of task to do , you can execute this script and this script generates all needed inventory to a file which you can mail to your manager</description>
+    </item>
+    
+    <item>
+      <title>Service Autohealer Using Shell Script</title>
+      <link>https://nithin-john-george.github.io/projects/auto-heal-script/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/projects/auto-heal-script/</guid>
+      <description>Shell script which will automatically try to start service when down and send email</description>
+    </item>
+    
+    <item>
+      <title>Ansible Playbook to Install &amp; Configure HTTPD Web Server with Jinja2 Templating</title>
+      <link>https://nithin-john-george.github.io/projects/install-and-configure-httpd-with-ansible/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/projects/install-and-configure-httpd-with-ansible/</guid>
+      <description>Simple playbook to install and configure HTTPD web server</description>
     </item>
     
   </channel>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Terraform Cloud on Nithin John George</title>
+    <link>https://nithin-john-george.github.io/tags/terraform-cloud/</link>
+    <description>Recent content in Terraform Cloud on Nithin John George</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language><atom:link href="https://nithin-john-george.github.io/tags/terraform-cloud/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances</title>
+      <link>https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/</guid>
+      <description>Maximizing Cost-Efficiency with Karpenter : Setting Up EKS Cluster (v1.24) on Spot-Instances with AWS ALB Ingress Controller, Amazon EBS CSI Driver, and Add-ons Completely using Terraform and Terraform Cloud</description>
+    </item>
+    
+    <item>
+      <title>Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities</title>
+      <link>https://nithin-john-george.github.io/blog/terraform-cloud/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://nithin-john-george.github.io/blog/terraform-cloud/</guid>
+      <description>In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management.</description>
+    </item>
+    
+  </channel>
+</rss>

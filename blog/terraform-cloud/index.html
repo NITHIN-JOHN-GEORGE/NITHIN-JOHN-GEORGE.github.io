@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities | Nithin John George</title>
+<meta name="keywords" content="Terraform, Terraform Cloud">
+<meta name="description" content="In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management.">
+<meta name="author" content="">
+<link rel="canonical" href="https://nithin-john-george.github.io/blog/terraform-cloud/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.a72801f0f40a8d7f71aa1cafd1c2f2a993a1f26ca1cfd38fdba65d5b9b0f08a0.css" integrity="sha256-pygB8PQKjX9xqhyv0cLyqZOh8myhz9OP26ZdW5sPCKA=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.5b9ae0304f93db6cc493f51846f012428af399c614b4f2fbdb7fa59dd4d5ef5b.js" integrity="sha256-W5rgME&#43;T22zEk/UYRvASQorzmcYUtPL723&#43;lndTV71s="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="https://nithin-john-george.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://nithin-john-george.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://nithin-john-george.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://nithin-john-george.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://nithin-john-george.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities" />
+<meta property="og:description" content="In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nithin-john-george.github.io/blog/terraform-cloud/" />
+<meta property="og:image" content="https://nithin-john-george.github.io/blog/terraform-cloud.jpeg" /><meta property="article:section" content="blog" />
+
+
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://nithin-john-george.github.io/blog/terraform-cloud.jpeg" />
+<meta name="twitter:title" content="Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities"/>
+<meta name="twitter:description" content="In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management."/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "https://nithin-john-george.github.io/blog/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities",
+      "item": "https://nithin-john-george.github.io/blog/terraform-cloud/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities",
+  "name": "Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities",
+  "description": "In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management.",
+  "keywords": [
+    "Terraform", "Terraform Cloud"
+  ],
+  "articleBody": "🔗 Medium In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management.\nWe will deliver the reasons why Terraform Cloud is essential, highlighting its capabilities and benefits, advanced workflows, and much more. We’ll take a closer look at the VCS-driven workflow, providing a detailed example to illustrate how it works in practice.\nPlus, we’ll provide some practical recommendations for using Terraform Cloud in a production environment.\nOne of the main benefits of using Terraform to manage cloud infrastructure is that it allows for infrastructure automation. With Terraform, developers and operations teams can define and manage their infrastructure in code, rather than manually configure resources through a web console or command line interface. This makes it easier to manage large, complex environments and reduces the risk of human error.\nEarlier, when using Terraform, the typical workflow involved developers defining their infrastructure as code using the Terraform configuration language(HCL), and then using the terraform plan and terraform apply commands to provision the infrastructure on their local machines.\nThe state of the infrastructure, which tracks the current state of the resources managed by Terraform, was often stored locally as well. However, as our cloud infrastructure grew, we started seeing inconsistencies and issues in the terraform state file as many team members were deploying resources at the same time.\nThat’s where Terraform cloud came in as a savior.\nTerraform cloud is a managed solution offered by Hashicorp to run Terraform configurations.\nTerraform Cloud is available as a hosted service at **https://app.terraform.io**. It acts as a CI/CD tool for deploying Infrastructure as Code (IaC)\nIt offers a central UI for all your project and provides remote state management also it manages Terraform runs ( plan / apply ) in a consistent and reliable environment, access controls for approving changes to infrastructure, a private registry for sharing Terraform modules, Cost Estimation, Drift Detection, Sentinel for Governance (policy controls for governing the contents of Terraform configurations), and more.\nYou can use it to manage cloud infrastructure, including Amazon Web Services, Google Cloud Platform, and Microsoft Azure. It’s a recommended product if you needed to manage resources within an enterprise and you have a whole team contributing to it.\nWhy use Terraform Cloud? Remote execution: It allows you to run Terraform plan and apply operations on infrastructure hosted in the cloud (TFC) or on a central system that you can control (Terraform Cloud Enterprise)\n2. Terraform cloud workspaces:\nWorkspaces are simply referring to environments. It works like separate working directories.\nIf we use multiple environments like development, QA, and production, we need to manage independent codes for each and every environment.\nBut with the help of Workspaces, we can use a single code for multiple environments and manage the State files of all the environments independently. It helps to create multiple State files with the same Terraform configurations.\nTerraform cloud manages infrastructure collections with workspaces. It works like separate working directories. Cloud workspaces are not limited to state files, configurations, variables, state management \u0026 credentials \u0026 secrets.\nIn addition to the basic Terraform content, Terraform Cloud keeps some additional data for each workspace:\nState versions: Each workspace retains backups of its previous state files. Although only the current state is necessary for managing resources, the state history can be useful for tracking changes over time or recovering from problems.\nRun History: When Terraform Cloud manages a workspace’s Terraform runs, it retains a record of all run activity, including summaries, logs, a reference to the changes that caused the run, and user comments.\n3. Version control integration and triggers:\nAs Terraform Cloud is an infrastructure-as-code service, It supports Version control system integration with some of VCS providers like GitHub, Gitlab, Azure DevOps, and Bitbucket. Terraform executions can be triggered upon new commits merged by pull requests or pushed in VCS. It can work as a CICD pipeline.\n4. Private registry:\nReusable modules are very useful when needing to provision multiple environments from the same source configuration when the requirement is to store that module privately in a Terraform cloud. The private registry can be used in this scenario. A private registry allows us to store modules and use those modules in workspaces.\n5. Access Control \u0026 Governance:\nLarge teams in organizations have many workspaces in Terraform cloud, And to manage access to those workspaces across team members is required most, Terraform cloud provides paid functionality to meet the control and governance needs of large organizations.\n6. Sentinel policies \u0026 Cost estimation:\nTerraform cloud provides sentinel, which is a policy-as-code framework. Which is used to enforce granular policies about how the infrastructure should get provisioned. Examples like limiting the size of virtual machines, confining major updates to defined maintenance windows, etc. These policies can act as firm requirements, advisory warnings, or soft requirements, which can be bypassed through explicit approval from the team.\n7. Drift Detection:\nIt continuously checks against the infrastructure state to detect changes and provide alerts. This allows Terraform to provide a central pane of visibility to all your infrastructure and offers operators confidence that it matches the last known Terraform state.\n8. Cost Optimization:\nCost Optimization is a unique feature of Terraform cloud. Before making changes to the provider, Terraform cloud can display an estimate of its total cost, as well as any change in cost caused by proposed updates.\nCost optimization can also be integrated with sentinel policies for warnings. It ensures that all your infrastructure is governed and has the proper security measures in place. It also reduces the potential for application downtime that could negatively impact the user experience and, eventually, revenue.\nHow does it work? Terraform Cloud uses organizations and workspaces to organize your code and environments.\n“Organizations are shared spaces for teams to collaborate on infrastructure”.\nEach organization can have multiple workspaces that define groups of resources of your infrastructure.\nNormally, a user will create one organization (common use case for small and medium companies) and have multiple workspaces describing your environments\nOrganizing Workspaces with Projects\nA project is a container that holds multiple workspaces. Projects help to organize workspaces and one key benefit of using projects is that they allow for more granular control over permissions. Each project has separate permission set that you can use to grant teams access to all workspaces in the project.\nEvery workspace must belong to exactly one project. By default, all workspaces belong to an organization’s Default Project.\nEnough of theory, Let’s start with the Practicals: First, we will create the Organization itself: Next, We will be Connecting to a version control provider Connecting Terraform Cloud to your VCS involves four steps:\nGo to your organization’s settings and then click Providers. The VCS Providers page appears. Click Add VCS Provider. The VCS Providers page appears.\nSelect GitHub and then select **GitHub.com** from the menu.\nThis will take us to the page where have to configure OAuth authentication with your VCS provider.\nNext thing on Github, we have to create a New OAuth Application This page is located at https://github.com/settings/applications/new.\nYou can also reach it through GitHub’s menus:\nClick your profile picture and choose “Settings.”\nClick “Developer settings,” then make sure you’re on the “OAuth Apps” page (not “GitHub Apps”).\nClick the “New OAuth App” button.\nFill it with the details you got above from the setup provider section and click on register application.\nNext click on generate a new client secret.\nNow go back to the Terraform Cloud, Enter the Client ID and Client Secret from the previous step, as well as an optional Name for this VCS connection. Click “Connect and continue.” This takes you to a page on GitHub.com, asking whether you want to authorize the app.\nClick the green “Authorize \" button at the bottom of the authorization page. GitHub might request your password to confirm the operation.\nNext, if the organization repositories include Git submodules that can only be accessed via SSH, an SSH key can be added along with the OAuth credentials. We will be skipping this step\nAnd that’s it, we have created a new VCS provider to connect to GitHub\nTerraform Cloud Workflows Terraform Cloud has three workflows for managing Terraform runs.\n**The UI/VCS-driven run workflow **— here you are connecting your VCS to Terraform Cloud — easily integrate version control such as GitHub, GitLab, BitBucket or Azure DevOps and automatically initiate Terraform runs when changes are committed to the specified branch\n**The API-driven run workflow **— you can use your standard Terraform CLI to trigger remote runs.\n**The CLI-driven run workflow **— where you can manage and trigger runs through other tools by triggering calls to Terraform Cloud.\nHere in this blog, we will be more focusing on the VCS-driven workflow.\nVCS Driven Workflow Some of the features:\ninitiating speculative plans every time a PR is created against the default branch (this is set up by default so you don’t have to do anything)\nonce PR is merged this will trigger the plan and apply, however by default applying will require manual approval.\nyou have various triggers to choose from. I will discuss this more when coming to an example.\n*Sample repo containing some terraform code for testing can be found under: *https://github.com/NITHIN-JOHN-GEORGE/terraform-cloud-demo\nCreating a Workspace Click Projects \u0026 workspaces → Click New, then select Workspace → Choose a workflow type: Version control → Choose a repository\nEnter a Workspace Name → choose a Project to add the workspace to → Open Advanced options to configure Terraform Working Directory, Set up AutoRun Triggering, and setting up the VCS branch.\nNote :\nTerraform Cloud provides different types of triggers to start a run automatically based on specific events. These triggers can be customized to suit the needs of your workflow.\nThe first type of trigger is the path changes trigger, which is particularly useful for monorepos where multiple projects are stored in a single repository. With this trigger, you can configure Terraform Cloud to start a run whenever a change occurs in a specific directory or file path within the repository. This means you don’t have to run the entire codebase and can focus on the relevant changes.\nThe second and recommended type of trigger is a pattern-based trigger. This trigger uses glob patterns to select which changes should trigger a run and ignore others. For example, if you only require a run when there is a change in .tf files in the “tfe-test” directory, you can specify the pattern as “/tfe-test/*.tf”. This ensures that Terraform Cloud only runs when specific changes occur, reducing the risk of unintended consequences and speeding up the deployment process.\nThis is an important configuration to be noted, otherwise, the workspace will be triggered every time a code changes in any other sub-directory in the Github-Repo.\nNext Click on Create Workspace\nHere we can directly configure variables, or we can skip and do it afterward.\nNext, Go to Workspace Overview → Click on Configure Variables\nHere you can add new variables which are required !!\nHere note we are adding a new variable called AWS_ACCESS_KEY. This is a variable that must be kept confidential so we have to click on Sensitive.\nHere we can also directly declare variables as Environment variables .\nRepeat the same for all variables you have.\nAs you can see the sensitive variables cannot be seen from the console, we also cannot see if we edit it, we can only update the value.\nThat’s it.\nNow go to Actions → Start a new run\nIt will wait for our Confirmation for Applying. Click on Confirm \u0026 Apply\nWe can see the states got saved here.\nAnd we can see a list of all Runs that happened:\nNow, let’s test the Auto triggering Functionality !!\nLet’s modify some parts of code and as soon as you push the code to GitHub, the Terraform runs will be triggered\nAnd that’s it, it got triggered !!\nThis confirms Everything Working Fine as Expected !!\nThere are other features of TF cloud like private module registry, configuring TF-agents, sentinel policies, drift detection,cost-estimation, etc .. we will be covering some of them in the upcoming blogs.\nConfiguring TF agents in our environment where can have complete control of the infrastructure, sentinel policies, drift detection, and cost estimation is paid feature and comes under the Business Plan of Terraform cloud\nRecommendations while using TF cloud in production : Add notifications for all events / certain events to a slack channel for workspaces with the prod prefix\nUse self-hosted TF-agents\nUse TF cloud for hosting our private modules\nAlternatively, write a backup script that automatically sends the state to s3 and does cross-region replication for disaster-recovery purposes and create workspaces with the states from S3.\nProvide granular access to terraform workspaces across team members with access controls.\nSet the Terraform log level to debug\nUse Features like Drift Detection ( which continuously checks against the infrastructure state to detect and notify when there are changes), Cost Estimation, and Sentinel Policies ( granular policies about how the infrastructure should get provisioned ).\nThanks for Reading !! Happy Learning\n",
+  "wordCount" : "2197",
+  "inLanguage": "en",
+  "image":"https://nithin-john-george.github.io/blog/terraform-cloud.jpeg","datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://nithin-john-george.github.io/blog/terraform-cloud/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Nithin John George",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://nithin-john-george.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header sticky-header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://nithin-john-george.github.io/" accesskey="h" title="Nithin John George (Alt + H)">Nithin John George</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://nithin-john-george.github.io/" title="Home">
+                    <span>Home</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/blog" title="Blog">
+                    <span>Blog</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/projects" title="Projects">
+                    <span>Projects</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/experience" title="Experience">
+                    <span>Experience</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/search" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/technical-skills/technical-skills/" title="Skills">
+                    <span>Skills</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://nithin-john-george.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://nithin-john-george.github.io/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      Automating Cloud Infrastructure with Terraform Cloud: A Deep Dive into its Capabilities
+    </h1>
+    <div class="post-description">
+      In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management.
+    </div>
+    <div class="post-meta">
+
+
+Mar 2023
+
+</div>
+  </header> 
+<figure class="entry-cover"><img loading="lazy" src="https://nithin-john-george.github.io/blog/terraform-cloud.jpeg" alt="">
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">‎ Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul><ul><ul>
+                <li>
+                    <a href="#-mediumhttpsmediumcomtechbeatlyautomating-cloud-infrastructure-with-terraform-cloud-a-deep-dive-into-its-capabilities-9bc9d0aff929" aria-label="🔗 Medium">🔗 <a href="https://medium.com/techbeatly/automating-cloud-infrastructure-with-terraform-cloud-a-deep-dive-into-its-capabilities-9bc9d0aff929">Medium</a></a></li></ul>
+                    </ul>
+                    
+                <li>
+                    <a href="#terraform-cloud-is-available-as-a-hosted-service-at-httpsappterraformiohttpsappterraformio" aria-label="Terraform Cloud is available as a hosted service at **https://app.terraform.io**.">Terraform Cloud is available as a hosted service at <a href="https://app.terraform.io">**https://app.terraform.io</a>**.</a><ul>
+                        
+                <li>
+                    <a href="#why-use-terraform-cloud" aria-label="Why use Terraform Cloud?">Why use Terraform Cloud?</a></li>
+                <li>
+                    <a href="#how-does-it-work" aria-label="How does it work?">How does it work?</a></li>
+                <li>
+                    <a href="#enough-of-theory-lets-start-with-the-practicals" aria-label="Enough of theory, Let’s start with the Practicals:">Enough of theory, Let’s start with the Practicals:</a><ul>
+                        
+                <li>
+                    <a href="#first-we-will-create-the-organization-itself" aria-label="First, we will create the Organization itself:">First, we will create the Organization itself:</a></li>
+                <li>
+                    <a href="#next-we-will-be-connecting-to-a-version-control-provider" aria-label="Next, We will be Connecting to a version control provider">Next, We will be Connecting to a version control provider</a></li></ul>
+                </li>
+                <li>
+                    <a href="#terraform-cloud-workflows" aria-label="Terraform Cloud Workflows">Terraform Cloud Workflows</a><ul>
+                        
+                <li>
+                    <a href="#vcs-driven-workflow" aria-label="VCS Driven Workflow">VCS Driven Workflow</a></li></ul>
+                </li>
+                <li>
+                    <a href="#creating-a-workspace" aria-label="Creating a Workspace">Creating a Workspace</a><ul>
+                        
+                <li>
+                    <a href="#recommendations-while-using-tf-cloud-in-production-" aria-label="Recommendations while using TF cloud in production :"><strong>Recommendations while using TF cloud in production :</strong></a>
+                </li>
+            </ul>
+            </li>
+            </ul>
+            </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h3 id="-mediumhttpsmediumcomtechbeatlyautomating-cloud-infrastructure-with-terraform-cloud-a-deep-dive-into-its-capabilities-9bc9d0aff929">🔗 <a href="https://medium.com/techbeatly/automating-cloud-infrastructure-with-terraform-cloud-a-deep-dive-into-its-capabilities-9bc9d0aff929">Medium</a><a hidden class="anchor" aria-hidden="true" href="#-mediumhttpsmediumcomtechbeatlyautomating-cloud-infrastructure-with-terraform-cloud-a-deep-dive-into-its-capabilities-9bc9d0aff929">#</a></h3>
+<p>In this blog, we will discover how Terraform Cloud can help you streamline your cloud infrastructure management process and we will explore the powerful features that make it a must-have tool for cloud infrastructure management.</p>
+<p>We will deliver the reasons why Terraform Cloud is essential, highlighting its capabilities and benefits, advanced workflows, and much more. We’ll take a closer look at the VCS-driven workflow, providing a detailed example to illustrate how it works in practice.</p>
+<p>Plus, we’ll provide some practical recommendations for using Terraform Cloud in a production environment.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/2568/1*SxC0r1H3Ebtx4DNnARfqRA.png" alt=""  />
+</p>
+<p>One of the main benefits of using Terraform to manage cloud infrastructure is that it allows for infrastructure automation. With Terraform, developers and operations teams can define and manage their infrastructure in code, rather than manually configure resources through a web console or command line interface. This makes it easier to manage large, complex environments and reduces the risk of human error.</p>
+<p>Earlier, when using Terraform, the typical workflow involved developers defining their infrastructure as code using the Terraform configuration language(HCL), and then using the <strong>terraform plan</strong> and <strong>terraform apply</strong> commands to provision the infrastructure on their local machines.</p>
+<p>The state of the infrastructure, which tracks the current state of the resources managed by Terraform, was often stored locally as well. However, as our cloud infrastructure grew, we started seeing inconsistencies and issues in the terraform state file as many team members were deploying resources at the same time.</p>
+<p>That’s where Terraform cloud came in as a savior.</p>
+<p>Terraform cloud is a managed solution offered by <a href="https://www.hashicorp.com/">Hashicorp</a> to run Terraform configurations.</p>
+<blockquote>
+<h1 id="terraform-cloud-is-available-as-a-hosted-service-at-httpsappterraformiohttpsappterraformio">Terraform Cloud is available as a hosted service at <a href="https://app.terraform.io">**https://app.terraform.io</a>**.<a hidden class="anchor" aria-hidden="true" href="#terraform-cloud-is-available-as-a-hosted-service-at-httpsappterraformiohttpsappterraformio">#</a></h1>
+</blockquote>
+<p>It acts as a CI/CD tool for deploying Infrastructure as Code (IaC)</p>
+<p>It offers a central UI for all your project and <strong>provides remote state management</strong> also it manages <strong>Terraform runs ( plan / apply ) in a consistent and reliable environment</strong>, <strong>access controls for approving changes to infrastructure</strong>, <strong>a private registry for sharing Terraform modules</strong>, <strong>Cost Estimation</strong>, <strong>Drift Detection</strong>, <strong>Sentinel for Governance</strong> (policy controls for governing the contents of Terraform configurations), and more.</p>
+<p>You can use it to manage cloud infrastructure, including Amazon Web Services, Google Cloud Platform, and Microsoft Azure. It’s a recommended product if you needed to manage resources within an enterprise and you have a whole team contributing to it.</p>
+<h2 id="why-use-terraform-cloud">Why use Terraform Cloud?<a hidden class="anchor" aria-hidden="true" href="#why-use-terraform-cloud">#</a></h2>
+<ol>
+<li><strong>Remote execution:</strong></li>
+</ol>
+<p>It allows you to run Terraform plan and apply operations on infrastructure hosted in the cloud (TFC) or on a central system that you can control (Terraform Cloud Enterprise)</p>
+<p><strong>2. Terraform cloud workspaces</strong>:</p>
+<p><strong>Workspaces</strong> are simply referring to <strong>environments.</strong> It works like separate working directories.</p>
+<p>If we use multiple environments like <strong>development, QA,</strong> and <strong>production,</strong> we need to manage independent codes for each and every environment.</p>
+<p>But with the help of Workspaces, we can use a single code for multiple environments and manage the <strong>State files</strong> of all the environments independently. It helps to create multiple State files with the same Terraform configurations.</p>
+<p>Terraform cloud manages infrastructure collections with workspaces. It works like separate working directories. Cloud workspaces are not limited to state files, configurations, variables, state management &amp; credentials &amp; secrets.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/2672/1*6twSStM0F4Ki4ESHuJZilA.png" alt=""  />
+</p>
+<p>In addition to the basic Terraform content, Terraform Cloud keeps some additional data for each workspace:</p>
+<ul>
+<li>
+<p><strong>State versions:</strong> Each workspace retains backups of its previous state files. Although only the current state is necessary for managing resources, the state history can be useful for tracking changes over time or recovering from problems.</p>
+</li>
+<li>
+<p><strong>Run History:</strong> When Terraform Cloud manages a workspace’s Terraform runs, it retains a record of all run activity, including summaries, logs, a reference to the changes that caused the run, and user comments.</p>
+</li>
+</ul>
+<p><strong>3. Version control integration and triggers:</strong></p>
+<p>As Terraform Cloud is an infrastructure-as-code service, It supports Version control system integration with some of VCS providers like GitHub, Gitlab, Azure DevOps, and Bitbucket. <strong>Terraform executions can be triggered upon new commits merged by pull requests or pushed in VCS. It can work as a CICD pipeline.</strong></p>
+<p><strong>4. Private registry:</strong></p>
+<p>Reusable modules are very useful when needing to provision multiple environments from the same source configuration when the requirement is to store that module privately in a Terraform cloud. The private registry can be used in this scenario. A private <strong>registry allows us to store modules and use those modules in workspaces.</strong></p>
+<p><strong>5. Access Control &amp; Governance:</strong></p>
+<p>Large teams in organizations have many workspaces in Terraform cloud, And to manage access to those workspaces across team members is required most, <strong>Terraform cloud provides paid functionality to meet the control and governance needs of large organizations</strong>.</p>
+<p><strong>6. Sentinel policies &amp; Cost estimation:</strong></p>
+<p>Terraform cloud provides sentinel, which is a policy-as-code framework. Which is used to <strong>enforce granular policies about how the infrastructure should get provisioned</strong>. Examples like limiting the size of virtual machines, confining major updates to defined maintenance windows, etc. These policies can act as firm requirements, advisory warnings, or soft requirements, which can be bypassed through explicit approval from the team.</p>
+<p><strong>7. Drift Detection:</strong></p>
+<p>It <strong>continuously checks against the infrastructure state to detect changes and provide alerts</strong>. This allows Terraform to provide a central pane of visibility to all your infrastructure and offers operators confidence that it matches the last known Terraform state.</p>
+<p><strong>8. Cost Optimization:</strong></p>
+<p>Cost Optimization is a unique feature of Terraform cloud. <strong>Before making changes to the provider, Terraform cloud can display an estimate of its total cost, as well as any change in cost caused by proposed updates</strong>.</p>
+<p>Cost optimization can also be integrated with sentinel policies for warnings. It ensures that all your infrastructure is governed and has the proper security measures in place. It also reduces the potential for application downtime that could negatively impact the user experience and, eventually, revenue.</p>
+<h2 id="how-does-it-work">How does it work?<a hidden class="anchor" aria-hidden="true" href="#how-does-it-work">#</a></h2>
+<p>Terraform Cloud uses organizations and workspaces to organize your code and environments.</p>
+<p><strong>“Organizations are shared spaces for teams to collaborate on infrastructure”.</strong></p>
+<p>Each organization can have multiple workspaces that define groups of resources of your infrastructure.</p>
+<p>Normally, a user will create one organization (common use case for small and medium companies) and have multiple workspaces describing your environments</p>
+<p><strong>Organizing Workspaces with Projects</strong></p>
+<p>A project is a container that holds multiple workspaces. Projects help to organize workspaces and one key benefit of using projects is that they allow for more granular control over permissions. Each project has separate permission set that you can use to grant teams access to all workspaces in the project.</p>
+<p>Every workspace must belong to exactly one project. By default, all workspaces belong to an organization’s <strong>Default Project</strong>.</p>
+<h2 id="enough-of-theory-lets-start-with-the-practicals">Enough of theory, Let’s start with the Practicals:<a hidden class="anchor" aria-hidden="true" href="#enough-of-theory-lets-start-with-the-practicals">#</a></h2>
+<h3 id="first-we-will-create-the-organization-itself">First, we will create the Organization itself:<a hidden class="anchor" aria-hidden="true" href="#first-we-will-create-the-organization-itself">#</a></h3>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5004/1*U0n0snnI82OCIxFCSTghtw.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5004/1*MkQsi0z_35daHpHSUFZ7bQ.png" alt=""  />
+</p>
+<h3 id="next-we-will-be-connecting-to-a-version-control-provider">Next, We will be Connecting to a version control provider<a hidden class="anchor" aria-hidden="true" href="#next-we-will-be-connecting-to-a-version-control-provider">#</a></h3>
+<p>Connecting Terraform Cloud to your VCS involves four steps:</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/2000/1*pI49KP3_chvzMYPJldGgoQ.png" alt=""  />
+</p>
+<ol>
+<li>Go to your organization’s settings and then click Providers. The VCS Providers page appears.</li>
+</ol>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5040/1*ZwZCA-DG9YWTRHJqLOURIA.png" alt=""  />
+</p>
+<ol start="2">
+<li>
+<p>Click <strong>Add VCS Provider</strong>. The <strong>VCS Providers</strong> page appears.</p>
+</li>
+<li>
+<p>Select <strong>GitHub</strong> and then select <a href="http://GitHub.com">**GitHub.com</a>** from the menu.</p>
+</li>
+</ol>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5040/1*MKEwITg9CbudKDz345lA-Q.png" alt=""  />
+</p>
+<p>This will take us to the page where have to configure OAuth authentication with your VCS provider.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4736/1*KjmwZosy5dF2aA8LXNSVtw.png" alt=""  />
+</p>
+<p>Next thing on Github, we have to create <strong>a New OAuth Application</strong> This page is located at <a href="https://github.com/settings/applications/new">https://github.com/settings/applications/new</a>.</p>
+<p>You can also reach it through GitHub’s menus:</p>
+<ul>
+<li>
+<p>Click your profile picture and choose “Settings.”</p>
+</li>
+<li>
+<p>Click “Developer settings,” then make sure you’re on the “OAuth Apps” page (not “GitHub Apps”).</p>
+</li>
+<li>
+<p>Click the “New OAuth App” button.</p>
+</li>
+</ul>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5024/1*2QwRWXAHw5y42uZfQAGMDw.png" alt=""  />
+</p>
+<p>Fill it with the details you got above from the setup provider section and click on register application.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4676/1*AeTuh-5SQDV9OLt19Bg1cg.png" alt=""  />
+</p>
+<p>Next click on generate a new client secret.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4676/1*f7tJeDRt_zGJB7ix0REghw.png" alt=""  />
+</p>
+<p>Now go back to the Terraform Cloud, Enter the Client ID and Client Secret from the previous step, as well as an optional Name for this VCS connection. Click “Connect and continue.” This takes you to a page on GitHub.com, asking whether you want to authorize the app.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4508/1*bL3vQvIltHy4SKnv-feIbg.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4508/1*b7bYiQlLFiSsFjN5_jZ_kg.png" alt=""  />
+</p>
+<p>Click the green “Authorize <GITHUB USER>&quot; button at the bottom of the authorization page. GitHub might request your password to confirm the operation.</p>
+<p>Next, if the organization repositories include Git submodules that can only be accessed via SSH, an SSH key can be added along with the OAuth credentials. <strong>We will be skipping this step</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4660/1*dmUrFr6uzqSHNmQ4efwZgw.png" alt=""  />
+</p>
+<p>And that’s it, we have created a new VCS provider to connect to GitHub</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4660/1*syRIY-e1AI17cwIRr1iLiw.png" alt=""  />
+</p>
+<h2 id="terraform-cloud-workflows">Terraform Cloud Workflows<a hidden class="anchor" aria-hidden="true" href="#terraform-cloud-workflows">#</a></h2>
+<p>Terraform Cloud has three workflows for managing Terraform runs.</p>
+<ul>
+<li>
+<p>**The <a href="https://developer.hashicorp.com/terraform/cloud-docs/run/ui">UI/VCS-driven run workflow</a> **— here you are connecting your VCS to Terraform Cloud — easily integrate version control such as GitHub, GitLab, BitBucket or Azure DevOps and automatically initiate Terraform runs when changes are committed to the specified branch</p>
+</li>
+<li>
+<p>**The API-driven run workflow **— you can use your standard Terraform CLI to trigger remote runs.</p>
+</li>
+<li>
+<p>**The <a href="https://developer.hashicorp.com/terraform/cloud-docs/run/cli">CLI-driven run workflow</a> **— where you can manage and trigger runs through other tools by triggering calls to Terraform Cloud.</p>
+</li>
+</ul>
+<blockquote>
+<p>Here in this blog, we will be more focusing on the VCS-driven workflow.</p>
+</blockquote>
+<h3 id="vcs-driven-workflow">VCS Driven Workflow<a hidden class="anchor" aria-hidden="true" href="#vcs-driven-workflow">#</a></h3>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4936/1*rHqJLh8c-34o1T2zLrxszA.png" alt=""  />
+</p>
+<p>Some of the features:</p>
+<ul>
+<li>
+<p>initiating speculative plans every time a PR is created against the default branch (this is set up by default so you don’t have to do anything)</p>
+</li>
+<li>
+<p>once PR is merged this will trigger the plan and apply, however by default applying will require manual approval.</p>
+</li>
+<li>
+<p>you have various triggers to choose from. I will discuss this more when coming to an example.</p>
+</li>
+</ul>
+<blockquote>
+<p>*Sample repo containing some terraform code for testing can be found under: <a href="https://github.com/NITHIN-JOHN-GEORGE/terraform-cloud-demo">*https://github.com/NITHIN-JOHN-GEORGE/terraform-cloud-demo</a></p>
+</blockquote>
+<h2 id="creating-a-workspace">Creating a Workspace<a hidden class="anchor" aria-hidden="true" href="#creating-a-workspace">#</a></h2>
+<p>Click <strong>Projects &amp; workspaces →</strong> Click <strong>New</strong>, then select <strong>Workspace →</strong> Choose a workflow type: <strong>Version control →</strong> Choose a <strong>repository</strong></p>
+<p>Enter a <strong>Workspace Name →</strong> choose a <strong>Project</strong> to add the workspace to → Open Advanced options to configure <strong>Terraform Working Directory, Set up AutoRun Triggering, and setting up the VCS branch.</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4936/1*7wYQgLLSzDVENzy79dY1fQ.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4936/1*SCIy_Z-XBeYXxr6EGBXlBA.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4136/1*-dJUKf_0zYw70EE1n02V5g.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4136/1*tObAzAnO_YvnTi0txRov9A.png" alt=""  />
+</p>
+<p><strong>Note :</strong></p>
+<p>Terraform Cloud provides different types of triggers to start a run automatically based on specific events. These triggers can be customized to suit the needs of your workflow.</p>
+<p>The first type of trigger is the path changes trigger, which is particularly useful for monorepos where multiple projects are stored in a single repository. With this trigger, you can configure Terraform Cloud to start a run whenever a change occurs in a specific directory or file path within the repository. This means you don’t have to run the entire codebase and can focus on the relevant changes.</p>
+<p>The second and recommended type of trigger is a pattern-based trigger. This trigger uses glob patterns to select which changes should trigger a run and ignore others. For example, if you only require a run when there is a change in .tf files in the “tfe-test” directory, you can specify the pattern as “/tfe-test/*.tf”. This ensures that Terraform Cloud only runs when specific changes occur, reducing the risk of unintended consequences and speeding up the deployment process.</p>
+<p><strong>This is an important configuration to be noted, otherwise, the workspace will be triggered every time a code changes in any other sub-directory in the Github-Repo.</strong></p>
+<p>Next Click on Create Workspace</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4136/1*_Y-mR2702t-sTOtEV5xQDA.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4780/1*xbAeguNcx0QXdCEhb01--w.png" alt=""  />
+</p>
+<p>Here we can directly configure variables, or we can skip and do it afterward.</p>
+<p>Next, Go to Workspace Overview → Click on Configure Variables</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4984/1*Z4CuLi1Uo8m0MQkgfb9SJA.png" alt=""  />
+</p>
+<p>Here you can add new variables which are required !!</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4984/1*lRdA0TB_ojxTKvKKXuE-Cw.png" alt=""  />
+</p>
+<p>Here note we are adding a new variable called AWS_ACCESS_KEY. This is a variable that must be kept confidential so we have to click on <strong>Sensitive.</strong></p>
+<p>Here we can also directly declare variables as Environment variables .</p>
+<p>Repeat the same for all variables you have.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4984/1*e1_InxuMdjEj30B53pGC-A.png" alt=""  />
+</p>
+<p>As you can see the sensitive variables cannot be seen from the console, we also cannot see if we edit it, we can only update the value.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4984/1*meyhvF6p4B6UVA5In4M_KQ.png" alt=""  />
+</p>
+<p>That’s it.</p>
+<p>Now go to Actions → Start a new run</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4984/1*W2Nau0B3N8ZKf8wOnT97Pw.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4984/1*X8XqUKgP6wWZ01tJoD1-IA.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4608/1*ttmDbO8qzeCAAp8hM1QNCQ.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4608/1*TuyrAdK3iXWqwj2dkjc78w.png" alt=""  />
+</p>
+<p>It will wait for our Confirmation for Applying. Click on Confirm &amp; Apply</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4608/1*f6mVF1HGW50LIpsOCZIncw.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4608/1*XzTU07vShE02TdHsG9CXWQ.png" alt=""  />
+</p>
+<p>We can see the states got saved here.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5068/1*_0snJS77So1puz5Ij7bTrg.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5068/1*NyNQRwZIw2svVCpJEaDV4g.png" alt=""  />
+</p>
+<p>And we can see a list of all Runs that happened:</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4320/1*DgoLfoscgEC6FhVLDj1mNA.png" alt=""  />
+</p>
+<p><strong>Now, let&rsquo;s test the Auto triggering Functionality !!</strong></p>
+<p>Let&rsquo;s modify some parts of code and as soon as you push the code to GitHub, the Terraform runs will be triggered</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5012/1*VjbzuD0qXhCKXj5xjHslrQ.png" alt=""  />
+</p>
+<p>And that&rsquo;s it, it got triggered !!</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5012/1*nmIlOvnrv253Tn2NcTgpjw.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5012/1*CBFIVaDuQS9YROpo_t4kpw.png" alt=""  />
+</p>
+<p>This confirms Everything Working Fine as Expected !!</p>
+<p>There are other features of TF cloud like private module registry, configuring TF-agents, sentinel policies, drift detection,cost-estimation, etc .. we will be covering some of them in the upcoming blogs.</p>
+<blockquote>
+<p><strong>Configuring TF agents in our environment where can have complete control of the infrastructure, sentinel policies, drift detection, and cost estimation is paid feature and comes under the Business Plan of Terraform cloud</strong></p>
+</blockquote>
+<h3 id="recommendations-while-using-tf-cloud-in-production-"><strong>Recommendations while using TF cloud in production :</strong><a hidden class="anchor" aria-hidden="true" href="#recommendations-while-using-tf-cloud-in-production-">#</a></h3>
+<ol>
+<li>
+<p>Add notifications for all events / certain events to a slack channel for workspaces with the prod prefix</p>
+</li>
+<li>
+<p>Use self-hosted TF-agents</p>
+</li>
+<li>
+<p>Use TF cloud for hosting our private modules</p>
+</li>
+<li>
+<p>Alternatively, write a backup script that automatically sends the state to s3 and does cross-region replication for disaster-recovery purposes and create workspaces with the states from S3.</p>
+</li>
+<li>
+<p>Provide granular access to terraform workspaces across team members with access controls.</p>
+</li>
+<li>
+<p>Set the Terraform log level to <em>debug</em></p>
+</li>
+<li>
+<p>Use Features like Drift Detection ( which continuously checks against the infrastructure state to detect and notify when there are changes), Cost Estimation, and Sentinel Policies ( granular policies about how the infrastructure should get provisioned ).</p>
+</li>
+</ol>
+<p>Thanks for Reading !! Happy Learning</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://nithin-john-george.github.io/tags/terraform/">Terraform</a></li>
+      <li><a href="https://nithin-john-george.github.io/tags/terraform-cloud/">Terraform Cloud</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="https://nithin-john-george.github.io/">Nithin John George</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
