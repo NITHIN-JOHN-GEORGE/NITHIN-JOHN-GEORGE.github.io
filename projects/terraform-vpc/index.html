@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Production-Grade VPC with Environment-Specific Terraform Configuration | Nithin John George</title>
+<meta name="keywords" content="Linux, Shell Scripting">
+<meta name="description" content="This Terraform setup creates a high-availability (HA) VPC in AWS leveraging an environment-sensitive count mechanism">
+<meta name="author" content="">
+<link rel="canonical" href="https://nithin-john-george.github.io/projects/terraform-vpc/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.a72801f0f40a8d7f71aa1cafd1c2f2a993a1f26ca1cfd38fdba65d5b9b0f08a0.css" integrity="sha256-pygB8PQKjX9xqhyv0cLyqZOh8myhz9OP26ZdW5sPCKA=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.5b9ae0304f93db6cc493f51846f012428af399c614b4f2fbdb7fa59dd4d5ef5b.js" integrity="sha256-W5rgME&#43;T22zEk/UYRvASQorzmcYUtPL723&#43;lndTV71s="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="https://nithin-john-george.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://nithin-john-george.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://nithin-john-george.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://nithin-john-george.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://nithin-john-george.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Production-Grade VPC with Environment-Specific Terraform Configuration" />
+<meta property="og:description" content="This Terraform setup creates a high-availability (HA) VPC in AWS leveraging an environment-sensitive count mechanism" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nithin-john-george.github.io/projects/terraform-vpc/" />
+<meta property="og:image" content="https://nithin-john-george.github.io/projects/figlet-terraform-vpc.png" /><meta property="article:section" content="projects" />
+
+
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://nithin-john-george.github.io/projects/figlet-terraform-vpc.png" />
+<meta name="twitter:title" content="Production-Grade VPC with Environment-Specific Terraform Configuration"/>
+<meta name="twitter:description" content="This Terraform setup creates a high-availability (HA) VPC in AWS leveraging an environment-sensitive count mechanism"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Projects",
+      "item": "https://nithin-john-george.github.io/projects/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Production-Grade VPC with Environment-Specific Terraform Configuration",
+      "item": "https://nithin-john-george.github.io/projects/terraform-vpc/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Production-Grade VPC with Environment-Specific Terraform Configuration",
+  "name": "Production-Grade VPC with Environment-Specific Terraform Configuration",
+  "description": "This Terraform setup creates a high-availability (HA) VPC in AWS leveraging an environment-sensitive count mechanism",
+  "keywords": [
+    "Linux", "Shell Scripting"
+  ],
+  "articleBody": "🔗 GitHub Overview This Terraform configuration is designed for creating and managing a high-availability (HA) Virtual Private Cloud (VPC) in AWS. It’s tailored to support multiple environments (prod, qa, dev) . It includes a dynamic count mechanism to control resource creation based on the environment (prod, qa, dev)\nmain.tf main.tf is the central file that defines the resources to be created and managed in AWS.\nAWS Resources Created AWS VPC (aws_vpc)\nA Virtual Private Cloud (VPC) is created with configurable properties like CIDR block, DNS support, and instance tenancy. Subnets (aws_subnet)\nBoth public and private subnets are defined, providing network segments for different use cases within the VPC. The creation of subnets is dynamic, based on the count of CIDR blocks specified for public and private subnets variables. This is achieved through the count attribute in Terraform and the variables public_subnets_cidr and private_subnets_cidr. Example: If public_subnets_cidr is [\"10.0.1.0/24\", \"10.0.2.0/24\"], two public subnets will be created with these CIDR blocks. Internet Gateway (aws_internet_gateway)\nAn Internet Gateway is attached to the VPC, enabling communication between resources in the VPC and the internet. Route Tables (aws_route_table)\nRoute tables for public and private (including production) networking are established, defining rules for network traffic routing. The public route table usually contains a default route that directs traffic to an Internet Gateway (IGW), enabling instances in the public subnet to access the internet. Private route tables are typically associated with NAT gateways, allowing instances in private subnets to access the internet indirectly while keeping them inaccessible from the internet. Routes (aws_route)\nSpecific routes are defined, like the default public internet gateway route and routes for NAT gateways, guiding the traffic flow. Route Table Associations (aws_route_table_association)\nThese associations connect subnets to the appropriate route tables. Each subnet, whether public or private, needs to be associated with a route table. Public subnets are typically associated with a route table that has a route to an Internet Gateway. Private subnets are associated with route tables that have routes to NAT gateways, enabling them to access the internet without being directly exposed to it. Elastic IPs (aws_eip)\nThey are used in conjunction with NAT gateways in AWS to provide a fixed, public IP address for instances within a private subnet to communicate with the internet. In environments like development or QA, a single EIP may be sufficient. In a production environment, where high availability and fault tolerance are critical, an EIP is typically created for each NAT gateway. Since NAT gateways are created per availability zone for redundancy, this would mean one EIP per AZ in a production setup. NAT Gateways (aws_nat_gateway)\nNAT gateways are created for enabling outbound internet access for instances in the private subnets. In non-production environments, a single NAT gateway is typically sufficient. The configuration uses a conditional check to determine if the environment is production. If not, a single NAT gateway is created. For production environments, the configuration is likely set to create a NAT gateway in each availability zone for high availability. The Terraform script checks the length of the list of availability zones (AZs) and creates a NAT gateway for each AZ. Flow Logs (aws_flow_log)\nThe creation of flow logs in your Terraform script is conditional The destination for these flow logs can be either an Amazon S3 bucket or a CloudWatch Logs log group. This is determined by the value of the vpc_flowlog_destination_type variable in your Terraform configuration S3 Bucket (aws_s3_bucket)\nAn S3 bucket is created for storing VPC flow logs. S3 Bucket ACL and Versioning (aws_s3_bucket_acl, aws_s3_bucket_versioning) Access control lists and versioning settings are defined for the S3 bucket. S3 Bucket Lifecycle Configuration (aws_s3_bucket_lifecycle_configuration) This resource manages the lifecycle of objects within the S3 bucket. CloudWatch Log Group (aws_cloudwatch_log_group) A log group in CloudWatch is created for the VPC flow logs. IAM Role and Policy (aws_iam_role, aws_iam_role_policy) An IAM role and corresponding policy are established for managing permissions related to the flow logs. Network ACL (aws_network_acl) A network access control list (ACL) is created, providing an additional layer of security for the VPC subnets. Name Type aws_cloudwatch_log_group.vpc_flowlog_loggroup resource aws_eip.nat_eip resource aws_eip.nat_eip_prod resource aws_flow_log.vpc_flowlog resource aws_flow_log.vpc_flowlog_Cloudwatch resource aws_iam_role.vpcflow_log_group_role resource aws_iam_role_policy.vpc_flowloggroup_role_policy resource aws_internet_gateway.ig resource aws_nat_gateway.nat resource aws_nat_gateway.prodnat resource aws_network_acl.default_network_acl resource aws_route.default_prod_route_nat_gateway resource aws_route.default_public_internet_gateway_route resource aws_route.default_route_nat_gateway resource aws_route_table.private resource aws_route_table.prod_private resource aws_route_table.public resource aws_route_table_association.private resource aws_route_table_association.prod_private resource aws_route_table_association.public resource aws_s3_bucket.vpc_flowlog_bucket resource aws_s3_bucket_acl.vpc_flowlog_bucket_acl resource aws_s3_bucket_lifecycle_configuration.vpc_flowlog_bucket_lifecycle resource aws_s3_bucket_versioning.vpc_flowlog_bucket_versioning resource aws_subnet.private resource aws_subnet.public resource aws_vpc.vpc resource aws_caller_identity.current data source output.tf Defines output variables that provide essential information about the resources created by the Terraform configuration.\nOutputs\nName Description account_id Account-ID natip NAT IP private_subnet_id Identifiers for the private subnets created within the VPC prodnatip Prod NAT IP public_subnet_id Identifiers for the public subnets created within the VPC vpc_arn VPC ARN vpc_id VPC ID variables.tf Declares and describes the input variables used in the configuration.\nName Description Type Default Required AWS_ACCESS_KEY to run terraform code in workspace please enter your AWS_ACCESS_KEY any n/a yes AWS_SECRET_KEY to run terraform code in workspace please enter your AWS_SECRET_KEY any n/a yes availability_zones please enter your availability_zones for your subnets in a list of string note =\u003e if you want 3 subnets in 3 differnt zone plaese enter 3 zones. You can follow single avilablility zone or multi availability zone method as your wish list(string) n/a yes eks_cluster_name Assume your eks cluster name and enter here, this is used under your vpc tags string n/a yes env please enter your one environment name eg dev,qa or prod string n/a yes private_route_table_routes if you have a route, please eneter your private routes as key value pairs eg [{},{}] otherwise leave it….. in a pair keys are ipv6_cidr_block,egress_only_gateway_id,gateway_id,instance_id,nat_gateway_id,network_interface_id,transit_gateway_id,vpc_endpoint_id,vpc_peering_connection_id eg =\u003e [{ cidr_block = ,ipv6_cidr_block = ,egress_only_gateway_id = ,gateway_id = ,instance_id = ,nat_gateway_id = ,network_interface_id = ,transit_gateway_id = ,vpc_endpoint_id = ,vpc_peering_connection_id = },{}… ] list(map(string)) [] no private_subnet_tags please enter a custom tag for your private_subnet in a key value pair map(string) n/a yes private_subnets_cidr please enter your private subnet’s cidr’s in a list of string note =\u003e if you want 3 private subnets you can enter 3 cidrs ranges for that list(string) n/a yes public_route_table_routes if you have a route, please eneter your private routes as key value pairs eg [{},{}] otherwise leave it….. in a pair keys are ipv6_cidr_block,egress_only_gateway_id,gateway_id,instance_id,nat_gateway_id,network_interface_id,transit_gateway_id,vpc_endpoint_id,vpc_peering_connection_id eg =\u003e [{ cidr_block = ,ipv6_cidr_block = ,egress_only_gateway_id = ,gateway_id = ,instance_id = ,nat_gateway_id = ,network_interface_id = ,transit_gateway_id = ,vpc_endpoint_id = ,vpc_peering_connection_id = },{}… ] list(map(string)) [] no public_subnet_tags please enter a custom tag for your public_subnet_tags in a key value pair map(string) n/a yes public_subnets_cidr please enter your public subnet’s cidr’s in a list of string. note =\u003e if you want 3 public subnets you can enter 3 cidrs ranges for that list(string) n/a yes region please enter a valid region for vpc launching string n/a yes vpc_cidr please enter a valid cidr range for your vpc in string eg: 10.1.0.0/16 string n/a yes vpc_flowlog please enter true or false bool n/a yes vpc_flowlog_bucket_retention please eneter your flowlog s3 bucket retention period in number of days number n/a yes vpc_flowlog_destination_type please enter your vpc flowlog backend type s3 or cloudwatch_log_group string n/a yes vpc_name please enter a vpc_name for your new vpc string n/a yes vpc_tags please enter a custom tag for your vpc in a key value pair map(string) n/a yes versions.tf Specifies the required Terraform version and AWS provider version.\nRequirements\nName Version terraform ~\u003e 1.0 aws ~\u003e 4.54.0 Providers\nName Version aws ~\u003e 4.54.0 Resource Creation in TF cloud We Will be Creating a VPC with 3 public and 3 private subnets with Terraform and managed via terraform cloud for managing remote state , workspace variables , plans and apply\n",
+  "wordCount" : "1270",
+  "inLanguage": "en",
+  "image":"https://nithin-john-george.github.io/projects/figlet-terraform-vpc.png","datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://nithin-john-george.github.io/projects/terraform-vpc/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Nithin John George",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://nithin-john-george.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header sticky-header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://nithin-john-george.github.io/" accesskey="h" title="Nithin John George (Alt + H)">Nithin John George</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://nithin-john-george.github.io/" title="Home">
+                    <span>Home</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/blog" title="Blog">
+                    <span>Blog</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/projects" title="Projects">
+                    <span>Projects</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/experience" title="Experience">
+                    <span>Experience</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/search" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/technical-skills/technical-skills/" title="Skills">
+                    <span>Skills</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://nithin-john-george.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://nithin-john-george.github.io/projects/">Projects</a></div>
+    <h1 class="post-title">
+      Production-Grade VPC with Environment-Specific Terraform Configuration
+    </h1>
+    <div class="post-description">
+      This Terraform setup creates a high-availability (HA) VPC in AWS leveraging an environment-sensitive count mechanism
+    </div>
+    <div class="post-meta">
+
+
+Nov 2023
+
+</div>
+  </header> 
+<figure class="entry-cover"><img loading="lazy" src="https://nithin-john-george.github.io/projects/figlet-terraform-vpc.png" alt="">
+        
+</figure>
+  <div class="post-content"><h3 id="-githubhttpsgithubcomnithin-john-georgeterraform-vpc-env-specific-run">🔗 <a href="https://github.com/NITHIN-JOHN-GEORGE/Terraform-VPC-env-specific-run">GitHub</a><a hidden class="anchor" aria-hidden="true" href="#-githubhttpsgithubcomnithin-john-georgeterraform-vpc-env-specific-run">#</a></h3>
+<h2 id="overview">Overview<a hidden class="anchor" aria-hidden="true" href="#overview">#</a></h2>
+<p>This Terraform configuration is designed for creating and managing a high-availability (HA) Virtual Private Cloud (VPC) in AWS. It&rsquo;s tailored to support multiple environments (prod, qa, dev) . It includes a dynamic count mechanism to control resource creation based on the environment (prod, qa, dev)</p>
+<h2 id="maintf"><code>main.tf</code><a hidden class="anchor" aria-hidden="true" href="#maintf">#</a></h2>
+<p><code>main.tf</code> is the central file that defines the resources to be created and managed in AWS.</p>
+<h3 id="aws-resources-created">AWS Resources Created<a hidden class="anchor" aria-hidden="true" href="#aws-resources-created">#</a></h3>
+<ol>
+<li>
+<p><strong>AWS VPC (<code>aws_vpc</code>)</strong></p>
+<ul>
+<li>A Virtual Private Cloud (VPC) is created with configurable properties like CIDR block, DNS support, and instance tenancy.</li>
+</ul>
+</li>
+<li>
+<p><strong>Subnets (<code>aws_subnet</code>)</strong></p>
+<ul>
+<li>Both public and private subnets are defined, providing network segments for different use cases within the VPC.</li>
+<li>The creation of subnets is dynamic, based on the count of CIDR blocks specified for public and private subnets variables. This is achieved through the <code>count</code> attribute in Terraform and the variables <code>public_subnets_cidr</code> and <code>private_subnets_cidr</code>.</li>
+<li><strong>Example</strong>: If <code>public_subnets_cidr</code> is <code>[&quot;10.0.1.0/24&quot;, &quot;10.0.2.0/24&quot;]</code>, two public subnets will be created with these CIDR blocks.</li>
+</ul>
+</li>
+<li>
+<p><strong>Internet Gateway (<code>aws_internet_gateway</code>)</strong></p>
+<ul>
+<li>An Internet Gateway is attached to the VPC, enabling communication between resources in the VPC and the internet.</li>
+</ul>
+</li>
+<li>
+<p><strong>Route Tables (<code>aws_route_table</code>)</strong></p>
+<ul>
+<li>Route tables for public and private (including production) networking are established, defining rules for network traffic routing.</li>
+<li>The public route table usually contains a default route that directs traffic to an Internet Gateway (IGW), enabling instances in the public subnet to access the internet.</li>
+<li>Private route tables are typically associated with NAT gateways, allowing instances in private subnets to access the internet indirectly while keeping them inaccessible from the internet.</li>
+</ul>
+</li>
+<li>
+<p><strong>Routes (<code>aws_route</code>)</strong></p>
+<ul>
+<li>Specific routes are defined, like the default public internet gateway route and routes for NAT gateways, guiding the traffic flow.</li>
+</ul>
+</li>
+<li>
+<p><strong>Route Table Associations (<code>aws_route_table_association</code>)</strong></p>
+<ul>
+<li>These associations connect subnets to the appropriate route tables.</li>
+<li>Each subnet, whether public or private, needs to be associated with a route table.</li>
+<li>Public subnets are typically associated with a route table that has a route to an Internet Gateway.</li>
+<li>Private subnets are associated with route tables that have routes to NAT gateways, enabling them to access the internet without being directly exposed to it.</li>
+</ul>
+</li>
+<li>
+<p><strong>Elastic IPs (<code>aws_eip</code>)</strong></p>
+<ul>
+<li>They are used in conjunction with NAT gateways in AWS to provide a fixed, public IP address for instances within a private subnet to communicate with the internet.</li>
+<li>In environments like development or QA, a single EIP may be sufficient.</li>
+<li>In a production environment, where high availability and fault tolerance are critical, an EIP is typically created for each NAT gateway. Since NAT gateways are created per availability zone for redundancy, this would mean one EIP per AZ in a production setup.</li>
+</ul>
+</li>
+<li>
+<p><strong>NAT Gateways (<code>aws_nat_gateway</code>)</strong></p>
+<ul>
+<li>NAT gateways are created for enabling outbound internet access for instances in the private subnets.</li>
+<li>In non-production environments, a single NAT gateway is typically sufficient.</li>
+<li>The configuration uses a conditional check to determine if the environment is production. If not, a single NAT gateway is created.</li>
+<li>For production environments, the configuration is likely set to create a NAT gateway in each availability zone for high availability.</li>
+<li>The Terraform script  checks the length of the list of availability zones (AZs) and creates a NAT gateway for each AZ.</li>
+</ul>
+</li>
+<li>
+<p><strong>Flow Logs (<code>aws_flow_log</code>)</strong></p>
+<ul>
+<li>The creation of flow logs in your Terraform script is conditional</li>
+<li>The destination for these flow logs can be either an Amazon S3 bucket or a CloudWatch Logs log group.</li>
+<li>This is determined by the value of the <code>vpc_flowlog_destination_type</code> variable in your Terraform configuration</li>
+</ul>
+</li>
+<li>
+<p><strong>S3 Bucket (<code>aws_s3_bucket</code>)</strong></p>
+</li>
+</ol>
+<ul>
+<li>An S3 bucket is created for storing VPC flow logs.</li>
+</ul>
+<ol start="11">
+<li><strong>S3 Bucket ACL and Versioning (<code>aws_s3_bucket_acl</code>, <code>aws_s3_bucket_versioning</code>)</strong></li>
+</ol>
+<ul>
+<li>Access control lists and versioning settings are defined for the S3 bucket.</li>
+</ul>
+<ol start="12">
+<li><strong>S3 Bucket Lifecycle Configuration (<code>aws_s3_bucket_lifecycle_configuration</code>)</strong></li>
+</ol>
+<ul>
+<li>This resource manages the lifecycle of objects within the S3 bucket.</li>
+</ul>
+<ol start="13">
+<li><strong>CloudWatch Log Group (<code>aws_cloudwatch_log_group</code>)</strong></li>
+</ol>
+<ul>
+<li>A log group in CloudWatch is created for the VPC flow logs.</li>
+</ul>
+<ol start="14">
+<li><strong>IAM Role and Policy (<code>aws_iam_role</code>, <code>aws_iam_role_policy</code>)</strong></li>
+</ol>
+<ul>
+<li>An IAM role and corresponding policy are established for managing permissions related to the flow logs.</li>
+</ul>
+<ol start="15">
+<li><strong>Network ACL (<code>aws_network_acl</code>)</strong></li>
+</ol>
+<ul>
+<li>A network access control list (ACL) is created, providing an additional layer of security for the VPC subnets.</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_log_group">aws_cloudwatch_log_group.vpc_flowlog_loggroup</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip">aws_eip.nat_eip</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/eip">aws_eip.nat_eip_prod</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/flow_log">aws_flow_log.vpc_flowlog</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/flow_log">aws_flow_log.vpc_flowlog_Cloudwatch</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role">aws_iam_role.vpcflow_log_group_role</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/iam_role_policy">aws_iam_role_policy.vpc_flowloggroup_role_policy</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway">aws_internet_gateway.ig</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway">aws_nat_gateway.nat</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/nat_gateway">aws_nat_gateway.prodnat</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/network_acl">aws_network_acl.default_network_acl</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route">aws_route.default_prod_route_nat_gateway</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route">aws_route.default_public_internet_gateway_route</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route">aws_route.default_route_nat_gateway</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table">aws_route_table.private</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table">aws_route_table.prod_private</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table">aws_route_table.public</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association">aws_route_table_association.private</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association">aws_route_table_association.prod_private</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association">aws_route_table_association.public</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket">aws_s3_bucket.vpc_flowlog_bucket</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_acl">aws_s3_bucket_acl.vpc_flowlog_bucket_acl</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_lifecycle_configuration">aws_s3_bucket_lifecycle_configuration.vpc_flowlog_bucket_lifecycle</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/s3_bucket_versioning">aws_s3_bucket_versioning.vpc_flowlog_bucket_versioning</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet">aws_subnet.private</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet">aws_subnet.public</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc">aws_vpc.vpc</a></td>
+<td>resource</td>
+</tr>
+<tr>
+<td><a href="https://registry.terraform.io/providers/hashicorp/aws/latest/docs/data-sources/caller_identity">aws_caller_identity.current</a></td>
+<td>data source</td>
+</tr>
+</tbody>
+</table>
+<h2 id="outputtf"><code>output.tf</code><a hidden class="anchor" aria-hidden="true" href="#outputtf">#</a></h2>
+<p>Defines output variables that provide essential information about the resources created by the Terraform configuration.</p>
+<p><strong>Outputs</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a name="output_account_id"></a> <a href="#output_account_id">account_id</a></td>
+<td>Account-ID</td>
+</tr>
+<tr>
+<td><a name="output_natip"></a> <a href="#output_natip">natip</a></td>
+<td>NAT IP</td>
+</tr>
+<tr>
+<td><a name="output_private_subnet_id"></a> <a href="#output_private_subnet_id">private_subnet_id</a></td>
+<td>Identifiers for the private  subnets created within the VPC</td>
+</tr>
+<tr>
+<td><a name="output_prodnatip"></a> <a href="#output_prodnatip">prodnatip</a></td>
+<td>Prod NAT IP</td>
+</tr>
+<tr>
+<td><a name="output_public_subnet_id"></a> <a href="#output_public_subnet_id">public_subnet_id</a></td>
+<td>Identifiers for the  public subnets created within the VPC</td>
+</tr>
+<tr>
+<td><a name="output_vpc_arn"></a> <a href="#output_vpc_arn">vpc_arn</a></td>
+<td>VPC ARN</td>
+</tr>
+<tr>
+<td><a name="output_vpc_id"></a> <a href="#output_vpc_id">vpc_id</a></td>
+<td>VPC ID</td>
+</tr>
+</tbody>
+</table>
+<h2 id="variablestf"><code>variables.tf</code><a hidden class="anchor" aria-hidden="true" href="#variablestf">#</a></h2>
+<p>Declares and describes the input variables used in the configuration.</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Type</th>
+<th>Default</th>
+<th style="text-align:center">Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a name="input_AWS_ACCESS_KEY"></a> <a href="#input_AWS_ACCESS_KEY">AWS_ACCESS_KEY</a></td>
+<td>to run terraform code in workspace please enter your AWS_ACCESS_KEY</td>
+<td><code>any</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_AWS_SECRET_KEY"></a> <a href="#input_AWS_SECRET_KEY">AWS_SECRET_KEY</a></td>
+<td>to run terraform code in workspace please enter your AWS_SECRET_KEY</td>
+<td><code>any</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_availability_zones"></a> <a href="#input_availability_zones">availability_zones</a></td>
+<td>please enter your availability_zones for your subnets in a  list of string note =&gt; if you want 3 subnets in 3 differnt zone plaese enter 3 zones. You can follow single avilablility zone or multi availability zone method as your wish</td>
+<td><code>list(string)</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_eks_cluster_name"></a> <a href="#input_eks_cluster_name">eks_cluster_name</a></td>
+<td>Assume your eks cluster name and enter here, this is used under your vpc tags</td>
+<td><code>string</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_env"></a> <a href="#input_env">env</a></td>
+<td>please enter your one environment name eg dev,qa or prod</td>
+<td><code>string</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_private_route_table_routes"></a> <a href="#input_private_route_table_routes">private_route_table_routes</a></td>
+<td>if you have a route, please eneter your private routes as key value pairs eg [{},{}] otherwise leave it&hellip;.. in a pair keys are ipv6_cidr_block,egress_only_gateway_id,gateway_id,instance_id,nat_gateway_id,network_interface_id,transit_gateway_id,vpc_endpoint_id,vpc_peering_connection_id eg =&gt; [{ cidr_block = ,ipv6_cidr_block =  ,egress_only_gateway_id  = ,gateway_id  = ,instance_id = ,nat_gateway_id  = ,network_interface_id = ,transit_gateway_id = ,vpc_endpoint_id = ,vpc_peering_connection_id = },{}&hellip; ]</td>
+<td><code>list(map(string))</code></td>
+<td><code>[]</code></td>
+<td style="text-align:center">no</td>
+</tr>
+<tr>
+<td><a name="input_private_subnet_tags"></a> <a href="#input_private_subnet_tags">private_subnet_tags</a></td>
+<td>please enter a custom tag for your private_subnet in a key value pair</td>
+<td><code>map(string)</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_private_subnets_cidr"></a> <a href="#input_private_subnets_cidr">private_subnets_cidr</a></td>
+<td>please enter your private subnet&rsquo;s cidr&rsquo;s in a list of string note =&gt; if you want 3 private subnets you can enter 3 cidrs ranges for that</td>
+<td><code>list(string)</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_public_route_table_routes"></a> <a href="#input_public_route_table_routes">public_route_table_routes</a></td>
+<td>if you have a route, please eneter your private routes as key value pairs eg [{},{}] otherwise leave it&hellip;.. in a pair keys are ipv6_cidr_block,egress_only_gateway_id,gateway_id,instance_id,nat_gateway_id,network_interface_id,transit_gateway_id,vpc_endpoint_id,vpc_peering_connection_id eg =&gt; [{ cidr_block = ,ipv6_cidr_block =  ,egress_only_gateway_id  = ,gateway_id  = ,instance_id = ,nat_gateway_id  = ,network_interface_id = ,transit_gateway_id = ,vpc_endpoint_id = ,vpc_peering_connection_id = },{}&hellip; ]</td>
+<td><code>list(map(string))</code></td>
+<td><code>[]</code></td>
+<td style="text-align:center">no</td>
+</tr>
+<tr>
+<td><a name="input_public_subnet_tags"></a> <a href="#input_public_subnet_tags">public_subnet_tags</a></td>
+<td>please enter a custom tag for your public_subnet_tags in a key value pair</td>
+<td><code>map(string)</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_public_subnets_cidr"></a> <a href="#input_public_subnets_cidr">public_subnets_cidr</a></td>
+<td>please enter your public subnet&rsquo;s cidr&rsquo;s in a list of string. note =&gt; if you want 3 public subnets you can enter 3 cidrs ranges for that</td>
+<td><code>list(string)</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_region"></a> <a href="#input_region">region</a></td>
+<td>please enter a valid region for vpc launching</td>
+<td><code>string</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_vpc_cidr"></a> <a href="#input_vpc_cidr">vpc_cidr</a></td>
+<td>please enter a valid cidr range for your vpc in string eg: 10.1.0.0/16</td>
+<td><code>string</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_vpc_flowlog"></a> <a href="#input_vpc_flowlog">vpc_flowlog</a></td>
+<td>please enter true or false</td>
+<td><code>bool</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_vpc_flowlog_bucket_retention"></a> <a href="#input_vpc_flowlog_bucket_retention">vpc_flowlog_bucket_retention</a></td>
+<td>please eneter your flowlog s3 bucket retention period in number of days</td>
+<td><code>number</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_vpc_flowlog_destination_type"></a> <a href="#input_vpc_flowlog_destination_type">vpc_flowlog_destination_type</a></td>
+<td>please enter your vpc flowlog backend type s3 or cloudwatch_log_group</td>
+<td><code>string</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_vpc_name"></a> <a href="#input_vpc_name">vpc_name</a></td>
+<td>please enter a vpc_name for your new vpc</td>
+<td><code>string</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+<tr>
+<td><a name="input_vpc_tags"></a> <a href="#input_vpc_tags">vpc_tags</a></td>
+<td>please enter a custom tag for your vpc in a key value pair</td>
+<td><code>map(string)</code></td>
+<td>n/a</td>
+<td style="text-align:center">yes</td>
+</tr>
+</tbody>
+</table>
+<h2 id="versionstf"><code>versions.tf</code><a hidden class="anchor" aria-hidden="true" href="#versionstf">#</a></h2>
+<p>Specifies the required Terraform version and AWS provider version.</p>
+<p><strong>Requirements</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a name="requirement_terraform"></a> <a href="#requirement_terraform">terraform</a></td>
+<td>~&gt; 1.0</td>
+</tr>
+<tr>
+<td><a name="requirement_aws"></a> <a href="#requirement_aws">aws</a></td>
+<td>~&gt; 4.54.0</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Providers</strong></p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a name="provider_aws"></a> <a href="#provider_aws">aws</a></td>
+<td>~&gt; 4.54.0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="resource-creation-in-tf-cloud"><code>Resource Creation in TF cloud</code><a hidden class="anchor" aria-hidden="true" href="#resource-creation-in-tf-cloud">#</a></h2>
+<p>We Will be Creating a VPC with 3 public and 3 private subnets with Terraform and managed via terraform cloud for managing remote state , workspace variables , plans and apply</p>
+<p><img loading="lazy" src="https://github.com/NITHIN-JOHN-GEORGE/devops-infra/assets/96073033/3ba8a90e-db32-4736-8780-812e975ecae8" alt="image"  />
+</p>
+<p><img loading="lazy" src="https://github.com/NITHIN-JOHN-GEORGE/devops-infra/assets/96073033/80f8d561-13a7-424f-a64e-05176c89a407" alt="image"  />
+</p>
+<p><img loading="lazy" src="https://github.com/NITHIN-JOHN-GEORGE/devops-infra/assets/96073033/42b97c92-49cf-4a38-9cf5-26e6ecc93268" alt="image"  />
+</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://nithin-john-george.github.io/tags/linux/">Linux</a></li>
+      <li><a href="https://nithin-john-george.github.io/tags/shell-scripting/">Shell Scripting</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="https://nithin-john-george.github.io/">Nithin John George</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>

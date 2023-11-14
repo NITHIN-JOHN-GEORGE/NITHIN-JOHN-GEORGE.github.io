@@ -2,15 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
+    <loc>https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/blog/terraform-cloud/</loc>
+  </url><url>
     <loc>https://nithin-john-george.github.io/blog/internals-of-ls-a-command/</loc>
   </url><url>
-    <loc>https://nithin-john-george.github.io/projects/auto-heal-script/</loc>
+    <loc>https://nithin-john-george.github.io/projects/terraform-vpc/</loc>
   </url><url>
-    <loc>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</loc>
+    <loc>https://nithin-john-george.github.io/projects/apache-log-parser-python/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/projects/end-to-end-ci-cd-pipeline/</loc>
   </url><url>
     <loc>https://nithin-john-george.github.io/projects/apache-log-parser-shell-script/</loc>
   </url><url>
+    <loc>https://nithin-john-george.github.io/projects/disk_cpu_mem_monitor/</loc>
+  </url><url>
     <loc>https://nithin-john-george.github.io/projects/server-inventory-shell-script/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/projects/auto-heal-script/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/projects/install-and-configure-httpd-with-ansible/</loc>
   </url><url>
     <loc>https://nithin-john-george.github.io/experience/porter/</loc>
   </url><url>
@@ -24,7 +36,15 @@
   </url><url>
     <loc>https://nithin-john-george.github.io/categories/</loc>
   </url><url>
+    <loc>https://nithin-john-george.github.io/tags/ci/cd/</loc>
+  </url><url>
     <loc>https://nithin-john-george.github.io/experience/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/tags/jenkins/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/tags/k8s/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/tags/karpenter/</loc>
   </url><url>
     <loc>https://nithin-john-george.github.io/tags/linux/</loc>
   </url><url>
@@ -32,10 +52,18 @@
   </url><url>
     <loc>https://nithin-john-george.github.io/projects/</loc>
   </url><url>
+    <loc>https://nithin-john-george.github.io/tags/python/</loc>
+  </url><url>
     <loc>https://nithin-john-george.github.io/search/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/tags/shell-scripting/</loc>
   </url><url>
     <loc>https://nithin-john-george.github.io/tags/</loc>
   </url><url>
     <loc>https://nithin-john-george.github.io/technical-skills/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/tags/terraform/</loc>
+  </url><url>
+    <loc>https://nithin-john-george.github.io/tags/terraform-cloud/</loc>
   </url>
 </urlset>

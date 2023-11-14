@@ -100,8 +100,8 @@
   "keywords": [
     "Linux"
   ],
-  "articleBody": "",
-  "wordCount" : "0",
+  "articleBody": "🔗 Medium The Shell acts as an interface between the user and the kernel in an operating system. It allows users to interact with the system by providing a command-line or graphical user interface (GUI) through which they can execute commands or run applications. When a user enters a command, the Shell interprets it and communicates with the kernel to carry out the requested operation.\nAnd , a command is instruction that the user gives to the Shell to perform a specific task.\nSystem call A system call is a request made by a process running in user space to the operating system kernel to perform an operating system service on behalf of the process. When a program running in user space needs to perform an operating system service, it makes a system call by invoking a specific function provided by the operating system.\nSimply put , System calls are calls to the Kernel code to do something.\nHow does ls -l command works internally? When you enter a command, the first thing the shell does is it breaks the entire command into “tokens.” The shell will then look for a program name belonging to the first token in the command line.\nIn this example, ‘ls -l’ is composed of two tokens, ‘ls’, and ‘-l.’ Next it checks for shell expansion i.e.,\nThe shell first verifies whether the first token entered by the user is an alias. If an alias exists, it replaces it with the corresponding actual command. Additionally, the shell expands any other aliases defined by the user before proceeding.\nIf there is no alias present , the shell first checks if the entered command is a built-in command or not. Then , it looks for the location of the executable program file, such as “ls,” in the system’s directories specified in the $PATH environment variable. The $PATH variable is a list of directories that the shell searches through whenever a command is entered.\nAfter identifying the $PATH variable, the shell breaks down all the directories in the $PATH using ‘:’ as a delimiter(tokenizing it) . If the shell fails to find the executable file in any of the directories listed in the $PATH variable, or if the command is neither a shell function nor an alias, the shell will throw an error.\nIf the command is located successfully, the shell examines the remaining tokens to identify if they are variables, shell parameters, or arguments to the command. In case they are variables or parameters, the shell will perform an expansion of these elements, replacing them with their original values in the command.\n*In Linux , most of the executable files are located in **‘/usr/bin’ . *The binary executable file of ls also will be there ( ‘/usr/bin/ls’ )\nAfter finding the “ls” executable file, the shell creates a new process, which is an instance of a program that needs to be executed. To execute the “ls” command, the shell uses three system calls: fork, , and wait. The shell duplicates itself (making a copy of itself) using the fork() system call, creating a child process that is a copy of the parent process (the shell).\nAfter creating the child process with the fork system call, the child process runs the execve system call ( execution system call ) with the path to the “ls” executable and its arguments.\nThen the system program will use some system calls to load all the libraries required by the program into the virtual memory at run-time ( dynamic loading )\nWe can use strace command to trace all system calls happening.\nWhile the child process executes it, the parent process waits for execution to be completed and once the execution call ends, the child process will indicate that it has finished and returns the response to the parent process through another system call called wait() and then the child process is terminated with the exit() system .\nOnce this execution process has been carried out, the memory used in these processes is freed, the response or result of the command will be displayed on the user’s screen, and the parent process takes over again and waits for the next input from the user.\nIn a program where you use fork, you also have to use wait() system call. wait() system call is used to wait in the parent process for the child process to finish.\nThank you for reading my article , have a nice day and keep learning!\n",
+  "wordCount" : "748",
   "inLanguage": "en",
   "image":"https://nithin-john-george.github.io/blog/internals-of-ls-a-command/ls-l-command.png","datePublished": "0001-01-01T00:00:00Z",
   "dateModified": "0001-01-01T00:00:00Z",
@@ -214,8 +214,59 @@ Apr 2023
   </header> 
 <figure class="entry-cover"><img loading="lazy" src="https://nithin-john-george.github.io/blog/internals-of-ls-a-command/ls-l-command.png" alt="">
         
-</figure>
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">‎ Table of Contents</span>
+        </summary>
 
+        <div class="inner"><ul><ul>
+                <li>
+                    <a href="#-mediumhttpsmediumcomnithinjohn97what-happens-internally-when-we-type-ls-l-command-in-the-shell-a3b51a1cb96d" aria-label="🔗 Medium">🔗 <a href="https://medium.com/@nithinjohn97/what-happens-internally-when-we-type-ls-l-command-in-the-shell-a3b51a1cb96d">Medium</a></a></li></ul>
+                    
+                <li>
+                    <a href="#system-call" aria-label="System call">System call</a></li>
+                <li>
+                    <a href="#how-does-ls--l-command-works-internally" aria-label="How does ls -l command works internally?">How does ls -l command works internally?</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h3 id="-mediumhttpsmediumcomnithinjohn97what-happens-internally-when-we-type-ls-l-command-in-the-shell-a3b51a1cb96d">🔗 <a href="https://medium.com/@nithinjohn97/what-happens-internally-when-we-type-ls-l-command-in-the-shell-a3b51a1cb96d">Medium</a><a hidden class="anchor" aria-hidden="true" href="#-mediumhttpsmediumcomnithinjohn97what-happens-internally-when-we-type-ls-l-command-in-the-shell-a3b51a1cb96d">#</a></h3>
+<p>The Shell acts as an interface between the user and the kernel in an operating system. It allows users to interact with the system by providing a command-line or graphical user interface (GUI) through which they can execute commands or run applications. When a user enters a command, the Shell interprets it and communicates with the kernel to carry out the requested operation.</p>
+<p>And , a command is instruction that the user gives to the Shell to perform a specific task.</p>
+<h2 id="system-call">System call<a hidden class="anchor" aria-hidden="true" href="#system-call">#</a></h2>
+<p>A system call is a request made by a process running in user space to the operating system kernel to perform an operating system service on behalf of the process. When a program running in user space needs to perform an operating system service, it makes a system call by invoking a specific function provided by the operating system.</p>
+<p>Simply put , System calls are calls to the Kernel code to do <em>something.</em></p>
+<h2 id="how-does-ls--l-command-works-internally">How does ls -l command works internally?<a hidden class="anchor" aria-hidden="true" href="#how-does-ls--l-command-works-internally">#</a></h2>
+<p>When you enter a command, the first thing the shell does is it breaks the entire command into “tokens.” The shell will then look for a program name belonging to the first token in the command line.</p>
+<p>In this example, ‘ls -l’ is composed of two tokens, ‘ls’, and ‘-l.’ Next it checks for shell expansion i.e.,</p>
+<p>The shell first verifies whether the first token entered by the user is an alias. If an alias exists, it replaces it with the corresponding actual command. Additionally, the shell expands any other aliases defined by the user before proceeding.</p>
+<p>If there is no alias present , the shell first checks if the entered command is a built-in command or not. Then , it looks for the location of the executable program file, such as “ls,” in the system’s directories specified in the $PATH environment variable. The $PATH variable is a list of directories that the shell searches through whenever a command is entered.</p>
+<p>After identifying the $PATH variable, the shell breaks down all the directories in the $PATH using ‘:’ as a delimiter(tokenizing it) . If the shell fails to find the executable file in any of the directories listed in the $PATH variable, or if the command is neither a shell function nor an alias, the shell will throw an error.</p>
+<p>If the command is located successfully, the shell examines the remaining tokens to identify if they are variables, shell parameters, or arguments to the command. In case they are variables or parameters, the shell will perform an expansion of these elements, replacing them with their original values in the command.</p>
+<blockquote>
+<p>*In Linux , most of the executable files are located in **‘/usr/bin’ . *<em>The binary executable file of ls also will be there ( <strong>‘/usr/bin/ls’ )</strong></em></p>
+</blockquote>
+<p>After finding the “ls” executable file, the shell creates a new process, which is an instance of a program that needs to be executed. To execute the “ls” command, the shell uses three system calls: fork, , and wait. The shell duplicates itself (making a copy of itself) using the fork() system call, creating a child process that is a copy of the parent process (the shell).</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/2804/1*b2RQpHiHlOJ500vn_Z7r2Q.png" alt=""  />
+</p>
+<p>After creating the child process with the fork system call, the child process runs the <strong>execve</strong> system call ( execution system call ) with the path to the “ls” executable and its arguments.</p>
+<p>Then the system program will use some system calls to load all the libraries required by the program into the virtual memory at run-time ( dynamic loading )</p>
+<p>We can use <strong>strace</strong> command to trace all system calls happening.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/3632/1*62WgTMjmvqAIFbje6WQsYw.png" alt=""  />
+</p>
+<p>While the child process executes it, the parent process waits for execution to be completed and once the execution call ends, the child process will indicate that it has finished and returns the response to the parent process through another system call called <em>wait()</em> and then the child process is terminated with the exit() system .</p>
+<p>Once this execution process has been carried out, the memory used in these processes is freed, the response or result of the command will be displayed on the user’s screen, and the parent process takes over again and waits for the next input from the user.</p>
+<blockquote>
+<p><em>In a program where you use fork, you also have to use wait() system call. wait() system call is used to wait in the parent process for the child process to finish.</em></p>
+</blockquote>
+<p>Thank you for reading my article , have a nice day and keep learning!</p>
+
+
+  </div>
 
   <footer class="post-footer">
     <ul class="post-tags">

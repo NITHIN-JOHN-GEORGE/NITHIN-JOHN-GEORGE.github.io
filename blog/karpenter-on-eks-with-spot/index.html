@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en" dir="auto">
+
+<head><meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+<meta name="robots" content="index, follow">
+<title>Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances | Nithin John George</title>
+<meta name="keywords" content="Terraform, Terraform Cloud, K8s, Karpenter">
+<meta name="description" content="Maximizing Cost-Efficiency with Karpenter : Setting Up EKS Cluster (v1.24) on Spot-Instances with AWS ALB Ingress Controller, Amazon EBS CSI Driver, and Add-ons Completely using Terraform and Terraform Cloud">
+<meta name="author" content="">
+<link rel="canonical" href="https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/">
+<link crossorigin="anonymous" href="/assets/css/stylesheet.min.a72801f0f40a8d7f71aa1cafd1c2f2a993a1f26ca1cfd38fdba65d5b9b0f08a0.css" integrity="sha256-pygB8PQKjX9xqhyv0cLyqZOh8myhz9OP26ZdW5sPCKA=" rel="preload stylesheet" as="style">
+<script defer crossorigin="anonymous" src="/assets/js/highlight.min.5b9ae0304f93db6cc493f51846f012428af399c614b4f2fbdb7fa59dd4d5ef5b.js" integrity="sha256-W5rgME&#43;T22zEk/UYRvASQorzmcYUtPL723&#43;lndTV71s="
+    onload="hljs.initHighlightingOnLoad();"></script>
+<link rel="icon" href="https://nithin-john-george.github.io/favicon.ico">
+<link rel="icon" type="image/png" sizes="16x16" href="https://nithin-john-george.github.io/favicon-16x16.png">
+<link rel="icon" type="image/png" sizes="32x32" href="https://nithin-john-george.github.io/favicon-32x32.png">
+<link rel="apple-touch-icon" href="https://nithin-john-george.github.io/apple-touch-icon.png">
+<link rel="mask-icon" href="https://nithin-john-george.github.io/safari-pinned-tab.svg">
+<meta name="theme-color" content="#2e2e33">
+<meta name="msapplication-TileColor" content="#2e2e33">
+<noscript>
+    <style>
+        #theme-toggle,
+        .top-link {
+            display: none;
+        }
+
+    </style>
+    <style>
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --theme: rgb(29, 30, 32);
+                --entry: rgb(46, 46, 51);
+                --primary: rgb(218, 218, 219);
+                --secondary: rgb(155, 156, 157);
+                --tertiary: rgb(65, 66, 68);
+                --content: rgb(196, 196, 197);
+                --hljs-bg: rgb(46, 46, 51);
+                --code-bg: rgb(55, 56, 62);
+                --border: rgb(51, 51, 51);
+            }
+
+            .list {
+                background: var(--theme);
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-track {
+                background: 0 0;
+            }
+
+            .list:not(.dark)::-webkit-scrollbar-thumb {
+                border-color: var(--theme);
+            }
+        }
+
+    </style>
+</noscript><meta property="og:title" content="Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances" />
+<meta property="og:description" content="Maximizing Cost-Efficiency with Karpenter : Setting Up EKS Cluster (v1.24) on Spot-Instances with AWS ALB Ingress Controller, Amazon EBS CSI Driver, and Add-ons Completely using Terraform and Terraform Cloud" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/" />
+<meta property="og:image" content="https://nithin-john-george.github.io/blog/karpenter.jpeg" /><meta property="article:section" content="blog" />
+
+
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://nithin-john-george.github.io/blog/karpenter.jpeg" />
+<meta name="twitter:title" content="Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances"/>
+<meta name="twitter:description" content="Maximizing Cost-Efficiency with Karpenter : Setting Up EKS Cluster (v1.24) on Spot-Instances with AWS ALB Ingress Controller, Amazon EBS CSI Driver, and Add-ons Completely using Terraform and Terraform Cloud"/>
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position":  1 ,
+      "name": "Blogs",
+      "item": "https://nithin-john-george.github.io/blog/"
+    }, 
+    {
+      "@type": "ListItem",
+      "position":  2 ,
+      "name": "Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances",
+      "item": "https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/"
+    }
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances",
+  "name": "Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances",
+  "description": "Maximizing Cost-Efficiency with Karpenter : Setting Up EKS Cluster (v1.24) on Spot-Instances with AWS ALB Ingress Controller, Amazon EBS CSI Driver, and Add-ons Completely using Terraform and Terraform Cloud",
+  "keywords": [
+    "Terraform", "Terraform Cloud", "K8s", "Karpenter"
+  ],
+  "articleBody": "🔗 Medium In this blog you will learn how to provision EKS Kubernetes cluster at any scale using Karpenter . We will also utilize **spot instances **to reduce costs by up to 90 percent. Additionally, we’ll set up the **AWS ALB Ingress Controller **and Amazon EBS CSI driver, establish trust between an OIDC-compatible identity provider and your AWS account using IAM OIDC identity provider (including the necessary IAM roles and policies), install the metrics server, and set up required EKS add-ons using Terraform. We will deploy all of this using Helm charts and configure custom values.yml using Terraform as well. Finally, we will use Terraform Cloud for remote state, creating workspaces, and the plan/apply workflow.\nIf you would like to skip the theoretical explanations please fell free scroll down to the actual terraform configurations and where do the testings!!\nKuberenetes Autoscaling A Kubernetes Cluster is a group of node machines that run containerized applications. Inside these nodes, Pods run containers that demand resources such as CPU, memory, and sometimes disk or GPU.\nGetting the size of a Kubernetes cluster right is not an easy task, if the number of nodes provisioned is too high, resources might be underutilized and if it’s too low, new workloads won’t be able to be scheduled in the cluster.\nSetting the number of nodes manually is a simple approach, but it requires manual intervention every time the cluster needs to grow or to shrink, and it will make nearly impossible to adapt the cluster size to cover rapid traffic and load fluctuations.\nOne of the benefits of using Kubernetes is its ability to dynamically scale your infrastructure based on user demand.\nKubernetes offers multiple layers of auto-scaling functionality, including:\nPod-based autoscaling\nHorizontal Pod Autoscaler — adds or removes more pods to the deployment as needed\nVertical Pod Autoscaler — resizes pod’s CPU and memory requests and limits to match the load\nNode-based autoscaling: adding or removing nodes as needed\nCluster Autoscaler\nKarpenter\nHow we can reduce cost with Using Spot Instances? AWS offers a cost-saving option for EC2 instances called “Spot instances” where AWS provides the unused/unoccupied EC2 instances for up to a 90% cheaper than regular On-Demand instances. However, their availability is not guaranteed as they are unused instances that are made available to users.\nWhen a Spot instance is reallocated, AWS automatically provides a new instance to take its place. While Spot instances are similar to regular On-Demand instances, they come with a risk of potential interruption, but they can be an effective way to save costs for workloads that are not time-sensitive.\nSpot instances are compatible with Amazon Elastic Kubernetes Service (EKS), and they can be used to scale production applications when there is a surge in demand. By leveraging Spot instances, users can take advantage of cost savings while also ensuring that their applications can handle spikes in traffic without compromising performance.\nOne downside of using Spot Instances is that they can be interrupted by the AWS EC2 Spot service, which is why it’s crucial to design your application with fault-tolerance in mind. To help with this, you can utilize Spot Instance interruption notices, which provide a two-minute warning before Amazon EC2 stops or terminates your instance. Keep in mind that after this notification, the instance will be reclaimed. By designing your application to handle interruptions gracefully, you can minimize the impact of Spot Instance interruptions and still benefit from the cost savings they offer.\nWhy use Karpenter instead of Cluster Autoscaler? Cluster Autoscaler is a useful Kubernetes tool that can adjust the size of a Kubernetes cluster by adding or removing nodes, based on the utilization metrics of nodes and the presence of pending pods. However, it requires nodes with the same capacity to function correctly.\nTo adjust the capacity, Kubernetes Cluster Autoscaler interacts with the Autoscaling group service directly. To properly work , AWS EKS managed node groups are needed, and the Autoscaler only scales up or down the managed node groups through Amazon EC2 Auto Scaling Groups. Whenever a new node group is added, it is essential to inform Cluster Autoscaler about it, as there is a mapping between Cluster Autoscaler, which is Kubernetes native, and the node group, which is AWS native.\nCluster Autoscaler does not provide flexibility to handle hundreds of instance types, zones, and purchase options.\nUnlike Autoscaler, Karpenter doesn’t rely on node groups ,it manages each instance directly. Instead, autoscaling configurations are specified in provisioners, which can be seen as a more customizable alternative to EKS-managed node groups.\nIf you are uncertain about the instance types you require or have no specific requirements, Karpenter can make the decision for you. All you need to do is create a provisioner that outlines the minimum parameter requirements.\nKarpenter is designed to make efficient use of the full range of instance types available through AWS. Unlike other autoscaling tools that may be limited in the instance types they can use, Karpenter can select and utilize any instance type that meets the needs of incoming pods.\nKarpenter looks at the workload (i.e pods) and launches the right instances for the situation.\nKarpenter manages instances directly, without the need for additional orchestration mechanisms such as node groups. This allows it to retry capacity requests in a matter of milliseconds, significantly reducing the time it takes to address capacity issues.Moreover, Karpenter’s direct management approach enables it to make efficient use of diverse instance types, availability zones, and purchase options, without the need to create numerous node groups. This results in a more flexible and cost-effective solution for managing Kubernetes clusters on AWS.\nInfrastructure costs are reduced by looking for under-utilized nodes and removing them, also by replacing expensive nodes with cheaper alternatives, and by consolidating workloads onto more efficient compute resources.\nKarpenter operates on an intent-based model when making instance selection decisions. This model takes into account the specific resource requests and scheduling requirements of incoming pods. By doing so, Karpenter can identify the most suitable instance type to handle these pods, which may involve requesting a larger instance type capable of accommodating all the pods on a single node.\nFor instance, if there are 50 pending pods waiting to be scheduled, Karpenter will calculate the resource requirements of these pods and select an appropriate instance type to accommodate them. Unlike Cluster Autoscaler, which may need to scale several nodes to meet the demand, Karpenter can request a single large EC2 instance and place all the pods on it.\nHow it works? Karpenter is designed to observe events within the Kubernetes cluster and send commands to the underlying cloud provider’s compute service. Upon installation, Karpenter begins to monitor the specifications of unschedulable Pods and calculates the aggregate resource requests. Based on this information, it can make decisions to launch and terminate nodes in order to reduce scheduling latencies and infrastructure costs.\nTo achieve this, Karpenter leverages a Custom Resource Definition (CRD) called Provisioner. The Provisioner specifies the node provisioning configuration, including the instance size/type, topology (such as availability zone), architecture (e.g. arm64, amd64), and lifecycle type (such as spot, on-demand, preemptible).\nKarpenter is designed to automatically manage the lifecycle of nodes provisioned by Kubernetes. When a node is no longer needed or has exceeded its TTL (time-to-live), Karpenter triggers a finalization process that includes several steps to gracefully decommission the node.\nOne event that can trigger finalization is the expiration of a node’s configuration, as defined by the ttlSecondsUntilExpired parameter. This parameter specifies the maximum amount of time that a node can remain active before being terminated. When the node’s TTL expires, Karpenter takes action by cordoning off the node, which means that no new workloads can be scheduled on it. Karpenter then begins to drain the pods running on the node, which involves moving the workloads to other nodes in the cluster. Finally, Karpenter terminates the underlying compute resource associated with the node and deletes the node object.\nAnother event that can trigger finalization is when the last workload running on a Karpenter provisioned node is terminated. In this case, Karpenter follows the same process of cordoning the node, draining the pods, terminating the underlying resource, and deleting the node object.\nBy automating the finalization process, Karpenter ensures that nodes are only active when they are needed, which can help to optimize the performance and cost-effectiveness of Kubernetes clusters on AWS.\nHow Karpenter handles Spot Interruptions Karpenter requires a queue to exist that receives event messages from EC2 and health services in order to handle interruption messages properly for nodes\nKarpenter will keep watching for upcoming involuntary interruption events that would cause disruption to your workloads.\nThese events include Spot Interruption Warnings, Scheduled Change Health Events, Instance Terminating Events, and Instance Stopping Events.\nWhen Karpenter detects that one of these events is imminent, it automatically performs cordoning, draining, and termination of the affected node(s) to allow enough time for cleanup of workloads prior to compute disruption. This is particularly useful in scenarios where the terminationGracePeriod for workloads is long or where cleanup is critical, as it ensures that there is enough time to gracefully clean up pods.\nKarpenter achieves this by monitoring an SQS queue that receives critical events from AWS services that could potentially affect nodes. However, to use this feature, it is necessary to provision an SQS queue and add EventBridge rules and targets that forward interruption events from AWS services to the SQS queue.\nNow lets get into action !!! I am assuming that the underlying VPC and network resources are already created.\nI will be creating a seperate blog on setting up Production Grade VPC (HA) with environment-specific run method which we used .\nThe public subnets in the VPC must be tagged with :\n\"kubernetes.io/cluster/\" = \"owned\" \"karpenter.sh/discovery\" = \"kubernetes.io/role/elb\" = 1 The private subnets in the VPC must be tagged with :\n\"kubernetes.io/cluster/\" = \"owned\" \"karpenter.sh/discovery\" = \"kubernetes.io/role/internal-elb\" = 1 Also we will be adding the following tags to the security group of control plane and eks-nodes:\n\"karpenter.sh/discovery\" = We will be discussing this when we move ahead!!!\nCreating the EC2 spot Linked Role This step is only necessary if this is the first time you’re using EC2 Spot in this account. It is necessary to exist in your account in order to let you launch Spot instances.\naws iam create-service-linked-role --aws-service-name spot.amazonaws.com Configuring the EKS Cluster !! Next we will be deploying the cluster itself first , which has deployed a minimum set of On-Demand instances that we will use to deploy Kubernetes controllers on it.\nAfter that we will use Karpenter to deploy Spot instances to showcase a few of the benefits of running a group-less auto scaler.\nTerraform code for Setting up the entire stack can be found at :\nhttps://github.com/NITHIN-JOHN-GEORGE/eks-karpenter-controllers-spot-terraform\nCreating Terraform files For the Setup !! Provider Configuration\nterraform { required_version = \"~\u003e 1.0\" required_providers { aws = { source = \"hashicorp/aws\" version = \"~\u003e 4.16.0\" } kubernetes = { source = \"hashicorp/kubernetes\" version = \"~\u003e 2.18.0\" } kubectl = { source = \"gavinbunney/kubectl\" version = \"\u003e= 1.7.0\" } helm = { source = \"hashicorp/helm\" version = \"2.8.0\" } } } provider \"aws\" { region = var.region access_key = var.AWS_ACCESS_KEY secret_key = var.AWS_SECRET_KEY } output \"endpoint\" { value = data.aws_eks_cluster.cluster.endpoint } # output \"kubeconfig-certificate-authority-data\" { # value = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data) # } provider \"kubernetes\" { host = data.aws_eks_cluster.cluster.endpoint cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data) token = data.aws_eks_cluster_auth.cluster.token } provider \"kubectl\" { host = data.aws_eks_cluster.cluster.endpoint cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data) token = data.aws_eks_cluster_auth.cluster.token load_config_file = false } provider \"helm\" { kubernetes { host = data.aws_eks_cluster.cluster.endpoint token = data.aws_eks_cluster_auth.cluster.token cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data) } } EKS Cluster Setup\nlocals { env = [\"prod\", \"qa\", \"dev\"] } #------------Security group for eks-cluster-------------------------------------------------- resource \"aws_security_group\" \"control_plane_sg\" { count = contains(local.env, var.env) ? 1 : 0 name = \"k8s-control-plane-sg\" vpc_id = \"${data.aws_vpc.vpc.id}\" tags = { Name = \"k8s-control-plane-sg\" vpc_id = \"${data.aws_vpc.vpc.id}\" ManagedBy = \"terraform\" Env = var.env \"karpenter.sh/discovery\" = var.cluster_name } } #----------------------Security group traffic rules for eks cluster------------------------------------------ ## Ingress rule resource \"aws_security_group_rule\" \"control_plane_inbound\" { description = \"Allow worker Kubelets and pods to receive communication from the cluster control plane\" security_group_id = element(aws_security_group.control_plane_sg.*.id,0) type = \"ingress\" from_port = 0 to_port = 65535 protocol = \"tcp\" cidr_blocks = flatten([\"${values(data.aws_subnet.public_subnets).*.cidr_block}\", \"${values(data.aws_subnet.private_subnets).*.cidr_block}\"]) } ## Egress rule resource \"aws_security_group_rule\" \"control_plane_outbound\" { security_group_id = element(aws_security_group.control_plane_sg.*.id,0) type = \"egress\" from_port = 0 to_port = 65535 protocol = \"-1\" cidr_blocks = [\"0.0.0.0/0\"] } #------------Security group for eks-nodes-------------------------------------------------- resource \"aws_security_group\" \"eks-nodes\" { count = contains(local.env, var.env) ? 1 : 0 name = \"nodes_eks_sg\" description = \"nodes_eks_sg\" vpc_id = \"${data.aws_vpc.vpc.id}\" egress { from_port = 0 to_port = 0 protocol = \"-1\" cidr_blocks = [\"0.0.0.0/0\"] } tags = { Name = \"nodes_eks_sg\" vpc_id = \"${data.aws_vpc.vpc.id}\" ManagedBy = \"terraform\" Env = var.env \"karpenter.sh/discovery\" = var.cluster_name } } #---------Security group traffic rules for node-security-group---------------- ## Ingress rule resource \"aws_security_group_rule\" \"nodes_ssh\" { security_group_id = element(aws_security_group.eks-nodes.*.id,0) type = \"ingress\" from_port = 22 to_port = 22 protocol = \"tcp\" cidr_blocks = flatten([\"${values(data.aws_subnet.public_subnets).*.cidr_block}\", \"${values(data.aws_subnet.private_subnets).*.cidr_block}\"]) } #--------------------cloud-watch-log-group-- for eks cluster---------------------------------------------- resource \"aws_cloudwatch_log_group\" \"eks_log_group\" { name = \"/aws/eks/${var.cluster_name}/cluster\" retention_in_days = var.retention_day tags = { Name = \"/aws/eks/${var.cluster_name}/cluster\" vpc_id = \"${data.aws_vpc.vpc.id}\" ManagedBy = \"terraform\" Env = var.env } } #-----------------EKS-cluster-code-------------------------------------------- resource \"aws_eks_cluster\" \"eks-cluster\" { count = contains(local.env, var.env) ? 1 : 0 name = \"${var.cluster_name}\" enabled_cluster_log_types = [\"api\",\"audit\",\"authenticator\",\"controllerManager\",\"scheduler\"] version = \"${var.eks_version}\" role_arn = element(aws_iam_role.EKSClusterRole.*.arn,0) vpc_config { endpoint_private_access = true endpoint_public_access = true security_group_ids = [\"${element(aws_security_group.control_plane_sg.*.id,0)}\"] subnet_ids = flatten([\"${values(data.aws_subnet.private_subnets).*.id}\"]) } tags = { Name = \"${var.cluster_name}\" vpc_id = \"${data.aws_vpc.vpc.id}\" ManagedBy = \"terraform\" \"karpenter.sh/discovery\" = var.cluster_name Env = var.env } depends_on = [ aws_cloudwatch_log_group.eks_log_group, aws_iam_role_policy_attachment.eks-cluster-AmazonEKSClusterPolicy, aws_iam_role_policy_attachment.eks-cluster-AmazonEKSServicePolicy, ] } #--------------eks-private-node-group---------------------------------------------- resource \"aws_eks_node_group\" \"node-group-private\" { cluster_name = element(aws_eks_cluster.eks-cluster.*.name,0) node_group_name = var.node_group_name node_role_arn = element(aws_iam_role.NodeGroupRole.*.arn,0) subnet_ids = flatten([\"${values(data.aws_subnet.private_subnets).*.id}\"]) capacity_type = \"ON_DEMAND\" ami_type = var.ami_type disk_size = var.disk_size instance_types = var.instance_types scaling_config { desired_size = var.node_desired_size max_size = var.node_max_size min_size = var.node_min_size } lifecycle { create_before_destroy = true } timeouts {} remote_access { ec2_ssh_key = var.ec2_ssh_key_name_eks_nodes source_security_group_ids = [element(aws_security_group.eks-nodes.*.id,0)] } labels = { \"eks/cluster-name\" = element(aws_eks_cluster.eks-cluster.*.name,0) \"eks/nodegroup-name\" = format(\"nodegroup_%s\", lower(element(aws_eks_cluster.eks-cluster.*.name,0))) } tags = merge({ Name = var.node_group_name \"eks/cluster-name\" = element(aws_eks_cluster.eks-cluster.*.name,0) \"eks/nodegroup-name\" = format(\"nodegroup_%s\", lower(element(aws_eks_cluster.eks-cluster.*.name,0))) \"kubernetes.io/cluster/${var.cluster_name}\" = \"owned\" \"karpenter.sh/discovery/${var.cluster_name}\" = var.cluster_name \"karpenter.sh/discovery\" = var.cluster_name \"eks/nodegroup-type\" = \"managed\" vpc_id = \"${data.aws_vpc.vpc.id}\" ManagedBy = \"terraform\" Env = var.env }) # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling. # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces. depends_on = [ aws_eks_cluster.eks-cluster, aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy, aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy, aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly, ] } # ADD-ONS resource \"aws_eks_addon\" \"addons\" { for_each = { for addon in var.addons : addon.name =\u003e addon } cluster_name = element(aws_eks_cluster.eks-cluster.*.name,0) addon_name = each.value.name resolve_conflicts = \"OVERWRITE\" depends_on = [aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private ] } IAM roles and Policies for EKS cluster and NodeGroup\n# IAM role for EKS cluster resource \"aws_iam_role\" \"EKSClusterRole\" { count = contains(local.env, var.env) ? 1 : 0 name = \"EKSClusterRole_v2\" assume_role_policy = jsonencode({ Version = \"2012-10-17\" Statement = [ { Action = \"sts:AssumeRole\" Effect = \"Allow\" Principal = { Service = \"eks.amazonaws.com\" } }, ] }) } # Adding policies to the IAM role for EKS cluster resource \"aws_iam_role_policy_attachment\" \"eks-cluster-AmazonEKSClusterPolicy\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonEKSClusterPolicy\" role = element(aws_iam_role.EKSClusterRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"eks-cluster-AmazonEKSVPCResourceController\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonEKSVPCResourceController\" role = element(aws_iam_role.EKSClusterRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"eks-cluster-AmazonEKSServicePolicy\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonEKSServicePolicy\" role = element(aws_iam_role.EKSClusterRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"eks_CloudWatchFullAccess\" { policy_arn = \"arn:aws:iam::aws:policy/CloudWatchFullAccess\" role =element(aws_iam_role.EKSClusterRole.*.name,0) } ## IAM role for Node group resource \"aws_iam_role\" \"NodeGroupRole\" { count = contains(local.env, var.env) ? 1 : 0 name = \"EKSNodeGroupRole_v2\" assume_role_policy = jsonencode({ Version = \"2012-10-17\" Statement = [ { Action = \"sts:AssumeRole\" Effect = \"Allow\" Principal = { Service = \"ec2.amazonaws.com\" } }, ] }) } #---policy-attachements-for-Node group-role-------- resource \"aws_iam_role_policy\" \"node-group-ClusterAutoscalerPolicy\" { name = \"eks-cluster-auto-scaler\" role = element(aws_iam_role.NodeGroupRole.*.id,0) policy = jsonencode({ Version = \"2012-10-17\" Statement = [ { Action = [ \"autoscaling:DescribeAutoScalingGroups\", \"autoscaling:DescribeAutoScalingInstances\", \"autoscaling:DescribeLaunchConfigurations\", \"autoscaling:DescribeTags\", \"autoscaling:SetDesiredCapacity\", \"autoscaling:TerminateInstanceInAutoScalingGroup\" ] Effect = \"Allow\" Resource = \"*\" }, ] }) } resource \"aws_iam_role_policy_attachment\" \"node_group_AWSLoadBalancerControllerPolicy\" { policy_arn = element(aws_iam_policy.load-balancer-policy.*.arn,0) role = element(aws_iam_role.NodeGroupRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"AmazonEKSWorkerNodePolicy\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy\" role = element(aws_iam_role.NodeGroupRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"AmazonEKS_CNI_Policy\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy\" role = element(aws_iam_role.NodeGroupRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"AmazonEC2ContainerRegistryReadOnly\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly\" role = element(aws_iam_role.NodeGroupRole.*.name,0) } resource \"aws_iam_role_policy_attachment\" \"CloudWatchAgentServerPolicy\" { policy_arn = \"arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy\" role = element(aws_iam_role.NodeGroupRole.*.name,0) } ## SSMManagedInstanceCore Policy for Nodes (Karpenter) resource \"aws_iam_role_policy_attachment\" \"eks_node_attach_AmazonSSMManagedInstanceCore\" { policy_arn = \"arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore\" role = element(aws_iam_role.NodeGroupRole.*.name,0) } # Create IAM OIDC identity providers to establish trust between an OIDC-compatible IdP and your AWS account. data \"tls_certificate\" \"cert\" { url = aws_eks_cluster.eks-cluster[0].identity[0].oidc[0].issuer } resource \"aws_iam_openid_connect_provider\" \"cluster\" { client_id_list = [\"sts.amazonaws.com\"] thumbprint_list = [data.tls_certificate.cert.certificates[0].sha1_fingerprint] url = aws_eks_cluster.eks-cluster[0].identity[0].oidc[0].issuer } **IAM role and policies for ALB ingress controller** # IAM policy for ALB ingress controller resource \"aws_iam_policy\" \"load-balancer-policy\" { count = contains(local.env, var.env) ? 1 : 0 name = \"AWSLoadBalancerControllerIAMPolicy_v2\" path = \"/\" description = \"AWS LoadBalancer Controller IAM Policy\" policy = \u003c",
+  "wordCount" : "4909",
+  "inLanguage": "en",
+  "image":"https://nithin-john-george.github.io/blog/karpenter.jpeg","datePublished": "0001-01-01T00:00:00Z",
+  "dateModified": "0001-01-01T00:00:00Z",
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "https://nithin-john-george.github.io/blog/karpenter-on-eks-with-spot/"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Nithin John George",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://nithin-john-george.github.io/favicon.ico"
+    }
+  }
+}
+</script>
+</head>
+
+<body class="" id="top">
+<script>
+    if (localStorage.getItem("pref-theme") === "dark") {
+        document.body.classList.add('dark');
+    } else if (localStorage.getItem("pref-theme") === "light") {
+        document.body.classList.remove('dark')
+    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        document.body.classList.add('dark');
+    }
+
+</script>
+
+<header class="header sticky-header">
+    <nav class="nav">
+        <div class="logo">
+            <a href="https://nithin-john-george.github.io/" accesskey="h" title="Nithin John George (Alt + H)">Nithin John George</a>
+            <span class="logo-switches">
+                <button id="theme-toggle" accesskey="t" title="(Alt + T)">
+                    <svg id="moon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                    <svg id="sun" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                </button>
+            </span>
+        </div>
+        <ul id="menu">
+            <li>
+                <a href="https://nithin-john-george.github.io/" title="Home">
+                    <span>Home</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/blog" title="Blog">
+                    <span>Blog</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/projects" title="Projects">
+                    <span>Projects</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/experience" title="Experience">
+                    <span>Experience</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/search" title="Search (Alt &#43; /)" accesskey=/>
+                    <span>Search</span>
+                </a>
+            </li>
+            <li>
+                <a href="https://nithin-john-george.github.io/technical-skills/technical-skills/" title="Skills">
+                    <span>Skills</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+</header>
+<main class="main">
+
+<article class="post-single">
+  <header class="post-header">
+    <div class="breadcrumbs"><a href="https://nithin-john-george.github.io/">Home</a>&nbsp;»&nbsp;<a href="https://nithin-john-george.github.io/blog/">Blogs</a></div>
+    <h1 class="post-title">
+      Karpenter : Setting Up On EKS Cluster (v1.24) with Spot-Instances
+    </h1>
+    <div class="post-description">
+      Maximizing Cost-Efficiency with Karpenter : Setting Up EKS Cluster (v1.24) on Spot-Instances with AWS ALB Ingress Controller, Amazon EBS CSI Driver, and Add-ons Completely using Terraform and Terraform Cloud
+    </div>
+    <div class="post-meta">
+
+
+Mar 2023
+
+</div>
+  </header> 
+<figure class="entry-cover"><img loading="lazy" src="https://nithin-john-george.github.io/blog/karpenter.jpeg" alt="">
+        
+</figure><div class="toc">
+    <details >
+        <summary accesskey="c" title="(Alt + C)">
+            <span class="details">‎ Table of Contents</span>
+        </summary>
+
+        <div class="inner"><ul><ul>
+                <li>
+                    <a href="#-mediumhttpsmediumcomtechbeatlymaximizing-cost-efficiency-with-karpenter-setting-up-eks-cluster-v1-24-b68bbd64f23c" aria-label="🔗 Medium">🔗 <a href="https://medium.com/techbeatly/maximizing-cost-efficiency-with-karpenter-setting-up-eks-cluster-v1-24-b68bbd64f23c">Medium</a></a></li></ul>
+                    
+                <li>
+                    <a href="#kuberenetes-autoscaling" aria-label="Kuberenetes Autoscaling">Kuberenetes Autoscaling</a></li>
+                <li>
+                    <a href="#how-we-can-reduce-cost-with-using-spot-instances" aria-label="How we can reduce cost with Using Spot Instances?">How we can reduce cost with Using Spot Instances?</a></li>
+                <li>
+                    <a href="#why-use-karpenter-instead-of-cluster-autoscaler" aria-label="Why use Karpenter instead of Cluster Autoscaler?">Why use Karpenter instead of Cluster Autoscaler?</a></li>
+                <li>
+                    <a href="#how-it-works" aria-label="How it works?">How it works?</a></li>
+                <li>
+                    <a href="#how-karpenter-handles-spot-interruptions" aria-label="How Karpenter handles Spot Interruptions">How Karpenter handles Spot Interruptions</a></li>
+                <li>
+                    <a href="#now-lets-get-into-action-" aria-label="Now lets get into action !!!">Now lets get into action !!!</a></li>
+                <li>
+                    <a href="#creating-the-ec2-spot-linked-role" aria-label="Creating the EC2 spot Linked Role">Creating the EC2 spot Linked Role</a></li>
+                <li>
+                    <a href="#configuring-the-eks-cluster-" aria-label="Configuring the EKS Cluster !!">Configuring the EKS Cluster !!</a></li>
+                <li>
+                    <a href="#creating-terraform-files-for-the-setup-" aria-label="Creating Terraform files For the Setup !!">Creating Terraform files For the Setup !!</a><ul>
+                        
+                <li>
+                    <a href="#kuberenets-resources-for-alb-ingress-controller" aria-label="Kuberenets Resources for ALB ingress controller"><strong>Kuberenets Resources for ALB ingress controller</strong></a></li>
+                <li>
+                    <a href="#instance-profile-for-karpenter" aria-label="Instance Profile for Karpenter"><strong>Instance Profile for Karpenter</strong></a></li>
+                <li>
+                    <a href="#handling-interruption-for-spot-instance-via-sqs-queue-and-event-bridge-rules" aria-label="Handling Interruption For Spot Instance via SQS queue and Event Bridge rules"><strong>Handling Interruption For Spot Instance via SQS queue and Event Bridge rules</strong></a></li>
+                <li>
+                    <a href="#template-file--valuesyml--for-karpenter" aria-label="Template File ( values.yml ) for Karpenter"><strong>Template File ( values.yml ) for Karpenter</strong></a></li>
+                <li>
+                    <a href="#helm-release-for-karpenter" aria-label="Helm release for Karpenter"><strong>Helm release for Karpenter</strong></a></li></ul>
+                </li>
+                <li>
+                    <a href="#deploying-via-terraform-cloud-" aria-label="Deploying via Terraform Cloud !!!">Deploying via Terraform Cloud !!!</a></li>
+                <li>
+                    <a href="#testing-it--its-time-for-action" aria-label="Testing it !! Its Time for Action">Testing it !! Its Time for Action</a>
+                </li>
+            </ul>
+        </div>
+    </details>
+</div>
+
+  <div class="post-content"><h3 id="-mediumhttpsmediumcomtechbeatlymaximizing-cost-efficiency-with-karpenter-setting-up-eks-cluster-v1-24-b68bbd64f23c">🔗 <a href="https://medium.com/techbeatly/maximizing-cost-efficiency-with-karpenter-setting-up-eks-cluster-v1-24-b68bbd64f23c">Medium</a><a hidden class="anchor" aria-hidden="true" href="#-mediumhttpsmediumcomtechbeatlymaximizing-cost-efficiency-with-karpenter-setting-up-eks-cluster-v1-24-b68bbd64f23c">#</a></h3>
+<p>In this blog you will learn how to provision EKS Kubernetes cluster at any scale using <a href="https://github.com/awslabs/karpenter">Karpenter</a> . We will also utilize **spot instances **to reduce costs by up to 90 percent. Additionally, we’ll set up the **AWS ALB Ingress Controller **and <strong>Amazon EBS CSI driver</strong>, establish trust between an OIDC-compatible identity provider and your AWS account using <strong>IAM OIDC identity provider</strong> (including the necessary IAM roles and policies), install the metrics server, and set up required EKS add-ons using Terraform. We will deploy all of this using Helm charts and configure custom values.yml using Terraform as well. Finally, we will use Terraform Cloud for remote state, creating workspaces, and the plan/apply workflow.</p>
+<blockquote>
+<p>If you would like to skip the theoretical explanations please fell free scroll down to the actual <strong>terraform configurations</strong> and where do the testings!!</p>
+</blockquote>
+<h2 id="kuberenetes-autoscaling">Kuberenetes Autoscaling<a hidden class="anchor" aria-hidden="true" href="#kuberenetes-autoscaling">#</a></h2>
+<p>A Kubernetes Cluster is a group of node machines that run containerized applications. Inside these nodes, Pods run containers that demand resources such as CPU, memory, and sometimes disk or GPU.</p>
+<p>Getting the size of a Kubernetes cluster right is not an easy task, if the number of nodes provisioned is too high, resources might be underutilized and if it’s too low, new workloads won’t be able to be scheduled in the cluster.</p>
+<p>Setting the number of nodes manually is a simple approach, but it requires manual intervention every time the cluster needs to grow or to shrink, and it will make nearly impossible to adapt the cluster size to cover rapid traffic and load fluctuations.</p>
+<p>One of the benefits of using Kubernetes is its ability to <strong>dynamically scale your infrastructure based on user demand</strong>.</p>
+<p>Kubernetes offers multiple layers of auto-scaling functionality, including:</p>
+<p><strong>Pod-based autoscaling</strong></p>
+<ul>
+<li>
+<p><a href="https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/">Horizontal Pod Autoscaler</a> — adds or removes more pods to the deployment as needed</p>
+</li>
+<li>
+<p><a href="https://cloud.google.com/kubernetes-engine/docs/concepts/verticalpodautoscaler">Vertical Pod Autoscaler</a> — resizes pod’s CPU and memory requests and limits to match the load</p>
+</li>
+</ul>
+<p><strong>Node-based autoscaling</strong>: adding or removing nodes as needed</p>
+<ul>
+<li>
+<p><a href="https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler">Cluster Autoscaler</a></p>
+</li>
+<li>
+<p><a href="https://karpenter.sh/docs/getting-started/">Karpenter</a></p>
+</li>
+</ul>
+<h2 id="how-we-can-reduce-cost-with-using-spot-instances">How we can reduce cost with Using Spot Instances?<a hidden class="anchor" aria-hidden="true" href="#how-we-can-reduce-cost-with-using-spot-instances">#</a></h2>
+<p>AWS offers a cost-saving option for EC2 instances called “Spot instances” where AWS provides the unused/unoccupied EC2 instances for up to a <strong>90% cheaper</strong> than regular On-Demand instances. However, their availability is not guaranteed as they are unused instances that are made available to users.</p>
+<p>When a Spot instance is reallocated, AWS automatically provides a new instance to take its place. While Spot instances are similar to regular On-Demand instances, they come with a risk of potential interruption, but they can be an effective way to save costs for workloads that are not time-sensitive.</p>
+<p>Spot instances are compatible with Amazon Elastic Kubernetes Service (EKS), and they can be used to scale production applications when there is a surge in demand. By leveraging Spot instances, users can take advantage of cost savings while also ensuring that their applications can handle spikes in traffic without compromising performance.</p>
+<p>One downside of using Spot Instances is that they can be interrupted by the AWS EC2 Spot service, which is why it’s crucial to design your application with fault-tolerance in mind. To help with this, you can utilize Spot Instance interruption notices, which provide a two-minute warning before Amazon EC2 stops or terminates your instance. Keep in mind that after this notification, the instance will be reclaimed. By designing your application to handle interruptions gracefully, you can minimize the impact of Spot Instance interruptions and still benefit from the cost savings they offer.</p>
+<h2 id="why-use-karpenter-instead-of-cluster-autoscaler">Why use Karpenter instead of Cluster Autoscaler?<a hidden class="anchor" aria-hidden="true" href="#why-use-karpenter-instead-of-cluster-autoscaler">#</a></h2>
+<p>Cluster Autoscaler is a useful Kubernetes tool that can adjust the size of a Kubernetes cluster by adding or removing nodes, based on the utilization metrics of nodes and the presence of pending pods. However, it requires nodes with the same capacity to function correctly.</p>
+<p>To adjust the capacity, Kubernetes Cluster Autoscaler interacts with the Autoscaling group service directly. To properly work , AWS EKS managed node groups are needed, and the Autoscaler only scales up or down the managed node groups through Amazon EC2 Auto Scaling Groups. Whenever a new node group is added, it is essential to inform Cluster Autoscaler about it, as there is a mapping between Cluster Autoscaler, which is Kubernetes native, and the node group, which is AWS native.</p>
+<p>Cluster Autoscaler does not provide flexibility to handle hundreds of instance types, zones, and purchase options.</p>
+<p>Unlike Autoscaler, <strong>Karpenter doesn’t rely on node groups ,it manages each instance directly</strong>. Instead, autoscaling configurations are specified in <strong>provisioners</strong>, which can be seen as a more customizable alternative to EKS-managed node groups.</p>
+<ul>
+<li>
+<p>If you are uncertain about the instance types you require or have no specific requirements, Karpenter can make the decision for you. All you need to do is create a provisioner that outlines the minimum parameter requirements.</p>
+</li>
+<li>
+<p>Karpenter is designed to make efficient use of the full range of instance types available through AWS. Unlike other autoscaling tools that may be limited in the instance types they can use, Karpenter can select and utilize any instance type that meets the needs of incoming pods.</p>
+</li>
+<li>
+<p>Karpenter looks at the workload (i.e pods) and launches the right instances for the situation.</p>
+</li>
+<li>
+<p>Karpenter manages instances directly, without the need for additional orchestration mechanisms such as node groups. This allows it to retry capacity requests in a matter of milliseconds, significantly reducing the time it takes to address capacity issues.Moreover, Karpenter’s direct management approach enables it to make <strong>efficient use of diverse instance types, availability zones, and purchase options, without the need to create numerous node groups</strong>. This results in a more flexible and cost-effective solution for managing Kubernetes clusters on AWS.</p>
+</li>
+<li>
+<p>Infrastructure <strong>costs are reduced</strong> by looking for under-utilized nodes and removing them, also by replacing expensive nodes with cheaper alternatives, and by consolidating workloads onto more efficient compute resources.</p>
+</li>
+<li>
+<p>Karpenter operates on an intent-based model when making instance selection decisions. This model takes into account the specific resource requests and scheduling requirements of incoming pods. By doing so, Karpenter can identify the most suitable instance type to handle these pods, which may involve requesting a larger instance type capable of accommodating all the pods on a single node.</p>
+</li>
+</ul>
+<p>For instance, if there are 50 pending pods waiting to be scheduled, Karpenter will calculate the resource requirements of these pods and select an appropriate instance type to accommodate them. Unlike Cluster Autoscaler, which may need to scale several nodes to meet the demand, Karpenter can request a single large EC2 instance and place all the pods on it.</p>
+<h2 id="how-it-works">How it works?<a hidden class="anchor" aria-hidden="true" href="#how-it-works">#</a></h2>
+<p>Karpenter is designed to observe events within the Kubernetes cluster and send commands to the underlying cloud provider’s compute service. Upon installation, Karpenter begins to monitor the specifications of unschedulable Pods and calculates the aggregate resource requests. Based on this information, it can make decisions to launch and terminate nodes in order to reduce scheduling latencies and infrastructure costs.</p>
+<p>To achieve this, Karpenter leverages a Custom Resource Definition (CRD) called Provisioner. The Provisioner specifies the node provisioning configuration, including the instance size/type, topology (such as availability zone), architecture (e.g. arm64, amd64), and lifecycle type (such as spot, on-demand, preemptible).</p>
+<p>Karpenter is designed to automatically manage the lifecycle of nodes provisioned by Kubernetes. When a node is no longer needed or has exceeded its TTL (time-to-live), Karpenter triggers a finalization process that includes several steps to gracefully decommission the node.</p>
+<p>One event that can trigger finalization is the expiration of a node’s configuration, as defined by the <strong>ttlSecondsUntilExpired</strong> parameter. This parameter specifies the maximum amount of time that a node can remain active before being terminated. When the node&rsquo;s TTL expires, Karpenter takes action by cordoning off the node, which means that no new workloads can be scheduled on it. Karpenter then begins to drain the pods running on the node, which involves moving the workloads to other nodes in the cluster. Finally, Karpenter terminates the underlying compute resource associated with the node and deletes the node object.</p>
+<p>Another event that can trigger finalization is when the last workload running on a Karpenter provisioned node is terminated. In this case, Karpenter follows the same process of cordoning the node, draining the pods, terminating the underlying resource, and deleting the node object.</p>
+<p>By automating the finalization process, Karpenter ensures that nodes are only active when they are needed, which can help to optimize the performance and cost-effectiveness of Kubernetes clusters on AWS.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/3140/1*Cqn8bflEDs-vbiAl2RIy7Q.png" alt=""  />
+</p>
+<h2 id="how-karpenter-handles-spot-interruptions">How Karpenter handles Spot Interruptions<a hidden class="anchor" aria-hidden="true" href="#how-karpenter-handles-spot-interruptions">#</a></h2>
+<p>Karpenter requires a queue to exist that receives event messages from EC2 and health services in order to handle interruption messages properly for nodes</p>
+<p>Karpenter will keep watching for upcoming involuntary interruption events that would cause disruption to your workloads.</p>
+<p>These events include <strong>Spot Interruption Warnings, Scheduled Change Health Events, Instance Terminating Events, and Instance Stopping Events</strong>.</p>
+<p>When Karpenter detects that one of these events is imminent, it automatically performs cordoning, draining, and termination of the affected node(s) to allow enough time for cleanup of workloads prior to compute disruption. This is particularly useful in scenarios where the terminationGracePeriod for workloads is long or where cleanup is critical, as it ensures that there is enough time to gracefully clean up pods.</p>
+<p><strong>Karpenter achieves this by monitoring an SQS queue</strong> that receives critical events from AWS services that could potentially affect nodes. However, <strong>to use this feature, it is necessary to provision an SQS queue and add EventBridge rules and targets that forward interruption events from AWS services to the SQS queue.</strong></p>
+<h2 id="now-lets-get-into-action-">Now lets get into action !!!<a hidden class="anchor" aria-hidden="true" href="#now-lets-get-into-action-">#</a></h2>
+<p>I am assuming that the <strong>underlying VPC and network resources are already created.</strong></p>
+<blockquote>
+<p>I will be creating a seperate blog on setting up Production Grade VPC (HA) with environment-specific run method which we used <strong>.</strong></p>
+</blockquote>
+<p>The public subnets in the VPC must be tagged with :</p>
+<pre><code>&quot;kubernetes.io/cluster/&lt;cluster-name&gt;&quot; = &quot;owned&quot;
+&quot;karpenter.sh/discovery&quot; = &lt;cluster-name&gt; 
+&quot;kubernetes.io/role/elb&quot; = 1
+</code></pre>
+<p>The private subnets in the VPC must be tagged with :</p>
+<pre><code>&quot;kubernetes.io/cluster/&lt;cluster-name&gt;&quot; = &quot;owned&quot;
+&quot;karpenter.sh/discovery&quot; = &lt;cluster-name&gt; 
+&quot;kubernetes.io/role/internal-elb&quot; = 1
+</code></pre>
+<p>Also we will be adding the following tags to the security group of control plane and eks-nodes:</p>
+<pre><code>&quot;karpenter.sh/discovery&quot; = &lt;cluster-name&gt;
+</code></pre>
+<p>We will be discussing this when we move ahead!!!</p>
+<h2 id="creating-the-ec2-spot-linked-role">Creating the EC2 spot Linked Role<a hidden class="anchor" aria-hidden="true" href="#creating-the-ec2-spot-linked-role">#</a></h2>
+<p>This step is only necessary if this is the first time you’re using EC2 Spot in this account. It is necessary to exist in your account in order to let you launch Spot instances.</p>
+<pre><code>aws iam create-service-linked-role --aws-service-name spot.amazonaws.com
+</code></pre>
+<h2 id="configuring-the-eks-cluster-">Configuring the EKS Cluster !!<a hidden class="anchor" aria-hidden="true" href="#configuring-the-eks-cluster-">#</a></h2>
+<p>Next we will be deploying the cluster itself first , which has deployed a minimum set of On-Demand instances that we will use to deploy Kubernetes controllers on it.</p>
+<p>After that we will use Karpenter to deploy Spot instances to showcase a few of the benefits of running a group-less auto scaler.</p>
+<p>Terraform code for Setting up the entire stack can be found at :</p>
+<p><a href="https://github.com/NITHIN-JOHN-GEORGE/eks-karpenter-controllers-spot-terraform">https://github.com/NITHIN-JOHN-GEORGE/eks-karpenter-controllers-spot-terraform</a></p>
+<h2 id="creating-terraform-files-for-the-setup-">Creating Terraform files For the Setup !!<a hidden class="anchor" aria-hidden="true" href="#creating-terraform-files-for-the-setup-">#</a></h2>
+<p><strong>Provider Configuration</strong></p>
+<pre><code>terraform {
+  required_version = &quot;~&gt; 1.0&quot;
+  
+  required_providers {
+    aws = {
+      source  = &quot;hashicorp/aws&quot;
+      version = &quot;~&gt; 4.16.0&quot;
+    }
+
+    kubernetes = {
+      source = &quot;hashicorp/kubernetes&quot;
+      version = &quot;~&gt; 2.18.0&quot;
+    }
+
+    kubectl = {
+      source  = &quot;gavinbunney/kubectl&quot;
+      version = &quot;&gt;= 1.7.0&quot;
+    }
+
+    helm = {
+      source = &quot;hashicorp/helm&quot;
+      version = &quot;2.8.0&quot;
+    }
+  }
+}
+provider &quot;aws&quot; {
+  region  = var.region
+  access_key = var.AWS_ACCESS_KEY
+  secret_key = var.AWS_SECRET_KEY
+
+}
+
+output &quot;endpoint&quot; {
+  value = data.aws_eks_cluster.cluster.endpoint
+}
+
+# output &quot;kubeconfig-certificate-authority-data&quot; {
+#   value = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+# }
+
+provider &quot;kubernetes&quot; {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+}
+
+provider &quot;kubectl&quot; {
+  host                   = data.aws_eks_cluster.cluster.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  token                  = data.aws_eks_cluster_auth.cluster.token
+  load_config_file       = false
+}
+
+provider &quot;helm&quot; {
+  kubernetes {
+    host                   = data.aws_eks_cluster.cluster.endpoint
+     token                  = data.aws_eks_cluster_auth.cluster.token
+     cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority.0.data)
+  }
+}
+</code></pre>
+<p><strong>EKS Cluster Setup</strong></p>
+<pre><code>locals {
+  env = [&quot;prod&quot;, &quot;qa&quot;, &quot;dev&quot;]
+}
+
+#------------Security group for eks-cluster--------------------------------------------------
+resource &quot;aws_security_group&quot; &quot;control_plane_sg&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name   = &quot;k8s-control-plane-sg&quot;
+  vpc_id = &quot;${data.aws_vpc.vpc.id}&quot;
+  tags = {
+    Name = &quot;k8s-control-plane-sg&quot;
+    vpc_id = &quot;${data.aws_vpc.vpc.id}&quot;
+    ManagedBy = &quot;terraform&quot;
+    Env       = var.env
+    &quot;karpenter.sh/discovery&quot; = var.cluster_name
+  }
+}
+#----------------------Security group traffic rules for eks cluster------------------------------------------
+## Ingress rule
+resource &quot;aws_security_group_rule&quot; &quot;control_plane_inbound&quot; {
+  description   = &quot;Allow worker Kubelets and pods to receive communication from the cluster control plane&quot;  
+  security_group_id = element(aws_security_group.control_plane_sg.*.id,0)
+  type              = &quot;ingress&quot;
+  from_port   = 0
+  to_port     = 65535
+  protocol    = &quot;tcp&quot;
+  cidr_blocks = flatten([&quot;${values(data.aws_subnet.public_subnets).*.cidr_block}&quot;, &quot;${values(data.aws_subnet.private_subnets).*.cidr_block}&quot;])
+}
+## Egress rule
+resource &quot;aws_security_group_rule&quot; &quot;control_plane_outbound&quot; {
+  security_group_id = element(aws_security_group.control_plane_sg.*.id,0)
+  type              = &quot;egress&quot;
+  from_port   = 0
+  to_port     = 65535
+  protocol    = &quot;-1&quot;
+  cidr_blocks = [&quot;0.0.0.0/0&quot;]
+}
+#------------Security group for eks-nodes--------------------------------------------------
+resource &quot;aws_security_group&quot; &quot;eks-nodes&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name        = &quot;nodes_eks_sg&quot;
+  description = &quot;nodes_eks_sg&quot;
+  vpc_id      = &quot;${data.aws_vpc.vpc.id}&quot;
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = &quot;-1&quot;
+    cidr_blocks = [&quot;0.0.0.0/0&quot;]
+  }
+  tags = {
+    Name = &quot;nodes_eks_sg&quot;
+    vpc_id = &quot;${data.aws_vpc.vpc.id}&quot;
+    ManagedBy = &quot;terraform&quot;
+    Env       = var.env
+    &quot;karpenter.sh/discovery&quot; = var.cluster_name
+  }
+}
+#---------Security group traffic rules for node-security-group----------------
+## Ingress rule
+resource &quot;aws_security_group_rule&quot; &quot;nodes_ssh&quot; {
+  security_group_id =  element(aws_security_group.eks-nodes.*.id,0)
+  type              = &quot;ingress&quot;
+  from_port         = 22
+  to_port           = 22
+  protocol          = &quot;tcp&quot;
+  cidr_blocks       = flatten([&quot;${values(data.aws_subnet.public_subnets).*.cidr_block}&quot;, &quot;${values(data.aws_subnet.private_subnets).*.cidr_block}&quot;])
+}
+#--------------------cloud-watch-log-group-- for eks cluster----------------------------------------------
+resource &quot;aws_cloudwatch_log_group&quot; &quot;eks_log_group&quot; {
+  name              = &quot;/aws/eks/${var.cluster_name}/cluster&quot;
+  retention_in_days = var.retention_day
+  tags = {
+    Name = &quot;/aws/eks/${var.cluster_name}/cluster&quot;
+    vpc_id = &quot;${data.aws_vpc.vpc.id}&quot;
+    ManagedBy = &quot;terraform&quot;
+    Env       = var.env
+  }
+  
+}
+#-----------------EKS-cluster-code--------------------------------------------
+resource &quot;aws_eks_cluster&quot; &quot;eks-cluster&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name     = &quot;${var.cluster_name}&quot;
+  enabled_cluster_log_types = [&quot;api&quot;,&quot;audit&quot;,&quot;authenticator&quot;,&quot;controllerManager&quot;,&quot;scheduler&quot;]
+  version  = &quot;${var.eks_version}&quot;
+  role_arn = element(aws_iam_role.EKSClusterRole.*.arn,0)
+  vpc_config {
+    endpoint_private_access = true
+    endpoint_public_access  = true
+    security_group_ids = [&quot;${element(aws_security_group.control_plane_sg.*.id,0)}&quot;]
+    subnet_ids         = flatten([&quot;${values(data.aws_subnet.private_subnets).*.id}&quot;])
+  }
+  tags = {
+    Name = &quot;${var.cluster_name}&quot;
+    vpc_id = &quot;${data.aws_vpc.vpc.id}&quot;
+    ManagedBy = &quot;terraform&quot;
+    &quot;karpenter.sh/discovery&quot; = var.cluster_name
+    Env       = var.env
+  }
+  depends_on = [
+    aws_cloudwatch_log_group.eks_log_group,
+    aws_iam_role_policy_attachment.eks-cluster-AmazonEKSClusterPolicy,
+    aws_iam_role_policy_attachment.eks-cluster-AmazonEKSServicePolicy,
+  ]
+}
+#--------------eks-private-node-group----------------------------------------------
+resource &quot;aws_eks_node_group&quot; &quot;node-group-private&quot; {
+  cluster_name    = element(aws_eks_cluster.eks-cluster.*.name,0)
+  node_group_name = var.node_group_name
+  node_role_arn   = element(aws_iam_role.NodeGroupRole.*.arn,0)
+  subnet_ids      = flatten([&quot;${values(data.aws_subnet.private_subnets).*.id}&quot;])
+  capacity_type  = &quot;ON_DEMAND&quot;
+  ami_type       = var.ami_type
+  disk_size      = var.disk_size
+  instance_types = var.instance_types
+  scaling_config {
+    desired_size = var.node_desired_size
+    max_size     = var.node_max_size
+    min_size     = var.node_min_size
+  }
+  
+  lifecycle {
+    create_before_destroy = true
+  }
+  timeouts {}
+  remote_access {
+    ec2_ssh_key = var.ec2_ssh_key_name_eks_nodes
+    source_security_group_ids = [element(aws_security_group.eks-nodes.*.id,0)]
+  }
+   
+  labels         = {
+    &quot;eks/cluster-name&quot;   = element(aws_eks_cluster.eks-cluster.*.name,0)
+    &quot;eks/nodegroup-name&quot; = format(&quot;nodegroup_%s&quot;, lower(element(aws_eks_cluster.eks-cluster.*.name,0)))
+  }
+  tags = merge({
+    Name                 = var.node_group_name
+    &quot;eks/cluster-name&quot;   = element(aws_eks_cluster.eks-cluster.*.name,0)
+    &quot;eks/nodegroup-name&quot; = format(&quot;nodegroup_%s&quot;, lower(element(aws_eks_cluster.eks-cluster.*.name,0)))
+    &quot;kubernetes.io/cluster/${var.cluster_name}&quot; = &quot;owned&quot;
+    &quot;karpenter.sh/discovery/${var.cluster_name}&quot; = var.cluster_name
+    &quot;karpenter.sh/discovery&quot; = var.cluster_name
+    &quot;eks/nodegroup-type&quot; = &quot;managed&quot;
+    vpc_id = &quot;${data.aws_vpc.vpc.id}&quot;
+    ManagedBy = &quot;terraform&quot;
+    Env       = var.env
+  })
+  # Ensure that IAM Role permissions are created before and deleted after EKS Node Group handling.
+  # Otherwise, EKS will not be able to properly delete EC2 Instances and Elastic Network Interfaces.
+  depends_on = [
+    aws_eks_cluster.eks-cluster,
+    aws_iam_role_policy_attachment.AmazonEKSWorkerNodePolicy,
+    aws_iam_role_policy_attachment.AmazonEKS_CNI_Policy,
+    aws_iam_role_policy_attachment.AmazonEC2ContainerRegistryReadOnly,
+  ]
+}
+# ADD-ONS
+resource &quot;aws_eks_addon&quot; &quot;addons&quot; {
+  for_each          = { for addon in var.addons : addon.name =&gt; addon }
+  cluster_name      = element(aws_eks_cluster.eks-cluster.*.name,0)
+  addon_name        = each.value.name
+  resolve_conflicts = &quot;OVERWRITE&quot;
+  depends_on = [aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private ]
+}
+</code></pre>
+<p><strong>IAM roles and Policies for EKS cluster and NodeGroup</strong></p>
+<pre><code># IAM role for EKS cluster 
+
+resource &quot;aws_iam_role&quot; &quot;EKSClusterRole&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name = &quot;EKSClusterRole_v2&quot;
+  assume_role_policy = jsonencode({
+    Version = &quot;2012-10-17&quot;
+    Statement = [
+      {
+        Action = &quot;sts:AssumeRole&quot;
+        Effect = &quot;Allow&quot;
+        Principal = {
+          Service = &quot;eks.amazonaws.com&quot;
+        }
+      },
+    ]
+  })
+}
+# Adding policies to the IAM role for EKS cluster
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;eks-cluster-AmazonEKSClusterPolicy&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonEKSClusterPolicy&quot;
+  role       = element(aws_iam_role.EKSClusterRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;eks-cluster-AmazonEKSVPCResourceController&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonEKSVPCResourceController&quot;
+  role       = element(aws_iam_role.EKSClusterRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;eks-cluster-AmazonEKSServicePolicy&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonEKSServicePolicy&quot;
+  role       = element(aws_iam_role.EKSClusterRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;eks_CloudWatchFullAccess&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/CloudWatchFullAccess&quot;
+  role       =element(aws_iam_role.EKSClusterRole.*.name,0)
+}
+## IAM role for Node group
+resource &quot;aws_iam_role&quot; &quot;NodeGroupRole&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name = &quot;EKSNodeGroupRole_v2&quot;
+  assume_role_policy = jsonencode({
+    Version = &quot;2012-10-17&quot;
+    Statement = [
+      {
+        Action = &quot;sts:AssumeRole&quot;
+        Effect = &quot;Allow&quot;
+        Principal = {
+          Service = &quot;ec2.amazonaws.com&quot;
+        }
+      },
+    ]
+  })
+}
+#---policy-attachements-for-Node group-role--------
+resource &quot;aws_iam_role_policy&quot; &quot;node-group-ClusterAutoscalerPolicy&quot; {
+  name = &quot;eks-cluster-auto-scaler&quot;
+  role = element(aws_iam_role.NodeGroupRole.*.id,0)
+  policy = jsonencode({
+    Version = &quot;2012-10-17&quot;
+    Statement = [
+      {
+        Action = [
+            &quot;autoscaling:DescribeAutoScalingGroups&quot;,
+            &quot;autoscaling:DescribeAutoScalingInstances&quot;,
+            &quot;autoscaling:DescribeLaunchConfigurations&quot;,
+            &quot;autoscaling:DescribeTags&quot;,
+            &quot;autoscaling:SetDesiredCapacity&quot;,
+            &quot;autoscaling:TerminateInstanceInAutoScalingGroup&quot;
+        ]
+        Effect   = &quot;Allow&quot;
+        Resource = &quot;*&quot;
+      },
+    ]
+  })
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;node_group_AWSLoadBalancerControllerPolicy&quot; {
+  policy_arn = element(aws_iam_policy.load-balancer-policy.*.arn,0)
+  role       = element(aws_iam_role.NodeGroupRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;AmazonEKSWorkerNodePolicy&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy&quot;
+  role       = element(aws_iam_role.NodeGroupRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;AmazonEKS_CNI_Policy&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy&quot;
+  role       = element(aws_iam_role.NodeGroupRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;AmazonEC2ContainerRegistryReadOnly&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly&quot;
+  role       = element(aws_iam_role.NodeGroupRole.*.name,0)
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;CloudWatchAgentServerPolicy&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy&quot;
+  role       = element(aws_iam_role.NodeGroupRole.*.name,0)
+}
+## SSMManagedInstanceCore Policy for Nodes (Karpenter)
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;eks_node_attach_AmazonSSMManagedInstanceCore&quot; {
+  policy_arn = &quot;arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore&quot;
+  role       = element(aws_iam_role.NodeGroupRole.*.name,0)
+}
+# Create IAM OIDC identity providers to establish trust between an OIDC-compatible IdP and your AWS account.
+data &quot;tls_certificate&quot; &quot;cert&quot; {
+  url = aws_eks_cluster.eks-cluster[0].identity[0].oidc[0].issuer
+}
+resource &quot;aws_iam_openid_connect_provider&quot; &quot;cluster&quot; {
+  client_id_list  = [&quot;sts.amazonaws.com&quot;]
+  thumbprint_list = [data.tls_certificate.cert.certificates[0].sha1_fingerprint]
+  url             = aws_eks_cluster.eks-cluster[0].identity[0].oidc[0].issuer
+}
+
+**IAM role and policies for ALB ingress controller**
+
+# IAM policy  for ALB ingress controller
+
+resource &quot;aws_iam_policy&quot; &quot;load-balancer-policy&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name        = &quot;AWSLoadBalancerControllerIAMPolicy_v2&quot;
+  path        = &quot;/&quot;
+  description = &quot;AWS LoadBalancer Controller IAM Policy&quot;
+  policy = &lt;&lt;EOF
+{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+        {
+          &quot;Effect&quot;: &quot;Allow&quot;,
+          &quot;Action&quot;: [
+                &quot;iam:CreateServiceLinkedRole&quot;
+            ],
+           &quot;Resource&quot;: &quot;*&quot;,
+           &quot;Condition&quot;: {
+                &quot;StringEquals&quot;: {
+                    &quot;iam:AWSServiceName&quot;: &quot;elasticloadbalancing.amazonaws.com&quot;
+                }
+            }
+         },
+         {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;ec2:DescribeAccountAttributes&quot;,
+                &quot;ec2:DescribeAddresses&quot;,
+                &quot;ec2:DescribeAvailabilityZones&quot;,
+                &quot;ec2:DescribeInternetGateways&quot;,
+                &quot;ec2:DescribeVpcs&quot;,
+                &quot;ec2:DescribeVpcPeeringConnections&quot;,
+                &quot;ec2:DescribeSubnets&quot;,
+                &quot;ec2:DescribeSecurityGroups&quot;,
+                &quot;ec2:DescribeInstances&quot;,
+                &quot;ec2:DescribeNetworkInterfaces&quot;,
+                &quot;ec2:DescribeTags&quot;,
+                &quot;ec2:GetCoipPoolUsage&quot;,
+                &quot;ec2:DescribeCoipPools&quot;,
+                &quot;elasticloadbalancing:DescribeLoadBalancers&quot;,
+                &quot;elasticloadbalancing:DescribeLoadBalancerAttributes&quot;,
+                &quot;elasticloadbalancing:DescribeListeners&quot;,
+                &quot;elasticloadbalancing:DescribeListenerCertificates&quot;,
+                &quot;elasticloadbalancing:DescribeSSLPolicies&quot;,
+                &quot;elasticloadbalancing:DescribeRules&quot;,
+                &quot;elasticloadbalancing:DescribeTargetGroups&quot;,
+                &quot;elasticloadbalancing:DescribeTargetGroupAttributes&quot;,
+                &quot;elasticloadbalancing:DescribeTargetHealth&quot;,
+                &quot;elasticloadbalancing:DescribeTags&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;cognito-idp:DescribeUserPoolClient&quot;,
+                &quot;acm:ListCertificates&quot;,
+                &quot;acm:DescribeCertificate&quot;,
+                &quot;iam:ListServerCertificates&quot;,
+                &quot;iam:GetServerCertificate&quot;,
+                &quot;waf-regional:GetWebACL&quot;,
+                &quot;waf-regional:GetWebACLForResource&quot;,
+                &quot;waf-regional:AssociateWebACL&quot;,
+                &quot;waf-regional:DisassociateWebACL&quot;,
+                &quot;wafv2:GetWebACL&quot;,
+                &quot;wafv2:GetWebACLForResource&quot;,
+                &quot;wafv2:AssociateWebACL&quot;,
+                &quot;wafv2:DisassociateWebACL&quot;,
+                &quot;shield:GetSubscriptionState&quot;,
+                &quot;shield:DescribeProtection&quot;,
+                &quot;shield:CreateProtection&quot;,
+                &quot;shield:DeleteProtection&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;ec2:AuthorizeSecurityGroupIngress&quot;,
+                &quot;ec2:RevokeSecurityGroupIngress&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;ec2:CreateSecurityGroup&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;ec2:CreateTags&quot;
+            ],
+            &quot;Resource&quot;: &quot;arn:aws:ec2:*:*:security-group/*&quot;,
+            &quot;Condition&quot;: {
+                &quot;StringEquals&quot;: {
+                    &quot;ec2:CreateAction&quot;: &quot;CreateSecurityGroup&quot;
+                },
+                &quot;Null&quot;: {
+                    &quot;aws:RequestTag/elbv2.k8s.aws/cluster&quot;: &quot;false&quot;
+                }
+            }
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;ec2:CreateTags&quot;,
+                &quot;ec2:DeleteTags&quot;
+            ],
+            &quot;Resource&quot;: &quot;arn:aws:ec2:*:*:security-group/*&quot;,
+            &quot;Condition&quot;: {
+                &quot;Null&quot;: {
+                    &quot;aws:RequestTag/elbv2.k8s.aws/cluster&quot;: &quot;true&quot;,
+                    &quot;aws:ResourceTag/elbv2.k8s.aws/cluster&quot;: &quot;false&quot;
+                }
+            }
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;ec2:AuthorizeSecurityGroupIngress&quot;,
+                &quot;ec2:RevokeSecurityGroupIngress&quot;,
+                &quot;ec2:DeleteSecurityGroup&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;,
+            &quot;Condition&quot;: {
+                &quot;Null&quot;: {
+                    &quot;aws:ResourceTag/elbv2.k8s.aws/cluster&quot;: &quot;false&quot;
+                }
+            }
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:CreateLoadBalancer&quot;,
+                &quot;elasticloadbalancing:CreateTargetGroup&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;,
+            &quot;Condition&quot;: {
+                &quot;Null&quot;: {
+                    &quot;aws:RequestTag/elbv2.k8s.aws/cluster&quot;: &quot;false&quot;
+                }
+            }
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:CreateListener&quot;,
+                &quot;elasticloadbalancing:DeleteListener&quot;,
+                &quot;elasticloadbalancing:CreateRule&quot;,
+                &quot;elasticloadbalancing:DeleteRule&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:AddTags&quot;,
+                &quot;elasticloadbalancing:RemoveTags&quot;
+            ],
+            &quot;Resource&quot;: [
+                &quot;arn:aws:elasticloadbalancing:*:*:targetgroup/*/*&quot;,
+                &quot;arn:aws:elasticloadbalancing:*:*:loadbalancer/net/*/*&quot;,
+                &quot;arn:aws:elasticloadbalancing:*:*:loadbalancer/app/*/*&quot;
+            ],
+            &quot;Condition&quot;: {
+                &quot;Null&quot;: {
+                    &quot;aws:RequestTag/elbv2.k8s.aws/cluster&quot;: &quot;true&quot;,
+                    &quot;aws:ResourceTag/elbv2.k8s.aws/cluster&quot;: &quot;false&quot;
+                }
+            }
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:AddTags&quot;,
+                &quot;elasticloadbalancing:RemoveTags&quot;
+            ],
+            &quot;Resource&quot;: [
+                &quot;arn:aws:elasticloadbalancing:*:*:listener/net/*/*/*&quot;,
+                &quot;arn:aws:elasticloadbalancing:*:*:listener/app/*/*/*&quot;,
+                &quot;arn:aws:elasticloadbalancing:*:*:listener-rule/net/*/*/*&quot;,
+                &quot;arn:aws:elasticloadbalancing:*:*:listener-rule/app/*/*/*&quot;
+            ]
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:ModifyLoadBalancerAttributes&quot;,
+                &quot;elasticloadbalancing:SetIpAddressType&quot;,
+                &quot;elasticloadbalancing:SetSecurityGroups&quot;,
+                &quot;elasticloadbalancing:SetSubnets&quot;,
+                &quot;elasticloadbalancing:DeleteLoadBalancer&quot;,
+                &quot;elasticloadbalancing:ModifyTargetGroup&quot;,
+                &quot;elasticloadbalancing:ModifyTargetGroupAttributes&quot;,
+                &quot;elasticloadbalancing:DeleteTargetGroup&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;,
+            &quot;Condition&quot;: {
+                &quot;Null&quot;: {
+                    &quot;aws:ResourceTag/elbv2.k8s.aws/cluster&quot;: &quot;false&quot;
+                }
+            }
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:RegisterTargets&quot;,
+                &quot;elasticloadbalancing:DeregisterTargets&quot;
+            ],
+            &quot;Resource&quot;: &quot;arn:aws:elasticloadbalancing:*:*:targetgroup/*/*&quot;
+        },
+        {
+            &quot;Effect&quot;: &quot;Allow&quot;,
+            &quot;Action&quot;: [
+                &quot;elasticloadbalancing:SetWebAcl&quot;,
+                &quot;elasticloadbalancing:ModifyListener&quot;,
+                &quot;elasticloadbalancing:AddListenerCertificates&quot;,
+                &quot;elasticloadbalancing:RemoveListenerCertificates&quot;,
+                &quot;elasticloadbalancing:ModifyRule&quot;
+            ],
+            &quot;Resource&quot;: &quot;*&quot;
+        }
+    ]
+}
+EOF  
+}
+
+# IAM role and policy document for ALB ingress controller
+
+data &quot;aws_iam_policy_document&quot; &quot;eks_oidc_assume_role&quot; {
+  statement {
+    actions = [&quot;sts:AssumeRoleWithWebIdentity&quot;]
+    effect  = &quot;Allow&quot;
+    condition {
+      test     = &quot;StringEquals&quot;
+      variable = &quot;${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}:sub&quot;
+      values = [
+        &quot;system:serviceaccount:kube-system:aws-load-balancer-controller&quot;
+      ]
+    }
+    condition {
+      test     = &quot;StringEquals&quot;
+      variable = &quot;${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}:aud&quot;
+      values = [
+        &quot;sts.amazonaws.com&quot;
+      ]
+    }
+    principals {
+      identifiers = [
+        &quot;arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}&quot;
+      ]
+      type = &quot;Federated&quot;
+    }
+  }
+}
+resource &quot;aws_iam_role&quot; &quot;alb_ingress&quot; {
+  count                = contains(local.env, var.env) ? 1 : 0
+  name               = &quot;${var.cluster_name}-alb-ingress&quot;
+  assume_role_policy = data.aws_iam_policy_document.eks_oidc_assume_role.json
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;load-balancer-policy-role&quot; {
+  policy_arn = element(aws_iam_policy.load-balancer-policy.*.arn,0)
+  role       = element(aws_iam_role.alb_ingress.*.name,0)
+}
+</code></pre>
+<p><strong>IAM roles and policies for EBS CSI driver</strong></p>
+<pre><code>data &quot;aws_iam_policy_document&quot; &quot;eks_oidc_assume_role_ebs&quot; {
+  statement {
+    actions = [&quot;sts:AssumeRoleWithWebIdentity&quot;]
+    effect  = &quot;Allow&quot;
+    condition {
+      test     = &quot;StringEquals&quot;
+      variable = &quot;${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}:sub&quot;
+      values = [
+        &quot;system:serviceaccount:kube-system:ebs-csi-controller-sa&quot;
+      ]
+    }
+    principals {
+      identifiers = [
+        &quot;arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}&quot;
+      ]
+      type = &quot;Federated&quot;
+    }
+  }
+}
+
+resource &quot;aws_iam_role&quot; &quot;ebs-csi&quot; {
+  name               = &quot;ebs-csi-role&quot;
+  assume_role_policy = data.aws_iam_policy_document.eks_oidc_assume_role_ebs.json
+}
+
+# IAM policy  for EBS CSI  controller
+
+resource &quot;aws_iam_policy&quot; &quot;ebs_permissions&quot; {
+  name        = &quot;ebs-permissions&quot;
+  path        = &quot;/&quot;
+  description = &quot;AWS EBS Controller IAM Policy&quot;
+  policy = &lt;&lt;EOF
+{
+  &quot;Version&quot;: &quot;2012-10-17&quot;,
+  &quot;Statement&quot;: [
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:CreateSnapshot&quot;,
+        &quot;ec2:AttachVolume&quot;,
+        &quot;ec2:DetachVolume&quot;,
+        &quot;ec2:ModifyVolume&quot;,
+        &quot;ec2:DescribeAvailabilityZones&quot;,
+        &quot;ec2:DescribeInstances&quot;,
+        &quot;ec2:DescribeSnapshots&quot;,
+        &quot;ec2:DescribeTags&quot;,
+        &quot;ec2:DescribeVolumes&quot;,
+        &quot;ec2:DescribeVolumesModifications&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:CreateTags&quot;
+      ],
+      &quot;Resource&quot;: [
+        &quot;arn:aws:ec2:*:*:volume/*&quot;,
+        &quot;arn:aws:ec2:*:*:snapshot/*&quot;
+      ],
+      &quot;Condition&quot;: {
+        &quot;StringEquals&quot;: {
+          &quot;ec2:CreateAction&quot;: [
+            &quot;CreateVolume&quot;,
+            &quot;CreateSnapshot&quot;
+          ]
+        }
+      }
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:DeleteTags&quot;
+      ],
+      &quot;Resource&quot;: [
+        &quot;arn:aws:ec2:*:*:volume/*&quot;,
+        &quot;arn:aws:ec2:*:*:snapshot/*&quot;
+      ]
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:CreateVolume&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringLike&quot;: {
+          &quot;aws:RequestTag/ebs.csi.aws.com/cluster&quot;: &quot;true&quot;
+        }
+      }
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:CreateVolume&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringLike&quot;: {
+          &quot;aws:RequestTag/CSIVolumeName&quot;: &quot;*&quot;
+        }
+      }
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:DeleteVolume&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringLike&quot;: {
+          &quot;ec2:ResourceTag/CSIVolumeName&quot;: &quot;*&quot;
+        }
+      }
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:DeleteVolume&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringLike&quot;: {
+          &quot;ec2:ResourceTag/ebs.csi.aws.com/cluster&quot;: &quot;true&quot;
+        }
+      }
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:DeleteSnapshot&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringLike&quot;: {
+          &quot;ec2:ResourceTag/CSIVolumeSnapshotName&quot;: &quot;*&quot;
+        }
+      }
+    },
+    {
+      &quot;Effect&quot;: &quot;Allow&quot;,
+      &quot;Action&quot;: [
+        &quot;ec2:DeleteSnapshot&quot;
+      ],
+      &quot;Resource&quot;: &quot;*&quot;,
+      &quot;Condition&quot;: {
+        &quot;StringLike&quot;: {
+          &quot;ec2:ResourceTag/ebs.csi.aws.com/cluster&quot;: &quot;true&quot;
+        }
+      }
+    }
+  ]
+}
+EOF  
+}
+resource &quot;aws_iam_role_policy_attachment&quot; &quot;ebs-csi-policy-role&quot; {
+  policy_arn = aws_iam_policy.ebs_permissions.arn
+  role       = aws_iam_role.ebs-csi.name
+}
+</code></pre>
+<p><strong>Template Files ( Custom values.yml for helm chart ) FOR ALB-INGRESS AND EBS-CSI DRIVER</strong></p>
+<pre><code>data &quot;template_file&quot; &quot;alb-ingress-values&quot; {
+  template = &lt;&lt;EOF
+       replicaCount: 1vpcId: &quot;${data.aws_vpc.vpc.id}&quot;
+       clusterName: &quot;${var.cluster_name}&quot;
+       ingressClass: alb
+       createIngressClassResource: true
+  
+       region: &quot;${var.region}&quot;
+       resources:
+          requests:
+             memory: 256Mi
+             cpu: 100m
+          limits:
+             memory: 512Mi
+             cpu: 1000m
+  EOF
+}
+
+data &quot;template_file&quot; &quot;ebs-csi-driver-values&quot; {
+  template = &lt;&lt;EOF
+    controller:
+      region: &quot;${var.region}&quot;
+      replicaCount: 1
+      k8sTagClusterId: &quot;${var.cluster_name}&quot; 
+      updateStrategy:
+        type: RollingUpdate
+        rollingUpdate:
+         maxUnavailable: 1
+      resources:
+        requests:
+          cpu: 10m
+          memory: 40Mi
+        limits:
+           cpu: 100m
+           memory: 256Mi
+      serviceAccount:
+        create: true
+        name: ebs-csi-controller-sa
+        annotations: 
+            eks.amazonaws.com/role-arn: &quot;${aws_iam_role.ebs-csi.arn}&quot;
+    storageClasses: 
+     - name: ebs-sc
+       annotations:
+          storageclass.kubernetes.io/is-default-class: &quot;true&quot;
+  EOF
+}
+</code></pre>
+<h3 id="kuberenets-resources-for-alb-ingress-controller"><strong>Kuberenets Resources for ALB ingress controller</strong><a hidden class="anchor" aria-hidden="true" href="#kuberenets-resources-for-alb-ingress-controller">#</a></h3>
+<pre><code>resource &quot;kubernetes_service_account&quot; &quot;aws-load-balancer-controller-service-account&quot; {
+  metadata {
+    name      = &quot;aws-load-balancer-controller&quot;
+    namespace = &quot;kube-system&quot;
+    annotations = {
+      &quot;eks.amazonaws.com/role-arn&quot; = data.aws_iam_role.alb_ingress.arn
+    }
+    labels = {
+      &quot;app.kubernetes.io/name&quot;       = &quot;aws-load-balancer-controller&quot;
+      &quot;app.kubernetes.io/component&quot;  = &quot;controller&quot;
+      &quot;app.kubernetes.io/managed-by&quot; = &quot;terraform&quot;
+    }
+  }
+   automount_service_account_token = true
+  depends_on = [aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private ]
+}
+
+resource &quot;kubernetes_secret&quot; &quot;aws-load-balancer-controller&quot; {
+  metadata {
+    name      = &quot;aws-load-balancer-controller&quot;
+    namespace = &quot;kube-system&quot;
+    annotations = {
+      &quot;kubernetes.io/service-account.name&quot; = &quot;aws-load-balancer-controller&quot;
+      &quot;kubernetes.io/service-account.namespace&quot; = &quot;kube-system&quot;
+    }
+  }
+  type = &quot;kubernetes.io/service-account-token&quot;
+  depends_on = [kubernetes_service_account.aws-load-balancer-controller-service-account , aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private]
+}
+
+resource &quot;kubernetes_cluster_role&quot; &quot;aws-load-balancer-controller-cluster-role&quot; {
+  depends_on = [aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private ]
+  metadata {
+    name = &quot;aws-load-balancer-controller&quot;
+    labels = {
+      &quot;app.kubernetes.io/name&quot;       = &quot;aws-load-balancer-controller&quot;
+      &quot;app.kubernetes.io/managed-by&quot; = &quot;terraform&quot;
+    }
+  }
+  rule {
+    api_groups = [
+      &quot;&quot;,
+      &quot;extensions&quot;,
+    ]
+    resources = [
+      &quot;configmaps&quot;,
+      &quot;endpoints&quot;,
+      &quot;events&quot;,
+      &quot;ingresses&quot;,
+      &quot;ingresses/status&quot;,
+      &quot;services&quot;,
+    ]
+    verbs = [
+      &quot;create&quot;,
+      &quot;get&quot;,
+      &quot;list&quot;,
+      &quot;update&quot;,
+      &quot;watch&quot;,
+      &quot;patch&quot;,
+    ]
+  }
+  rule {
+    api_groups = [
+      &quot;&quot;,
+      &quot;extensions&quot;,
+    ]
+    resources = [
+      &quot;nodes&quot;,
+      &quot;pods&quot;,
+      &quot;secrets&quot;,
+      &quot;services&quot;,
+      &quot;namespaces&quot;,
+    ]
+    verbs = [
+      &quot;get&quot;,
+      &quot;list&quot;,
+      &quot;watch&quot;,
+    ]
+  }
+}
+resource &quot;kubernetes_cluster_role_binding&quot; &quot;aws-load-balancer-controller-cluster-role-binding&quot; {
+  depends_on = [aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private ]
+  metadata {
+    name = &quot;aws-load-balancer-controller&quot;
+    labels = {
+      &quot;app.kubernetes.io/name&quot;       = &quot;aws-load-balancer-controller&quot;
+      &quot;app.kubernetes.io/managed-by&quot; = &quot;terraform&quot;
+    }
+  }
+  role_ref {
+    api_group = &quot;rbac.authorization.k8s.io&quot;
+    kind      = &quot;ClusterRole&quot;
+    name      = kubernetes_cluster_role.aws-load-balancer-controller-cluster-role.metadata[0].name
+  }
+  subject {
+    api_group = &quot;&quot;
+    kind      = &quot;ServiceAccount&quot;
+    name      = kubernetes_service_account.aws-load-balancer-controller-service-account.metadata[0].name
+    namespace = kubernetes_service_account.aws-load-balancer-controller-service-account.metadata[0].namespace
+  }
+}
+</code></pre>
+<p><strong>Helm Release for ALB ingress controller and EBS CSI driver and Metrics Server</strong></p>
+<pre><code>resource &quot;helm_release&quot; &quot;alb-ingress-controller&quot; {
+  
+  depends_on = [
+    aws_eks_cluster.eks-cluster ,
+    aws_eks_node_group.node-group-private ,
+    kubernetes_cluster_role_binding.aws-load-balancer-controller-cluster-role-binding,
+    kubernetes_service_account.aws-load-balancer-controller-service-account , 
+    kubernetes_secret.aws-load-balancer-controller , 
+    helm_release.karpenter , 
+    kubectl_manifest.karpenter-provisioner ]
+  
+  name       = &quot;alb-ingress-controller&quot;
+  repository = &quot;&lt;https://aws.github.io/eks-charts&gt;&quot;
+  version = &quot;1.4.7&quot;
+  chart      = &quot;aws-load-balancer-controller&quot;
+  namespace =  &quot;kube-system&quot;
+  values = [data.template_file.alb-ingress-values.rendered]
+
+set {
+    name  = &quot;serviceAccount.create&quot;
+    value = &quot;false&quot;
+  }
+  set {
+    name  = &quot;serviceAccount.name&quot;
+    value = &quot;${kubernetes_service_account.aws-load-balancer-controller-service-account.metadata[0].name}&quot;
+  }
+}
+
+resource &quot;helm_release&quot; &quot;aws-ebs-csi-driver&quot; {
+  depends_on = [ aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private , helm_release.karpenter , kubectl_manifest.karpenter-provisioner , aws_iam_role.ebs-csi ]
+  name       = &quot;aws-ebs-csi-driver&quot;
+  repository = &quot;&lt;https://kubernetes-sigs.github.io/aws-ebs-csi-driver&gt;&quot;
+  chart      = &quot;aws-ebs-csi-driver&quot;
+  namespace =  &quot;kube-system&quot;
+  create_namespace = true
+  values = [data.template_file.ebs-csi-driver-values.rendered]
+}
+
+resource &quot;helm_release&quot; &quot;metrics-server&quot; {
+    depends_on = [helm_release.karpenter , kubectl_manifest.karpenter-provisioner ]
+    name        = &quot;metrics-server&quot;
+    chart       = &quot;metrics-server&quot;
+    repository  = &quot;&lt;https://kubernetes-sigs.github.io/metrics-server/&gt;&quot;
+    version     = &quot;3.8.2&quot;
+    namespace   = &quot;kube-system&quot;
+    description = &quot;Metric server helm Chart deployment configuration&quot;
+}
+</code></pre>
+<p><strong>IAM role and policies for Karpenter controller</strong></p>
+<pre><code>data &quot;aws_iam_policy_document&quot; &quot;karpenter_controller_assume_role_policy&quot; {
+  statement {
+    actions = [&quot;sts:AssumeRoleWithWebIdentity&quot;]
+    effect  = &quot;Allow&quot;
+    condition {
+      test     = &quot;StringEquals&quot;
+      variable = &quot;${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}:sub&quot;
+      values   = [&quot;system:serviceaccount:karpenter:karpenter&quot;]
+    }
+    condition {
+      test     = &quot;StringEquals&quot;
+      variable = &quot;${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}:aud&quot;
+      values   = [&quot;sts.amazonaws.com&quot;]
+    }
+    principals {
+      identifiers = [
+        &quot;arn:aws:iam::${data.aws_caller_identity.current.account_id}:oidc-provider/${replace(data.aws_eks_cluster.cluster.identity[0].oidc[0].issuer, &quot;https://&quot;, &quot;&quot;)}&quot;
+      ]
+      type = &quot;Federated&quot;
+    }
+  }
+}
+
+data &quot;aws_iam_policy_document&quot; &quot;karpenter&quot; {
+  statement {
+    resources = [&quot;*&quot;]
+    actions   = [&quot;ec2:DescribeImages&quot;, &quot;ec2:RunInstances&quot;, &quot;ec2:DescribeSubnets&quot;, &quot;ec2:DescribeSecurityGroups&quot;, &quot;ec2:DescribeLaunchTemplates&quot;, &quot;ec2:DescribeInstances&quot;, &quot;ec2:DescribeInstanceTypes&quot;, &quot;ec2:DescribeInstanceTypeOfferings&quot;, &quot;ec2:DescribeAvailabilityZones&quot;, &quot;ec2:DeleteLaunchTemplate&quot;, &quot;ec2:CreateTags&quot;, &quot;ec2:CreateLaunchTemplate&quot;, &quot;ec2:CreateFleet&quot;, &quot;ec2:DescribeSpotPriceHistory&quot;, &quot;pricing:GetProducts&quot;, &quot;ssm:GetParameter&quot;]
+    effect    = &quot;Allow&quot;
+  }
+  statement {
+    resources = [&quot;*&quot;]
+    actions   = [&quot;ec2:TerminateInstances&quot;, &quot;ec2:DeleteLaunchTemplate&quot; , &quot;ec2:RequestSpotInstances&quot; , &quot;ec2:DescribeInstanceStatus&quot; , &quot;iam:CreateServiceLinkedRole&quot; , &quot;iam:ListRoles&quot; , &quot;iam:ListInstanceProfiles&quot;]
+    effect    = &quot;Allow&quot;
+    # Make sure Karpenter can only delete nodes that it has provisioned
+    condition {
+      test     = &quot;StringEquals&quot;
+      values   = [var.eks_cluster_name]
+      variable = &quot;ec2:ResourceTag/karpenter.sh/discovery&quot;
+    }
+  }
+  statement {
+    resources = [data.aws_eks_cluster.cluster.arn]
+    actions   = [&quot;eks:DescribeCluster&quot;]
+    effect    = &quot;Allow&quot;
+  }
+  statement {
+    resources = [element(aws_iam_role.NodeGroupRole.*.arn,0)]
+    actions   = [&quot;iam:PassRole&quot;]
+    effect    = &quot;Allow&quot;
+  }
+  # Optional: Interrupt Termination Queue permissions, provided by AWS SQS
+  statement {
+    resources = [aws_sqs_queue.karpenter.arn]
+    actions   = [&quot;sqs:DeleteMessage&quot;, &quot;sqs:GetQueueUrl&quot;, &quot;sqs:GetQueueAttributes&quot;, &quot;sqs:ReceiveMessage&quot;]
+    effect    = &quot;Allow&quot;
+  }
+}
+resource &quot;aws_iam_role&quot; &quot;karpenter_controller&quot; {
+  description        = &quot;IAM Role for Karpenter Controller (pod) to assume&quot;
+  assume_role_policy = data.aws_iam_policy_document.karpenter_controller_assume_role_policy.json
+  name               = &quot;karpenter-controller&quot;
+  inline_policy {
+    policy = data.aws_iam_policy_document.karpenter.json
+    name   = &quot;karpenter&quot;
+  }
+  depends_on = [data.aws_iam_policy_document.karpenter_controller_assume_role_policy , data.aws_iam_policy_document.karpenter]
+}
+</code></pre>
+<h3 id="instance-profile-for-karpenter"><strong>Instance Profile for Karpenter</strong><a hidden class="anchor" aria-hidden="true" href="#instance-profile-for-karpenter">#</a></h3>
+<pre><code>## Karpenter Instance Profile
+
+resource &quot;aws_iam_instance_profile&quot; &quot;karpenter&quot; {
+  name = &quot;karpenter-instance-profile&quot;
+  role = element(aws_iam_role.NodeGroupRole.*.name,0)
+  depends_on = [ aws_iam_role.NodeGroupRole  ]
+}
+</code></pre>
+<h3 id="handling-interruption-for-spot-instance-via-sqs-queue-and-event-bridge-rules"><strong>Handling Interruption For Spot Instance via SQS queue and Event Bridge rules</strong><a hidden class="anchor" aria-hidden="true" href="#handling-interruption-for-spot-instance-via-sqs-queue-and-event-bridge-rules">#</a></h3>
+<pre><code># SQS Queue
+
+resource &quot;aws_sqs_queue&quot; &quot;karpenter&quot; {
+  message_retention_seconds = 300
+  name                      = &quot;${var.cluster_name}-karpenter-sqs-queue&quot;
+}
+# Node termination queue policy
+resource &quot;aws_sqs_queue_policy&quot; &quot;karpenter&quot; {
+  policy    = data.aws_iam_policy_document.node_termination_queue.json
+  queue_url = aws_sqs_queue.karpenter.url
+}
+data &quot;aws_iam_policy_document&quot; &quot;node_termination_queue&quot; {
+  statement {
+    resources = [aws_sqs_queue.karpenter.arn]
+    sid       = &quot;SQSWrite&quot;
+    actions   = [&quot;sqs:SendMessage&quot;]
+    principals {
+      type        = &quot;Service&quot;
+      identifiers = [&quot;events.amazonaws.com&quot;, &quot;sqs.amazonaws.com&quot;]
+    }
+  }
+}
+resource &quot;aws_cloudwatch_event_rule&quot; &quot;scheduled_change_rule&quot; {
+  name        = &quot;ScheduledChangeRule&quot;
+  description = &quot;AWS Health Event&quot;
+  event_pattern = jsonencode({
+    source      = [&quot;aws.health&quot;]
+    detail_type = [&quot;AWS Health Event&quot;]
+  })
+}
+resource &quot;aws_cloudwatch_event_rule&quot; &quot;spot_interruption_rule&quot; {
+  name        = &quot;SpotInterruptionRule&quot;
+  description = &quot;EC2 Spot Instance Interruption Warning&quot;
+  event_pattern = jsonencode({
+    source      = [&quot;aws.ec2&quot;]
+    detail_type = [&quot;EC2 Spot Instance Interruption Warning&quot;]
+  })
+}
+resource &quot;aws_cloudwatch_event_rule&quot; &quot;rebalance_rule&quot; {
+  name        = &quot;RebalanceRule&quot;
+  description = &quot;EC2 Instance Rebalance Recommendation&quot;
+  event_pattern = jsonencode({
+    source      = [&quot;aws.ec2&quot;]
+    detail_type = [&quot;EC2 Instance Rebalance Recommendation&quot;]
+  })
+}
+resource &quot;aws_cloudwatch_event_rule&quot; &quot;instance_state_change_rule&quot; {
+  name        = &quot;InstanceStateChangeRule&quot;
+  description = &quot;EC2 Instance State-change Notification&quot;
+  event_pattern = jsonencode({
+    source      = [&quot;aws.ec2&quot;]
+    detail_type = [&quot;EC2 Instance State-change Notification&quot;]
+  })
+}
+resource &quot;aws_cloudwatch_event_target&quot; &quot;scheduled_change_rule&quot; {
+  rule      = aws_cloudwatch_event_rule.scheduled_change_rule.name
+  arn       = aws_sqs_queue.karpenter.arn
+}
+resource &quot;aws_cloudwatch_event_target&quot; &quot;spot_interruption_rule&quot; {
+  rule      = aws_cloudwatch_event_rule.spot_interruption_rule.name
+  arn       = aws_sqs_queue.karpenter.arn
+}
+resource &quot;aws_cloudwatch_event_target&quot; &quot;rebalance_rule&quot; {
+  rule      = aws_cloudwatch_event_rule.rebalance_rule.name
+  arn       = aws_sqs_queue.karpenter.arn
+}
+resource &quot;aws_cloudwatch_event_target&quot; &quot;instance_state_change_rule&quot; {
+  rule      = aws_cloudwatch_event_rule.instance_state_change_rule.name
+  arn       = aws_sqs_queue.karpenter.arn
+}
+</code></pre>
+<h3 id="template-file--valuesyml--for-karpenter"><strong>Template File ( values.yml ) for Karpenter</strong><a hidden class="anchor" aria-hidden="true" href="#template-file--valuesyml--for-karpenter">#</a></h3>
+<pre><code>data &quot;template_file&quot; &quot;karpenter&quot; {
+  template = &lt;&lt;EOF
+serviceAccount:
+   annotations:
+       eks.amazonaws.com/role-arn: &quot;${aws_iam_role.karpenter_controller.arn}&quot;
+settings:
+  aws:
+    clusterName: &quot;${data.aws_eks_cluster.cluster.id}&quot;
+    clusterEndpoint: &quot;${data.aws_eks_cluster.cluster.endpoint}&quot;
+    defaultInstanceProfile: &quot;${aws_iam_instance_profile.karpenter.name}&quot;
+    interruptionQueueName: &quot;${var.cluster_name}-karpenter-sqs-queue&quot;
+   EOF
+}
+</code></pre>
+<h3 id="helm-release-for-karpenter"><strong>Helm release for Karpenter</strong><a hidden class="anchor" aria-hidden="true" href="#helm-release-for-karpenter">#</a></h3>
+<pre><code>resource &quot;helm_release&quot; &quot;karpenter&quot; {
+  namespace        = &quot;karpenter&quot;
+  create_namespace = true
+  name                = &quot;karpenter&quot;
+  repository          = &quot;oci://public.ecr.aws/karpenter&quot;
+  repository_username = data.aws_ecrpublic_authorization_token.token.user_name
+  repository_password = data.aws_ecrpublic_authorization_token.token.password
+  chart               = &quot;karpenter&quot;
+  version    = &quot;v0.27.0&quot;  
+  values = [data.template_file.karpenter.rendered]
+  # set {
+  #   name  = &quot;serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn&quot;
+  #   value = &quot;${aws_iam_role.karpenter_controller.arn}&quot;
+  # }
+ # set {
+  #   name  = &quot;settings.aws.clusterName&quot;
+  #   value = data.aws_eks_cluster.cluster.id
+  # }
+  # set {
+  #   name  = &quot;settings.aws.clusterEndpoint&quot;
+  #   value = data.aws_eks_cluster.cluster.endpoint
+  # }
+  # set {
+  #   name  = &quot;settings.aws.defaultInstanceProfile&quot;
+  #   value = aws_iam_instance_profile.karpenter.name
+  # }
+  # set {
+  #   name  = &quot;settings.aws.interruptionQueueName&quot;
+  #   value =  &quot;${var.cluster_name}-karpenter-sqs-queue&quot;
+  # }
+  depends_on = [ aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private , aws_iam_role.karpenter_controller , aws_iam_instance_profile.karpenter , aws_sqs_queue.karpenter ]
+}
+</code></pre>
+<blockquote>
+<p>Not finished yet !! We need Provisioners installed which decides what type of instance to bring up based on the workload.</p>
+</blockquote>
+<p>Provisioners are CRDs that Karpenter uses to provision new nodes. New nodes are brought up based on the pods that are waiting to be scheduled and their scheduling constraints</p>
+<p><strong>Configuring Default Karpenter Provisioner</strong></p>
+<pre><code>resource &quot;kubectl_manifest&quot; &quot;karpenter-provisioner&quot; {
+    depends_on = [ helm_release.karpenter , aws_eks_cluster.eks-cluster , aws_eks_node_group.node-group-private]
+    yaml_body = &lt;&lt;YAML
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: karpenter-default
+  namespace: karpenter
+spec:
+  provider:
+    securityGroupSelector:
+      karpenter.sh/discovery: &quot;${var.cluster_name}&quot;
+    subnetSelector:
+      karpenter.sh/discovery: &quot;${var.cluster_name}&quot;
+    tags:
+      karpenter.sh/discovery: &quot;${var.cluster_name}&quot;
+  requirements:
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values: [&quot;spot&quot;]
+    - key: &quot;node.kubernetes.io/instance-type&quot;
+      operator: In
+      values: [&quot;t3a.micro&quot; , &quot;t3a.medium&quot; , &quot;t3a.large&quot; ]
+    - key: &quot;topology.kubernetes.io/zone&quot;
+      operator: In
+      values: [&quot;us-east-1a&quot;, &quot;us-east-1b&quot; , &quot;us-east-1c&quot;]
+    - key: created-by
+      operator: In
+      values: [&quot;karpenter&quot;]
+  ttlSecondsAfterEmpty: 30
+YAML
+}
+</code></pre>
+<p><strong>Note:</strong> securityGroupSelector and subnetSelector — These are used by Karpenter to identify which subnets and security groups should be used for the new nodes. When you bring up your EKS cluster you should add the respective tags to your private_subnets and to your node_security_group. Not setting these correctly can cause Karpenter to not bring up nodes or the nodes that are brought up can have difficulties trying to join the cluster.</p>
+<p>The constraints ttlSecondsUntilExpired defines the node expiry so a newer node will be provisioned, and ttlSecondsAfterEmpty defines when to delete a node since the last workload stops running. (<strong>Note:</strong> DaemonSets are not taken into account.)</p>
+<h2 id="deploying-via-terraform-cloud-">Deploying via Terraform Cloud !!!<a hidden class="anchor" aria-hidden="true" href="#deploying-via-terraform-cloud-">#</a></h2>
+<p>I am deploying the EKS Cluster to the AWS via Terraform Cloud . I have workspaces and made connections to the repository and updated variables.</p>
+<p><strong>Workspace Run Overview:</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5032/1*Yka10VtT30AlTH_xbqmPvA.png" alt=""  />
+</p>
+<p><strong>Workspace Variables Overview:</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5032/1*UhJDZGTRZAIShs2EzllUXw.png" alt=""  />
+</p>
+<p><strong>Workspace Planned:</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5032/1*S9NHhNuf8xnN5cTShNsz1A.png" alt=""  />
+</p>
+<p><strong>Workspace Applied:</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5032/1*EgCKCc_Tj0XbbzX-AP4apQ.png" alt=""  />
+</p>
+<h2 id="testing-it--its-time-for-action">Testing it !! Its Time for Action<a hidden class="anchor" aria-hidden="true" href="#testing-it--its-time-for-action">#</a></h2>
+<p><strong>Updating the Kubeconfig File</strong></p>
+<pre><code>aws eks update-kubeconfig --region us-east-1 --name karpenter-demo
+</code></pre>
+<p><strong>Listing all Pods in the Cluster</strong></p>
+<pre><code>kubectl get pods -A
+</code></pre>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5032/1*e-W1j3ra_Bna-jkROb5big.png" alt=""  />
+</p>
+<p><strong>Listing all resources in Karpenter Namespace</strong></p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4788/1*T8DlFpxkqBGYMoA4C-QJ1w.png" alt="kubectl get all -n karpenter"  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4788/1*o8kBU3Ex7UxKZmgZBWogvQ.png" alt="kubectl get provisioner -n karpenter"  />
+</p>
+<pre><code>kubectl create deployment nginx --image=nginx
+kubectl set resources deployment nginx --requests=cpu=100m,memory=256Mi
+kubectl scale deployment nginx --replicas 12
+</code></pre>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/4920/1*TTq8XsuXpwPc4NqteGJusw.png" alt=""  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5008/1*XoYOUNQlEqa3fSb1NiwkAQ.png" alt="kubectl logs pods/karpenter-5868c87959–8dxmw -n karpenter"  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5008/1*LWFLJAtY-bqoYRbcuLBb2w.png" alt="kubectl logs pods/karpenter-5868c87959–8dxmw -n karpenter"  />
+</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5008/1*R49gitYrXxmJD4RMJuEm0g.png" alt="kubectl get nodes -o wide"  />
+</p>
+<p>We can see a new node got provisioned . To verify that it created a spot instance lets go to the console and see:</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5008/1*a4mqBB4sotRQ2r2sGOygLQ.png" alt=""  />
+</p>
+<p>Now lets scale down to see what happens.</p>
+<pre><code>kubectl scale deployment nginx --replicas 1
+</code></pre>
+<p>Immediately after that :</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5008/1*Ft-DiyLDZEkCOUN7DjKB_w.png" alt=""  />
+</p>
+<p>Lets check console whats happening.</p>
+<p><img loading="lazy" src="https://cdn-images-1.medium.com/max/5008/1*FYZQHZPyDrJXoS_oO9X14Q.png" alt=""  />
+</p>
+<p>This confirms our setup was successfully completed !!</p>
+<p>Thank you for reading my article , have a nice day and keep learning!</p>
+
+
+  </div>
+
+  <footer class="post-footer">
+    <ul class="post-tags">
+      <li><a href="https://nithin-john-george.github.io/tags/terraform/">Terraform</a></li>
+      <li><a href="https://nithin-john-george.github.io/tags/terraform-cloud/">Terraform Cloud</a></li>
+      <li><a href="https://nithin-john-george.github.io/tags/k8s/">K8s</a></li>
+      <li><a href="https://nithin-john-george.github.io/tags/karpenter/">Karpenter</a></li>
+    </ul>
+  </footer>
+</article>
+    </main>
+    
+<footer class="footer">
+    <span>&copy; 2023 <a href="https://nithin-john-george.github.io/">Nithin John George</a></span>
+</footer>
+<a href="#top" aria-label="go to top" title="Go to Top (Alt + G)" class="top-link" id="top-link" accesskey="g">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12 6" fill="currentColor">
+        <path d="M12 6H0l6-6z" />
+    </svg>
+</a>
+
+<script>
+    let menu = document.getElementById('menu')
+    if (menu) {
+        menu.scrollLeft = localStorage.getItem("menu-scroll-position");
+        menu.onscroll = function () {
+            localStorage.setItem("menu-scroll-position", menu.scrollLeft);
+        }
+    }
+
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+        anchor.addEventListener("click", function (e) {
+            e.preventDefault();
+            var id = this.getAttribute("href").substr(1);
+            if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView({
+                    behavior: "smooth"
+                });
+            } else {
+                document.querySelector(`[id='${decodeURIComponent(id)}']`).scrollIntoView();
+            }
+            if (id === "top") {
+                history.replaceState(null, null, " ");
+            } else {
+                history.pushState(null, null, `#${id}`);
+            }
+        });
+    });
+
+</script>
+<script>
+    var mybutton = document.getElementById("top-link");
+    window.onscroll = function () {
+        if (document.body.scrollTop > 800 || document.documentElement.scrollTop > 800) {
+            mybutton.style.visibility = "visible";
+            mybutton.style.opacity = "1";
+        } else {
+            mybutton.style.visibility = "hidden";
+            mybutton.style.opacity = "0";
+        }
+    };
+
+</script>
+<script>
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+        if (document.body.className.includes("dark")) {
+            document.body.classList.remove('dark');
+            localStorage.setItem("pref-theme", 'light');
+        } else {
+            document.body.classList.add('dark');
+            localStorage.setItem("pref-theme", 'dark');
+        }
+    })
+
+</script>
+<script>
+    document.querySelectorAll('pre > code').forEach((codeblock) => {
+        const container = codeblock.parentNode.parentNode;
+
+        const copybutton = document.createElement('button');
+        copybutton.classList.add('copy-code');
+        copybutton.innerHTML = 'copy';
+
+        function copyingDone() {
+            copybutton.innerHTML = 'copied!';
+            setTimeout(() => {
+                copybutton.innerHTML = 'copy';
+            }, 2000);
+        }
+
+        copybutton.addEventListener('click', (cb) => {
+            if ('clipboard' in navigator) {
+                navigator.clipboard.writeText(codeblock.textContent);
+                copyingDone();
+                return;
+            }
+
+            const range = document.createRange();
+            range.selectNodeContents(codeblock);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            try {
+                document.execCommand('copy');
+                copyingDone();
+            } catch (e) { };
+            selection.removeRange(range);
+        });
+
+        if (container.classList.contains("highlight")) {
+            container.appendChild(copybutton);
+        } else if (container.parentNode.firstChild == container) {
+            
+        } else if (codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.nodeName == "TABLE") {
+            
+            codeblock.parentNode.parentNode.parentNode.parentNode.parentNode.appendChild(copybutton);
+        } else {
+            
+            codeblock.parentNode.appendChild(copybutton);
+        }
+    });
+</script>
+</body>
+
+</html>
