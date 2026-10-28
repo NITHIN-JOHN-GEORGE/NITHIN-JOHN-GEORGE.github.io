@@ -46,7 +46,7 @@ make cluster                       # a 2-node cluster inside Docker
 
 Each lesson below is one `make` command. Each one prints what it's doing, reads the real kernel files, ends with `PASS`/`FAIL` checks, and cleans up after itself. When you're done, `make clean` deletes the whole cluster.
 
-## Lesson 1: a cgroup is just a folder
+## Lesson 1: A cgroup is just a folder
 
 Imagine a box. You put some processes in it, and the box has dials on the side: *how much CPU*, *how much memory*, *how many processes*. The kernel keeps every process inside the box within those dial settings.
 
@@ -61,6 +61,9 @@ make 00-setup
 ```
 
 The first check runs `stat -fc %T /sys/fs/cgroup/` on the node. If it prints `cgroup2fs`, you're on cgroups v2. The module then lists the controllers the kernel offers (`cpu`, `memory`, `io`, `pids` and a few more) and shows where the kubelet keeps its pods.
+
+> [!KEY]
+> A cgroup is a folder of processes, and the files in it are limits the kernel enforces.
 
 ## Lesson 2: Kubernetes builds Russian dolls
 
@@ -80,7 +83,10 @@ On a real node the folders look like this (kind adds a `kubelet-` prefix):
   └── kubelet-kubepods-besteffort.slice/
 ```
 
-## Lesson 3: requests and limits become numbers in files
+> [!KEY]
+> Cgroups nest, and a child can never get more than its parent.
+
+## Lesson 3: Requests and limits become numbers in files
 
 Now the magic trick. Here's where each line of your YAML goes:
 
@@ -99,7 +105,10 @@ make 01-requests-and-limits
 
 That last row surprises a lot of people: **a memory request doesn't protect anything at runtime by default.** It only helps the scheduler find a node with room.
 
-## Lesson 4: a CPU limit is a budget, and you can run out
+> [!KEY]
+> `requests.cpu` → `cpu.weight`, `limits.cpu` → `cpu.max`, `limits.memory` → `memory.max`. A memory request becomes no file at all.
+
+## Lesson 4: A CPU limit is a budget, and you can run out
 
 Think of `cpu.max` like a mobile data plan that renews every 100 milliseconds. With `limits.cpu: 200m`, you get 20ms of CPU time per 100ms window. Use it up early, and you **wait** until the next window, even if the machine has 9 idle CPUs.
 
@@ -127,7 +136,10 @@ The kernel counts it for you in `cpu.stat` (`nr_throttled`, `throttled_usec`). I
 rate(container_cpu_cfs_throttled_periods_total[5m]) / rate(container_cpu_cfs_periods_total[5m])
 ```
 
-## Lesson 5: a CPU request is your slice of the pizza
+> [!KEY]
+> A CPU limit never kills. It makes you **wait**, even on an idle node.
+
+## Lesson 5: A CPU request is your slice of the pizza
 
 A request does **not** reserve a core. When the node is quiet, it does nothing: anyone can use spare CPU. It only matters when everyone is hungry at once, and then the kernel cuts the pizza in proportion to the requests.
 
@@ -149,7 +161,10 @@ make 03-cpu-weight
 
 Notice the weights themselves are 17 and 84, not a clean 1:8. Newer container runtimes convert requests to `cpu.weight` with a non-linear formula, so read the file rather than guessing. What matters is the outcome: the bigger request won about 8 times more CPU.
 
-## Lesson 6: memory can't be throttled, so it's killed
+> [!KEY]
+> A CPU request only matters when CPUs are busy, and then it decides your share.
+
+## Lesson 6: Memory can't be throttled, so it's killed
 
 CPU is easy to share: make someone wait a few milliseconds and they continue. Memory is different. If a process needs more RAM and there is none left in its box, waiting doesn't help. So when a container hits `memory.max`, the kernel's **OOM killer** (out of memory) ends it.
 
@@ -171,6 +186,9 @@ $ cat .../memory.events
 ```
 
 Exit code **137** is 128 + 9, meaning the process got signal 9 (`SIGKILL`) from the kernel. It never gets a chance to clean up. Notice it died at about 60 MiB of data, before reaching 64: Python itself also lives in that box and counts against the limit.
+
+> [!KEY]
+> Cross `memory.max` and the kernel kills the process: `OOMKilled`, exit code 137.
 
 ## Lesson 7: QoS classes decide who goes first
 
@@ -199,7 +217,10 @@ make 05-qos-classes
 
 The Burstable pod scored `996` because its memory request is tiny compared with the node. A larger memory request lowers the score and moves the pod further from the front of the line.
 
-## Lesson 8: not all of a node is for pods
+> [!KEY]
+> When the whole node runs out of memory, BestEffort goes first and Guaranteed goes last.
+
+## Lesson 8: Not all of a node is for pods
 
 A node with 8 GiB of memory can't give all 8 GiB to pods; the operating system and the kubelet need some too. The part left for pods is called **allocatable**:
 
@@ -219,7 +240,10 @@ make 06-node-allocatable
 
 kind reserves nothing, which is why the two numbers are equal here. On a real cluster, always set `systemReserved` and `kubeReserved`, or pods will be scheduled into the memory the OS needs.
 
-## Lesson 9: the kubelet evicts before the kernel kills
+> [!KEY]
+> The scheduler compares requests with allocatable, never with real usage.
+
+## Lesson 9: The kubelet evicts before the kernel kills
 
 Lesson 6 was one container hitting its own limit. What if the **node** runs low, because many pods use more than they asked for? The kubelet watches node memory and, before the kernel's OOM killer has to act, it **evicts** a pod.
 
@@ -242,7 +266,10 @@ make 07-node-pressure-eviction
 
 `request is 0` is the whole story: the kubelet evicts the pod furthest above its request first. Pods that stay within their memory request are the last ones it touches. (The lab always puts the kubelet's settings back when it's done.)
 
-## Lesson 10: priority lets important pods jump the queue
+> [!KEY]
+> Stay within your memory request and the kubelet evicts you last.
+
+## Lesson 10: Priority lets important pods jump the queue
 
 A **PriorityClass** is a number you attach to pods. If a high-priority pod can't fit anywhere, the scheduler is allowed to remove lower-priority pods to make room. This is **preemption**.
 
@@ -260,6 +287,9 @@ make 08-priority-preemption
 ```
 
 No cgroup is involved here at all; it's a decision made by the scheduler. Keep the number of priority classes small. If everything is "critical", nothing is.
+
+> [!KEY]
+> A higher-priority pod can push lower-priority pods off a full node.
 
 ## Lesson 11: ResourceQuota and LimitRange guard the front door
 
@@ -286,7 +316,10 @@ pods "lr-too-big" is forbidden: maximum memory usage per Container is 256Mi, but
 
 The two go together: a quota on CPU requests rejects any pod without a request, and a LimitRange default quietly adds one.
 
-## Lesson 12: limits people forget, PIDs and disk
+> [!KEY]
+> Quotas and LimitRanges are checked when a pod is created, not while it runs.
+
+## Lesson 12: Limits people forget, PIDs and disk
 
 **PIDs.** Every process and thread needs an ID, and a node has a limited number. One runaway pod spawning processes (a "fork bomb") can use them all and break the whole node. The kubelet's `podPidsLimit` becomes `pids.max` on each pod's cgroup, and the kernel refuses new processes past it.
 
@@ -298,7 +331,10 @@ make 11-pids-and-ephemeral-storage
 
 You'll see the pod's process count stop short of 100 with `can't fork: Resource temporarily unavailable`, and a second pod evicted with a message about `ephemeral local storage`.
 
-## Lesson 13: pressure tells you how long you waited
+> [!KEY]
+> Limit PIDs and disk too. Both protect the whole node, not just your pod.
+
+## Lesson 13: Pressure tells you how long you waited
 
 Usage tells you how *busy* something is. **Pressure** (PSI, "pressure stall information") tells you how long things *waited*. Imagine a queue in front of a single checkout:
 
@@ -317,7 +353,10 @@ $ kubectl -n lab exec psi-cpu -- cat /sys/fs/cgroup/cpu.pressure
 
 `some avg10=75.19` means that over the last 10 seconds, at least one thread was stuck waiting for a CPU 75% of the time. When a pod is slow but its CPU graph looks fine, check pressure.
 
-## Lesson 14: change limits without a restart
+> [!KEY]
+> Pressure measures waiting, which usage graphs can't show.
+
+## Lesson 14: Change limits without a restart
 
 Since Kubernetes 1.33 you can change a running pod's CPU and memory **in place**. The kubelet simply rewrites the cgroup files of the live container.
 
@@ -334,6 +373,9 @@ after   cpu.max 50000 100000   memory.max 134217728   cpu.weight 59
 ```
 
 Same container, same process, new numbers. It's the clearest proof in the whole lab that `resources:` really is just a few numbers in a few files.
+
+> [!KEY]
+> Resize rewrites the cgroup files of a live container. No restart.
 
 ## Cheat sheet
 
