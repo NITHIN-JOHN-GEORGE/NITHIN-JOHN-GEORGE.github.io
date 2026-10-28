@@ -1,0 +1,114 @@
+{
+  "name": "Nithin John George",
+  "handle": "nithin",
+  "title": "Nithin John George · Platform Engineering & SRE",
+  "description": "Platform engineer working on Kubernetes, GitOps, cloud infrastructure, observability and security. Blog posts and engineering handbooks.",
+  "url": "https://nithin-john-george.github.io",
+  "role": "SDE 3, Engineering Platform",
+  "company": "Porter",
+  "location": "Kottayam, Kerala, India",
+  "tagline": "Platform Engineering · SRE · Cloud Infrastructure · Developer Experience",
+  "intro": "I build and operate cloud platforms that help engineering teams deliver software safely and independently. 6+ years across GCP, AWS and Kubernetes, with a focus on progressive delivery, infrastructure automation, observability and security.",
+  "links": {
+    "github": "https://github.com/NITHIN-JOHN-GEORGE",
+    "linkedin": "https://www.linkedin.com/in/nithin-john-george-517ab1160/",
+    "medium": "https://medium.com/@nithinjohn97"
+  },
+  "highlights": [
+    {
+      "icon": "shield",
+      "title": "In-house code security platform",
+      "text": "Built and own a platform covering SAST, SBOM/SCA, secret scanning and container scanning on a Python and Temporal backend, with a Backstage developer portal. It replaced a commercial SaaS tool and saves ₹50L+ per year."
+    },
+    {
+      "icon": "rocket",
+      "title": "Progressive delivery",
+      "text": "Scalable CI on GitHub Actions, GitOps with ArgoCD, and canary releases with Argo Rollouts that roll back automatically on latency and error-rate metrics."
+    },
+    {
+      "icon": "layers",
+      "title": "Standardised Helm charts",
+      "text": "Reusable umbrella Helm charts that now power 150+ microservices."
+    },
+    {
+      "icon": "cloud",
+      "title": "Cloud migration and foundation",
+      "text": "A major role in the AWS to GCP migration, which cut costs and modernised the infrastructure, including the GCP landing zone it was built on."
+    },
+    {
+      "icon": "wrench",
+      "title": "Self-serve infrastructure",
+      "text": "Modernised IaC pipelines so developers can create infrastructure with minimal dependency on the cloud infra team, reducing BAU overhead."
+    },
+    {
+      "icon": "branch",
+      "title": "Dynamic staging environments",
+      "text": "In-house staging environments on Kubernetes using ArgoCD and gateway header routing."
+    },
+    {
+      "icon": "chart",
+      "title": "Observability backbone",
+      "text": "Self-hosted the telemetry stack on LGTM and unified it into a single platform."
+    },
+    {
+      "icon": "bot",
+      "title": "AI-powered DevOps assistant",
+      "text": "An assistant that simplifies Terraform debugging through error analysis and automated problem resolution. Won a company-wide hackathon."
+    },
+    {
+      "icon": "server",
+      "title": "Self-hosted GitHub runners",
+      "text": "Actions runners on Kubernetes, which cut workflow cost and queue time."
+    }
+  ],
+  "stack": [
+    {
+      "group": "Cloud and compute",
+      "items": [
+        ["GCP", "googlecloud"], ["AWS", "amazonaws"], ["Kubernetes", "kubernetes"], ["GKE", "googlecloud"],
+        ["EKS", "amazoneks"], ["Amazon ECS", "amazonecs"], ["Karpenter", ""], ["KEDA", "keda"], ["Linux", "linux"]
+      ]
+    },
+    {
+      "group": "GitOps and delivery",
+      "items": [
+        ["ArgoCD", "argo"], ["Argo Rollouts", "argo"], ["Helm", "helm"], ["GitHub Actions", "githubactions"],
+        ["ARC runners", "githubactions"], ["Jenkins", "jenkins"], ["Concourse CI", "concourse"], ["Docker", "docker"],
+        ["Git", "git"], ["GitHub", "github"]
+      ]
+    },
+    {
+      "group": "Infrastructure and platform",
+      "items": [
+        ["Terraform", "terraform"], ["External Secrets Operator", ""], ["HashiCorp Vault", "vault"],
+        ["Backstage", "backstage"], ["Temporal", "temporal"], ["Confluent Kafka", "confluent"],
+        ["Python", "python"], ["Shell scripting", "gnubash"]
+      ]
+    },
+    {
+      "group": "Observability",
+      "items": [
+        ["Grafana LGTM", "grafana"], ["Loki", "grafana"], ["Alloy", "grafana"], ["Prometheus", "prometheus"],
+        ["Datadog", "datadog"], ["OpenTelemetry", "opentelemetry"], ["Fluent Bit", "fluentbit"], ["Vector", ""],
+        ["Cloud Monitoring", "googlecloud"], ["DevLake (DORA)", ""]
+      ]
+    },
+    {
+      "group": "Gateway and edge",
+      "items": [["Kong", "kong"], ["GKE Gateway", "googlecloud"], ["Akamai WAF", "akamai"]]
+    },
+    {
+      "group": "Security",
+      "items": [
+        ["SAST", ""], ["SCA", ""], ["SBOM", ""], ["DAST", ""], ["SonarQube", "sonarqubeserver"],
+        ["AppSentinels", ""], ["OPA", "openpolicyagent"]
+      ]
+    }
+  ],
+  "experience": [
+    { "role": "SDE 3, DevOps (Cloud & Developer Experience)", "org": "Porter", "period": "Oct 2024 to present" },
+    { "role": "SDE 2, DevOps (Cloud Infrastructure)", "org": "Porter", "period": "Jun 2023 to present" },
+    { "role": "DevOps Engineer", "org": "Apton Works", "period": "Mar 2022 to May 2023" },
+    { "role": "Junior System Engineer", "org": "Geojit Financial", "period": "Mar 2020 to Oct 2021" }
+  ]
+}

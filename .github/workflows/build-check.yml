@@ -1,0 +1,19 @@
+name: Build check
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [master, main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build site
+        run: node build.mjs
+      - name: Fail if the build produced no pages
+        run: test -f dist/index.html && test -f dist/blog/index.html
