@@ -18,47 +18,108 @@
     {
       "icon": "shield",
       "title": "In-house code security platform",
-      "text": "Built and own a platform covering SAST, SBOM/SCA, secret scanning and container scanning on a Python and Temporal backend, with a Backstage developer portal. It replaced a commercial SaaS tool and saves ₹50L+ per year."
+      "text": "Built and own a platform covering SAST, SBOM/SCA, secret scanning and container scanning on a Python and Temporal backend, with a Backstage developer portal. It replaced a commercial SaaS tool and saves ₹50L+ per year.",
+      "tag": "Saved ₹50L+/yr",
+      "accent": "#3fb950",
+      "tech": [
+        "Python",
+        "Temporal",
+        "Backstage"
+      ]
     },
     {
-      "icon": "rocket",
+      "icon": "branch",
       "title": "Progressive delivery",
-      "text": "Scalable CI on GitHub Actions, GitOps with ArgoCD, and canary releases with Argo Rollouts that roll back automatically on latency and error-rate metrics."
+      "text": "Scalable CI on GitHub Actions, GitOps with ArgoCD, and canary releases with Argo Rollouts that roll back automatically on latency and error-rate metrics.",
+      "tag": "GitOps & Progressive",
+      "accent": "#58a6ff",
+      "tech": [
+        "ArgoCD",
+        "Argo Rollouts",
+        "GitHub Actions"
+      ]
     },
     {
       "icon": "layers",
       "title": "Standardised Helm charts",
-      "text": "Reusable umbrella Helm charts that now power 150+ microservices."
-    },
-    {
-      "icon": "cloud",
-      "title": "Cloud migration and foundation",
-      "text": "A major role in the AWS to GCP migration, which cut costs and modernised the infrastructure, including the GCP landing zone it was built on."
-    },
-    {
-      "icon": "wrench",
-      "title": "Self-serve infrastructure",
-      "text": "Modernised IaC pipelines so developers can create infrastructure with minimal dependency on the cloud infra team, reducing BAU overhead."
-    },
-    {
-      "icon": "branch",
-      "title": "Dynamic staging environments",
-      "text": "In-house staging environments on Kubernetes using ArgoCD and gateway header routing."
-    },
-    {
-      "icon": "chart",
-      "title": "Observability backbone",
-      "text": "Self-hosted the telemetry stack on LGTM and unified it into a single platform."
+      "text": "Reusable umbrella Helm charts that now power 150+ microservices.",
+      "tag": "150+ Microservices",
+      "accent": "#a371f7",
+      "tech": [
+        "Helm",
+        "Kubernetes"
+      ]
     },
     {
       "icon": "bot",
       "title": "AI-powered DevOps assistant",
-      "text": "An assistant that simplifies Terraform debugging through error analysis and automated problem resolution. Won a company-wide hackathon."
+      "text": "An assistant that simplifies Terraform debugging through error analysis and automated problem resolution. Won a company-wide hackathon.",
+      "tag": "AI / LLM DevOps",
+      "accent": "#e3b341",
+      "tech": [
+        "Terraform",
+        "LLM"
+      ]
     },
     {
-      "icon": "server",
+      "icon": "cloud",
+      "title": "Cloud migration and foundation",
+      "text": "A major role in the AWS to GCP migration, which cut costs and modernised the infrastructure, including the GCP landing zone it was built on.",
+      "tag": "AWS → GCP",
+      "accent": "#39c5cf",
+      "tech": [
+        "GCP",
+        "AWS",
+        "Landing Zone"
+      ]
+    },
+    {
+      "icon": "network",
+      "title": "Dynamic staging environments",
+      "text": "In-house staging environments on Kubernetes using ArgoCD and gateway header routing.",
+      "tag": "Dynamic Routing",
+      "accent": "#2dd4bf",
+      "tech": [
+        "ArgoCD",
+        "GKE Gateway",
+        "Header routing"
+      ]
+    },
+    {
+      "icon": "chart",
+      "title": "Observability backbone",
+      "text": "Self-hosted the telemetry stack on LGTM and unified it into a single platform.",
+      "tag": "Unified Telemetry",
+      "accent": "#f0883e",
+      "tech": [
+        "Grafana",
+        "Loki",
+        "Alloy",
+        "OpenTelemetry"
+      ]
+    },
+    {
+      "icon": "github",
       "title": "Self-hosted GitHub runners",
-      "text": "Actions runners on Kubernetes, which cut workflow cost and queue time."
+      "text": "Actions runners on Kubernetes, which cut workflow cost and queue time.",
+      "tag": "K8s Runners",
+      "accent": "#7c8cff",
+      "tech": [
+        "ARC",
+        "Kubernetes",
+        "GitHub Actions"
+      ]
+    },
+    {
+      "icon": "wrench",
+      "title": "Self-serve infrastructure",
+      "text": "Modernised IaC pipelines so developers can create infrastructure with minimal dependency on the cloud infra team, reducing BAU overhead.",
+      "tag": "Self-serve IaC",
+      "accent": "#f778ba",
+      "tech": [
+        "Terraform",
+        "CI pipelines"
+      ]
     }
   ],
   "stack": [
@@ -67,39 +128,48 @@
       "items": [
         [
           "GCP",
-          "googlecloud"
+          "googlecloud",
+          "#4285F4"
         ],
         [
           "AWS",
-          "amazonaws"
+          "amazonaws",
+          "#232F3E"
         ],
         [
           "Kubernetes",
-          "kubernetes"
+          "kubernetes",
+          "#326CE5"
         ],
         [
           "GKE",
-          "googlecloud"
+          "googlecloud",
+          "#4285F4"
         ],
         [
           "EKS",
-          "amazoneks"
+          "amazoneks",
+          "#FF9900"
         ],
         [
           "Amazon ECS",
-          "amazonecs"
+          "amazonecs",
+          "#FF9900"
         ],
         [
           "Karpenter",
-          ""
+          "",
+          "#232F3E"
         ],
         [
           "KEDA",
-          "keda"
+          "keda",
+          "#326CE5"
         ],
         [
           "Linux",
-          "linux"
+          "linux",
+          "#FCC624"
         ]
       ],
       "icon": "cloud"
@@ -109,43 +179,53 @@
       "items": [
         [
           "ArgoCD",
-          "argo"
+          "argo",
+          "#EF7B4D"
         ],
         [
           "Argo Rollouts",
-          "argo"
+          "argo",
+          "#EF7B4D"
         ],
         [
           "Helm",
-          "helm"
+          "helm",
+          "#0F1689"
         ],
         [
           "GitHub Actions",
-          "githubactions"
+          "githubactions",
+          "#2088FF"
         ],
         [
           "ARC runners",
-          "githubactions"
+          "githubactions",
+          "#2088FF"
         ],
         [
           "Jenkins",
-          "jenkins"
+          "jenkins",
+          "#D24939"
         ],
         [
           "Concourse CI",
-          "concourse"
+          "concourse",
+          "#3398DC"
         ],
         [
           "Docker",
-          "docker"
+          "docker",
+          "#2496ED"
         ],
         [
           "Git",
-          "git"
+          "git",
+          "#F05032"
         ],
         [
           "GitHub",
-          "github"
+          "github",
+          "#24292F"
         ]
       ],
       "icon": "rocket"
@@ -155,35 +235,43 @@
       "items": [
         [
           "Terraform",
-          "terraform"
+          "terraform",
+          "#7B42BC"
         ],
         [
           "External Secrets Operator",
-          ""
+          "",
+          "#326CE5"
         ],
         [
           "HashiCorp Vault",
-          "vault"
+          "vault",
+          "#FFEC6E"
         ],
         [
           "Backstage",
-          "backstage"
+          "backstage",
+          "#9BF0E1"
         ],
         [
           "Temporal",
-          "temporal"
+          "temporal",
+          "#141414"
         ],
         [
           "Confluent Kafka",
-          "confluent"
+          "confluent",
+          "#000000"
         ],
         [
           "Python",
-          "python"
+          "python",
+          "#3776AB"
         ],
         [
           "Shell scripting",
-          "gnubash"
+          "gnubash",
+          "#4EAA25"
         ]
       ],
       "icon": "layers"
@@ -193,43 +281,53 @@
       "items": [
         [
           "Grafana LGTM",
-          "grafana"
+          "grafana",
+          "#F46800"
         ],
         [
           "Loki",
-          "grafana"
+          "grafana",
+          "#F46800"
         ],
         [
           "Alloy",
-          "grafana"
+          "grafana",
+          "#F46800"
         ],
         [
           "Prometheus",
-          "prometheus"
+          "prometheus",
+          "#E6522C"
         ],
         [
           "Datadog",
-          "datadog"
+          "datadog",
+          "#632CA6"
         ],
         [
           "OpenTelemetry",
-          "opentelemetry"
+          "opentelemetry",
+          "#425CC7"
         ],
         [
           "Fluent Bit",
-          "fluentbit"
+          "fluentbit",
+          "#49BDA5"
         ],
         [
           "Vector",
-          ""
+          "",
+          "#5C2D91"
         ],
         [
           "Cloud Monitoring",
-          "googlecloud"
+          "googlecloud",
+          "#4285F4"
         ],
         [
           "DevLake (DORA)",
-          ""
+          "",
+          "#1F6FEB"
         ]
       ],
       "icon": "chart"
@@ -239,15 +337,18 @@
       "items": [
         [
           "Kong",
-          "kong"
+          "kong",
+          "#003459"
         ],
         [
           "GKE Gateway",
-          "googlecloud"
+          "googlecloud",
+          "#4285F4"
         ],
         [
           "Akamai WAF",
-          "akamai"
+          "akamai",
+          "#0096D6"
         ]
       ],
       "icon": "server"
@@ -257,31 +358,38 @@
       "items": [
         [
           "SAST",
-          ""
+          "",
+          "#5C2D91"
         ],
         [
           "SCA",
-          ""
+          "",
+          "#5C2D91"
         ],
         [
           "SBOM",
-          ""
+          "",
+          "#1F6FEB"
         ],
         [
           "DAST",
-          ""
+          "",
+          "#5C2D91"
         ],
         [
           "SonarQube",
-          "sonarqubeserver"
+          "sonarqubeserver",
+          "#4E9BCD"
         ],
         [
           "AppSentinels",
-          ""
+          "",
+          "#1F6FEB"
         ],
         [
           "OPA",
-          "openpolicyagent"
+          "openpolicyagent",
+          "#7D9199"
         ]
       ],
       "icon": "shield"

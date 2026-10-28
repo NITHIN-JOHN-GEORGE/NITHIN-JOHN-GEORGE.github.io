@@ -39,6 +39,8 @@ const ICONS = {
   moon: '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>',
   search: '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
   book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
+  network: '<rect x="9" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
+  github: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
   menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'
 };
 const icon = (name, size = 20) =>
@@ -246,6 +248,16 @@ function expTimeline() {
 }
 
 
+
+function brandBadge([name, slug, color]) {
+  const hex = (color || '#30363d').replace('#', '');
+  const r = parseInt(hex.slice(0, 2), 16), g = parseInt(hex.slice(2, 4), 16), bl = parseInt(hex.slice(4, 6), 16);
+  const light = (0.299 * r + 0.587 * g + 0.114 * bl) > 170;
+  const fg = light ? '1f2328' : 'ffffff';
+  const img = slug ? `<img src="https://cdn.simpleicons.org/${slug}/${fg}" alt="" width="16" height="16" loading="lazy" onerror="this.remove()">` : '';
+  return `<li class="skx-badge" style="--bg:#${hex};--fg:#${fg}">${img}<span>${e(name)}</span></li>`;
+}
+
 function allSkills() {
   return site.stack.flatMap((g, gi) => g.items.map(([name, slug]) => ({ name, slug, group: g.group, gi: 'g' + gi })));
 }
@@ -314,20 +326,16 @@ function homePage(posts, books) {
     <h2 class="section-h">Skills</h2>
     <p class="muted">${allSkills().length} tools I use to run, ship and secure the platform.</p>
   </div>
-  <div class="core reveal">
-    ${coreSkills()
-      .map((s) => `<div class="core-tile">${skLogo(s, 28)}<div><b>${e(s.name)}</b><small class="mono">${e(s.group)}</small></div></div>`)
-      .join('')}
+  <div class="skx">
+    ${site.stack
+      .map(
+        (g) => `<div class="skx-group reveal">
+      <h3 class="skx-h mono">${icon(g.icon || 'layers', 15)}${e(g.group)}</h3>
+      <ul class="skx-badges">${g.items.map(brandBadge).join('')}</ul>
+    </div>`
+      )
+      .join('\n    ')}
   </div>
-  <div class="sk-tabs reveal" role="group" aria-label="Filter skills">
-    <button type="button" class="sk-tab on" data-group="all" aria-pressed="true">All <span>${allSkills().length}</span></button>
-    ${site.stack.map((g, i) => `<button type="button" class="sk-tab" data-group="g${i}" aria-pressed="false">${e(g.group)} <span>${g.items.length}</span></button>`).join('')}
-  </div>
-  <ul class="sk-grid reveal">
-    ${allSkills()
-      .map((s) => `<li class="sk-tile" data-group="${s.gi}">${skLogo(s, 20)}<span>${e(s.name)}</span></li>`)
-      .join('')}
-  </ul>
 </section>
 
 <section class="wrap section" id="projects">
@@ -335,16 +343,18 @@ function homePage(posts, books) {
     <h2 class="section-h">Projects</h2>
     <p class="muted">Platform work I've built and run at Porter, from delivery to security.</p>
   </div>
-  <ol class="timeline">
+  <div class="pj-grid">
     ${site.highlights
       .map(
-        (h) => `<li class="tl-item reveal">
-      <span class="tl-dot" aria-hidden="true">${icon(h.icon, 16)}</span>
-      <div class="glass tl-card"><h3>${e(h.title)}</h3><p>${e(h.text)}</p></div>
-    </li>`
+        (h) => `<article class="pj reveal" style="--ac:${e(h.accent || '#58a6ff')}">
+      <div class="pj-top"><span class="pj-icon">${icon(h.icon, 22)}</span>${h.tag ? `<span class="pj-tag mono">${e(h.tag)}</span>` : ''}</div>
+      <h3>${e(h.title)}</h3>
+      <p>${e(h.text)}</p>
+      ${h.tech && h.tech.length ? `<ul class="pj-tech">${h.tech.map((t) => `<li>${e(t)}</li>`).join('')}</ul>` : ''}
+    </article>`
       )
       .join('\n    ')}
-  </ol>
+  </div>
 </section>
 
 <section class="wrap section" id="writing">
