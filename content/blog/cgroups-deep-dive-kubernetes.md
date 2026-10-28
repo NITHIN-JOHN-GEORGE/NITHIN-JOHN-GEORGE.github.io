@@ -9,6 +9,9 @@ Every `resources:` block you write in a Pod spec ends up as a handful of numbers
 
 This post walks from the kernel feature up to the kubelet, and ends with the commands I use to inspect it on a real node.
 
+> [!TIP]
+> Want to see all of this happen on your own laptop? The hands-on handbook [Kubernetes resources, under the hood](/handbooks/kubernetes-resources-under-the-hood/) runs each idea from this post on a local kind cluster and reads the real kernel files: throttling, OOM kills, QoS, eviction, priority, quotas, PIDs, PSI and in-place resize.
+
 ## What a cgroup is
 
 A cgroup is a group of processes that the kernel accounts for and limits together. Each cgroup is a directory in a virtual filesystem. The files inside it are either **controls** you write to (like `memory.max`) or **stats** you read from (like `memory.current`).
@@ -180,3 +183,4 @@ The kernel enforces the limits, but the runtime inside the container still has t
 - Always set memory limits, and set memory requests equal to them for anything important.
 - Alert on throttling ratio and `oom_kill` counts, not only on average CPU and memory usage.
 - When something looks wrong, read the files. `cpu.max`, `memory.max` and `cpu.stat` tell you what the kernel is doing, which is not always what the YAML says.
+- To try every one of these on a laptop, work through the [hands-on handbook](/handbooks/kubernetes-resources-under-the-hood/) and its [lab repo](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood).
