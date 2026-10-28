@@ -122,7 +122,7 @@ const NAV = [
   { key: 'skills', label: 'Skills', href: '/#skills' },
   { key: 'writing', label: 'Blogs', href: '/blog/' },
   { key: 'projects', label: 'Projects', href: '/#projects' },
-  { key: 'certifications', label: 'Certifications', href: '/#certifications' },
+  { key: 'certifications', label: 'Certifications', href: '/about/#certifications' },
   { key: 'contact', label: 'Contact', href: '/#contact' }
 ];
 
@@ -245,6 +245,22 @@ function expTimeline() {
   </ol>`;
 }
 
+
+function allSkills() {
+  return site.stack.flatMap((g, gi) => g.items.map(([name, slug]) => ({ name, slug, group: g.group, gi: 'g' + gi })));
+}
+function coreSkills() {
+  const all = allSkills();
+  return (site.coreSkills || []).map((n) => all.find((s) => s.name === n)).filter(Boolean);
+}
+function skLogo(s, size) {
+  const mono = s.name.replace(/[^A-Za-z0-9 ]/g, '').split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
+  const img = s.slug
+    ? `<img class="only-dark" src="https://cdn.simpleicons.org/${s.slug}/c9d1d9" alt="" width="${size}" height="${size}" loading="lazy" onerror="this.remove()"><img class="only-light" src="https://cdn.simpleicons.org/${s.slug}/1f2328" alt="" width="${size}" height="${size}" loading="lazy" onerror="this.remove()">`
+    : '';
+  return `<span class="sk-logo" style="--s:${size}px"><span class="sk-mono mono" aria-hidden="true">${e(mono)}</span>${img}</span>`;
+}
+
 function homePage(posts, books) {
   const latest = posts.slice(0, 3);
   const termData = {
@@ -269,12 +285,11 @@ function homePage(posts, books) {
   <div class="hero2-copy">
     <p class="eyebrow mono reveal">${e(site.headline)}</p>
     <h1 class="hero2-title reveal">Hi, I'm <span class="grad">${e(firstName)} ${e(rest)}</span></h1>
-    <p class="hero2-sub reveal">${e(site.role)} at ${e(site.company)} · ${e(site.location)}</p>
-    <p class="lead reveal">${e(site.intro)}</p>
+    <p class="lead reveal">${e(site.heroLine || site.intro)}</p>
     <dl class="stats reveal">
       ${site.stats
         .map(
-          (s) => `<div class="stat"><dt class="stat-num mono">${e(s.prefix || '')}<span class="count" data-to="${s.value}">${s.value}</span>${e(s.suffix || '')}</dt><dd>${e(s.label)}</dd></div>`
+          (s) => `<div class="stat"><dt class="stat-num mono">${s.text ? e(s.text) : `${e(s.prefix || '')}<span class="count" data-to="${s.value}">${s.value}</span>${e(s.suffix || '')}`}</dt><dd>${e(s.label)}</dd></div>`
         )
         .join('')}
     </dl>
@@ -297,19 +312,22 @@ function homePage(posts, books) {
 <section class="wrap section" id="skills">
   <div class="section-head reveal">
     <h2 class="section-h">Skills</h2>
-    <p class="muted">The tools I use day to day to run and secure the platform.</p>
+    <p class="muted">${allSkills().length} tools I use to run, ship and secure the platform.</p>
   </div>
-  <div class="xp-grid">
-    ${site.stack
-      .map(
-        (g) => `<article class="glass reveal">
-      <div class="glass-icon">${icon(g.icon || 'layers', 20)}</div>
-      <h3>${e(g.group)}</h3>
-      <ul class="chips">${g.items.map(chip).join('')}</ul>
-    </article>`
-      )
-      .join('\n    ')}
+  <div class="core reveal">
+    ${coreSkills()
+      .map((s) => `<div class="core-tile">${skLogo(s, 28)}<div><b>${e(s.name)}</b><small class="mono">${e(s.group)}</small></div></div>`)
+      .join('')}
   </div>
+  <div class="sk-tabs reveal" role="group" aria-label="Filter skills">
+    <button type="button" class="sk-tab on" data-group="all" aria-pressed="true">All <span>${allSkills().length}</span></button>
+    ${site.stack.map((g, i) => `<button type="button" class="sk-tab" data-group="g${i}" aria-pressed="false">${e(g.group)} <span>${g.items.length}</span></button>`).join('')}
+  </div>
+  <ul class="sk-grid reveal">
+    ${allSkills()
+      .map((s) => `<li class="sk-tile" data-group="${s.gi}">${skLogo(s, 20)}<span>${e(s.name)}</span></li>`)
+      .join('')}
+  </ul>
 </section>
 
 <section class="wrap section" id="projects">
@@ -325,30 +343,6 @@ function homePage(posts, books) {
       <div class="glass tl-card"><h3>${e(h.title)}</h3><p>${e(h.text)}</p></div>
     </li>`
       )
-      .join('\n    ')}
-  </ol>
-</section>
-
-<section class="wrap section" id="experience">
-  <div class="section-head reveal"><h2 class="section-h">Experience</h2></div>
-  ${expTimeline()}
-</section>
-
-<section class="wrap section" id="certifications">
-  <div class="section-head reveal"><h2 class="section-h">Certifications</h2></div>
-  <ol class="xtl xtl-cert">
-    ${(site.certifications || [])
-      .map((c) => {
-        const logo = c.logo
-          ? `<img class="only-dark" src="https://cdn.simpleicons.org/${c.logo}/c9d1d9" alt="" width="18" height="18" loading="lazy" onerror="this.remove()"><img class="only-light" src="https://cdn.simpleicons.org/${c.logo}/1f2328" alt="" width="18" height="18" loading="lazy" onerror="this.remove()">`
-          : '';
-        const expired = /expired/i.test(c.status || '');
-        return `<li class="xtl-item reveal${expired ? ' expired' : ' current'}">
-      <div class="xtl-date mono"><span class="cert-issuer">${logo}${e(c.issuer)}</span></div>
-      <div class="xtl-node" aria-hidden="true"></div>
-      <div class="glass xtl-card"><h3>${e(c.name)}</h3><p class="xtl-org">${e(c.issuer)}${c.status ? ` <span class="cert-pill mono${expired ? ' is-expired' : ''}">${e(c.status)}</span>` : ''}</p></div>
-    </li>`;
-      })
       .join('\n    ')}
   </ol>
 </section>
@@ -398,8 +392,7 @@ function aboutPage() {
     <div>
       <p class="eyebrow mono reveal">~/about</p>
       <h1 class="reveal">I build the platform <span class="grad">other engineers ship on</span></h1>
-      <p class="lead reveal">${e(site.motd || site.intro)}</p>
-      <p class="reveal">I work in the ${e(site.company)} engineering platform team. Most of what I do is making it easy for application teams to ship safely: GitOps delivery, shared Helm charts, self-serve infrastructure, observability and an in-house code security platform. I care about developer velocity without compromising on security.</p>
+      <p class="lead reveal">I work in the ${e(site.company)} engineering platform team. Most of what I do is making it easy for application teams to ship safely: GitOps delivery, shared Helm charts, self-serve infrastructure, observability and an in-house code security platform. I care about developer velocity without compromising on security.</p>
       <div class="cta reveal">
         <a class="btn btn-grad" href="${e(site.links.linkedin)}" rel="noopener">Connect on LinkedIn</a>
         <a class="btn btn-ghost" href="${e(site.links.github)}" rel="noopener">GitHub</a>
@@ -407,26 +400,35 @@ function aboutPage() {
       </div>
     </div>
     <aside class="glass ab-card reveal" aria-label="At a glance">
-      <p class="ab-card-title mono"><span class="t-dim">$</span> cat ~/.about-me.yaml</p>
+      <p class="ab-card-title mono">At a glance</p>
       <dl class="ab-glance">${glance.map(([k, v]) => `<div><dt class="mono">${e(k)}</dt><dd>${e(v)}</dd></div>`).join('')}</dl>
       ${y.focus ? `<p class="ab-sub mono">focus</p><ul class="ab-focus">${y.focus.map((f) => `<li>${e(f)}</li>`).join('')}</ul>` : ''}
     </aside>
   </section>
 
-  <section class="section">
+  <section class="section" id="experience">
     <div class="section-head reveal"><h2 class="section-h">Experience</h2><p class="muted">From system administration to platform engineering.</p></div>
     ${expTimeline()}
   </section>
 
-  <section class="section">
-    <div class="section-head reveal"><h2 class="section-h">What I work on</h2></div>
-    <div class="xp-grid">
-      ${site.highlights
-        .slice(0, 6)
-        .map((h) => `<article class="glass reveal"><div class="glass-icon">${icon(h.icon, 18)}</div><h3>${e(h.title)}</h3><p class="muted" style="margin:0;font-size:.9rem">${e(h.text)}</p></article>`)
-        .join('\n      ')}
-    </div>
-  </section>
+  <section class="section" id="certifications">
+  <div class="section-head reveal"><h2 class="section-h">Certifications</h2></div>
+  <ol class="xtl xtl-cert">
+    ${(site.certifications || [])
+      .map((c) => {
+        const logo = c.logo
+          ? `<img class="only-dark" src="https://cdn.simpleicons.org/${c.logo}/c9d1d9" alt="" width="18" height="18" loading="lazy" onerror="this.remove()"><img class="only-light" src="https://cdn.simpleicons.org/${c.logo}/1f2328" alt="" width="18" height="18" loading="lazy" onerror="this.remove()">`
+          : '';
+        const expired = /expired/i.test(c.status || '');
+        return `<li class="xtl-item reveal${expired ? ' expired' : ' current'}">
+      <div class="xtl-date mono"><span class="cert-issuer">${logo}${e(c.issuer)}</span></div>
+      <div class="xtl-node" aria-hidden="true"></div>
+      <div class="glass xtl-card"><h3>${e(c.name)}</h3><p class="xtl-org">${e(c.issuer)}${c.status ? ` <span class="cert-pill mono${expired ? ' is-expired' : ''}">${e(c.status)}</span>` : ''}</p></div>
+    </li>`;
+      })
+      .join('\n    ')}
+  </ol>
+</section>
 </div>`;
   return layout({ title: 'About', description: `About ${site.name}: ${site.tagline}.`, path: '/about/', body, active: 'about', home: true });
 }

@@ -385,7 +385,7 @@
   }
   // on the home page, highlight the menu item for the section in view
   if (!document.body.classList.contains('home') || !document.getElementById('skills') || !('IntersectionObserver' in window)) return;
-  var ids = ['skills', 'projects', 'certifications', 'contact'];
+  var ids = ['skills', 'projects', 'contact'];
   var links = {};
   ids.forEach(function (id) { links[id] = document.querySelector('.nav a[data-nav="' + id + '"]'); });
   var homeLink = document.querySelector('.nav a[data-nav="home"]');
@@ -418,4 +418,19 @@
       if (homeLink) homeLink.setAttribute('aria-current', 'page');
     }
   }, { passive: true });
+})();
+
+
+/* ===== skills filter ===== */
+(function () {
+  var tabs = document.querySelectorAll('.sk-tab');
+  if (!tabs.length) return;
+  var tiles = document.querySelectorAll('.sk-tile');
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      var g = t.getAttribute('data-group');
+      tabs.forEach(function (x) { var on = x === t; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      tiles.forEach(function (el) { el.classList.toggle('is-hidden', g !== 'all' && el.getAttribute('data-group') !== g); });
+    });
+  });
 })();

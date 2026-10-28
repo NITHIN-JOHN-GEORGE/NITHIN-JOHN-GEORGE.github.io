@@ -348,5 +348,13 @@
       "status": "Expired",
       "logo": "terraform"
     }
+  ],
+  "heroLine": "SDE 3 on Porter's Engineering Platform team. I build the delivery, infrastructure and security platform that application teams ship on.",
+  "coreSkills": [
+    "GCP",
+    "Kubernetes",
+    "ArgoCD",
+    "Helm",
+    "Terraform"
   ]
 }
