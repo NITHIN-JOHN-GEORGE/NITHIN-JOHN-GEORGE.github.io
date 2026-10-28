@@ -1,6 +1,6 @@
 {
   "name": "Nithin John George",
-  "handle": "nithin",
+  "handle": "nithinjohngeorge",
   "title": "Nithin John George · Platform Engineering & SRE",
   "description": "Platform engineer working on Kubernetes, GitOps, cloud infrastructure, observability and security. Blog posts and engineering handbooks.",
   "url": "https://nithin-john-george.github.io",
@@ -65,50 +65,267 @@
     {
       "group": "Cloud and compute",
       "items": [
-        ["GCP", "googlecloud"], ["AWS", "amazonaws"], ["Kubernetes", "kubernetes"], ["GKE", "googlecloud"],
-        ["EKS", "amazoneks"], ["Amazon ECS", "amazonecs"], ["Karpenter", ""], ["KEDA", "keda"], ["Linux", "linux"]
-      ]
+        [
+          "GCP",
+          "googlecloud"
+        ],
+        [
+          "AWS",
+          "amazonaws"
+        ],
+        [
+          "Kubernetes",
+          "kubernetes"
+        ],
+        [
+          "GKE",
+          "googlecloud"
+        ],
+        [
+          "EKS",
+          "amazoneks"
+        ],
+        [
+          "Amazon ECS",
+          "amazonecs"
+        ],
+        [
+          "Karpenter",
+          ""
+        ],
+        [
+          "KEDA",
+          "keda"
+        ],
+        [
+          "Linux",
+          "linux"
+        ]
+      ],
+      "icon": "cloud"
     },
     {
       "group": "GitOps and delivery",
       "items": [
-        ["ArgoCD", "argo"], ["Argo Rollouts", "argo"], ["Helm", "helm"], ["GitHub Actions", "githubactions"],
-        ["ARC runners", "githubactions"], ["Jenkins", "jenkins"], ["Concourse CI", "concourse"], ["Docker", "docker"],
-        ["Git", "git"], ["GitHub", "github"]
-      ]
+        [
+          "ArgoCD",
+          "argo"
+        ],
+        [
+          "Argo Rollouts",
+          "argo"
+        ],
+        [
+          "Helm",
+          "helm"
+        ],
+        [
+          "GitHub Actions",
+          "githubactions"
+        ],
+        [
+          "ARC runners",
+          "githubactions"
+        ],
+        [
+          "Jenkins",
+          "jenkins"
+        ],
+        [
+          "Concourse CI",
+          "concourse"
+        ],
+        [
+          "Docker",
+          "docker"
+        ],
+        [
+          "Git",
+          "git"
+        ],
+        [
+          "GitHub",
+          "github"
+        ]
+      ],
+      "icon": "rocket"
     },
     {
       "group": "Infrastructure and platform",
       "items": [
-        ["Terraform", "terraform"], ["External Secrets Operator", ""], ["HashiCorp Vault", "vault"],
-        ["Backstage", "backstage"], ["Temporal", "temporal"], ["Confluent Kafka", "confluent"],
-        ["Python", "python"], ["Shell scripting", "gnubash"]
-      ]
+        [
+          "Terraform",
+          "terraform"
+        ],
+        [
+          "External Secrets Operator",
+          ""
+        ],
+        [
+          "HashiCorp Vault",
+          "vault"
+        ],
+        [
+          "Backstage",
+          "backstage"
+        ],
+        [
+          "Temporal",
+          "temporal"
+        ],
+        [
+          "Confluent Kafka",
+          "confluent"
+        ],
+        [
+          "Python",
+          "python"
+        ],
+        [
+          "Shell scripting",
+          "gnubash"
+        ]
+      ],
+      "icon": "layers"
     },
     {
       "group": "Observability",
       "items": [
-        ["Grafana LGTM", "grafana"], ["Loki", "grafana"], ["Alloy", "grafana"], ["Prometheus", "prometheus"],
-        ["Datadog", "datadog"], ["OpenTelemetry", "opentelemetry"], ["Fluent Bit", "fluentbit"], ["Vector", ""],
-        ["Cloud Monitoring", "googlecloud"], ["DevLake (DORA)", ""]
-      ]
+        [
+          "Grafana LGTM",
+          "grafana"
+        ],
+        [
+          "Loki",
+          "grafana"
+        ],
+        [
+          "Alloy",
+          "grafana"
+        ],
+        [
+          "Prometheus",
+          "prometheus"
+        ],
+        [
+          "Datadog",
+          "datadog"
+        ],
+        [
+          "OpenTelemetry",
+          "opentelemetry"
+        ],
+        [
+          "Fluent Bit",
+          "fluentbit"
+        ],
+        [
+          "Vector",
+          ""
+        ],
+        [
+          "Cloud Monitoring",
+          "googlecloud"
+        ],
+        [
+          "DevLake (DORA)",
+          ""
+        ]
+      ],
+      "icon": "chart"
     },
     {
       "group": "Gateway and edge",
-      "items": [["Kong", "kong"], ["GKE Gateway", "googlecloud"], ["Akamai WAF", "akamai"]]
+      "items": [
+        [
+          "Kong",
+          "kong"
+        ],
+        [
+          "GKE Gateway",
+          "googlecloud"
+        ],
+        [
+          "Akamai WAF",
+          "akamai"
+        ]
+      ],
+      "icon": "server"
     },
     {
       "group": "Security",
       "items": [
-        ["SAST", ""], ["SCA", ""], ["SBOM", ""], ["DAST", ""], ["SonarQube", "sonarqubeserver"],
-        ["AppSentinels", ""], ["OPA", "openpolicyagent"]
-      ]
+        [
+          "SAST",
+          ""
+        ],
+        [
+          "SCA",
+          ""
+        ],
+        [
+          "SBOM",
+          ""
+        ],
+        [
+          "DAST",
+          ""
+        ],
+        [
+          "SonarQube",
+          "sonarqubeserver"
+        ],
+        [
+          "AppSentinels",
+          ""
+        ],
+        [
+          "OPA",
+          "openpolicyagent"
+        ]
+      ],
+      "icon": "shield"
     }
   ],
   "experience": [
-    { "role": "SDE 3, DevOps (Cloud & Developer Experience)", "org": "Porter", "period": "Oct 2024 to present" },
-    { "role": "SDE 2, DevOps (Cloud Infrastructure)", "org": "Porter", "period": "Jun 2023 to present" },
-    { "role": "DevOps Engineer", "org": "Apton Works", "period": "Mar 2022 to May 2023" },
-    { "role": "Junior System Engineer", "org": "Geojit Financial", "period": "Mar 2020 to Oct 2021" }
+    {
+      "role": "SDE 3, DevOps (Cloud & Developer Experience)",
+      "org": "Porter",
+      "period": "Oct 2024 to present"
+    },
+    {
+      "role": "SDE 2, DevOps (Cloud Infrastructure)",
+      "org": "Porter",
+      "period": "Jun 2023 to present"
+    },
+    {
+      "role": "DevOps Engineer",
+      "org": "Apton Works",
+      "period": "Mar 2022 to May 2023"
+    },
+    {
+      "role": "Junior System Engineer",
+      "org": "Geojit Financial",
+      "period": "Mar 2020 to Oct 2021"
+    }
+  ],
+  "headline": "Platform Engineer · SRE · Cloud Infrastructure",
+  "stats": [
+    {
+      "value": 6,
+      "suffix": "+",
+      "label": "Years in cloud infrastructure"
+    },
+    {
+      "value": 150,
+      "suffix": "+",
+      "label": "Microservices on shared Helm charts"
+    },
+    {
+      "prefix": "₹",
+      "value": 50,
+      "suffix": "L+",
+      "label": "Saved per year by replacing a SaaS tool"
+    }
   ]
 }

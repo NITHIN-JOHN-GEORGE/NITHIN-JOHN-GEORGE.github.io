@@ -117,12 +117,11 @@ function loadHandbooks() {
 
 // ---------- layout ----------
 const NAV = [
-  { key: 'blog', label: 'blog', href: '/blog/' },
-  { key: 'handbooks', label: 'handbooks', href: '/handbooks/' },
+  { key: 'writing', label: 'blog', href: '/blog/' },
   { key: 'about', label: 'about', href: '/about/' }
 ];
 
-function layout({ title, description, path, body, active = '', wide = false }) {
+function layout({ title, description, path, body, active = '', wide = false, home = false }) {
   const fullTitle = title === site.name ? site.title : `${title} · ${site.name}`;
   const desc = description || site.description;
   const canonical = `${site.url}${path}`;
@@ -153,15 +152,17 @@ function layout({ title, description, path, body, active = '', wide = false }) {
     else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
   } catch (e) {}
   document.documentElement.setAttribute('data-theme', t);
+  document.documentElement.classList.add('js');
+  if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('no-motion');
 })();
 </script>
 <link rel="stylesheet" href="${url('/assets/style.css')}">
 </head>
-<body>
+<body${home ? ' class="home"' : ''}>
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header">
   <div class="wrap header-inner">
-    <a class="brand" href="${url('/')}" aria-label="${e(site.name)}, home"><span class="brand-user">${e(site.handle)}</span><span class="brand-at">@</span><span class="brand-host">${e(site.company.toLowerCase())}</span><span class="brand-path">:~$</span><span class="cursor" aria-hidden="true"></span></a>
+    <a class="brand" href="${url('/')}" aria-label="${e(site.name)}, home"><span class="brand-user">${e(site.handle)}</span><span class="brand-path">&nbsp;~ %</span><span class="cursor" aria-hidden="true"></span></a>
     <nav class="nav" aria-label="Primary">
       ${NAV.map((n) => `<a href="${url(n.href)}"${active === n.key ? ' aria-current="page"' : ''}>${n.label}</a>`).join('')}
     </nav>
@@ -223,93 +224,122 @@ function postRow(p) {
 // ---------- pages ----------
 function homePage(posts, books) {
   const latest = posts.slice(0, 3);
+  const termData = {
+    user: site.handle,
+    name: site.name,
+    role: `${site.role} at ${site.company}`,
+    location: site.location,
+    about: site.intro,
+    skills: site.stack.map((g) => ({ group: g.group, items: g.items.map((i) => i[0]) })),
+    experience: site.experience,
+    posts: posts.map((p) => ({ title: p.title, date: fmtMonth(p.date), href: p.href })),
+    handbooks: books.map((b) => ({ title: b.title, href: url(`/handbooks/${b.slug}/`), chapters: b.chapters.length })),
+    links: site.links
+  };
+  const firstName = site.name.split(' ')[0];
+  const rest = site.name.slice(firstName.length).trim();
   const body = `
-<section class="hero wrap">
-  <div class="hero-copy">
-    <p class="eyebrow mono">${e(site.tagline)}</p>
-    <h1>${e(site.name)}</h1>
-    <p class="lead">${e(site.intro)}</p>
-    <p class="hero-meta mono">${e(site.role)} at ${e(site.company)} · ${e(site.location)}</p>
-    <div class="cta">
-      <a class="btn btn-primary" href="${url('/handbooks/')}">${icon('book', 16)} Handbooks</a>
-      <a class="btn" href="${url('/blog/')}">Read the blog</a>
-      <a class="btn" href="${e(site.links.github)}" rel="noopener">GitHub</a>
-      <a class="btn" href="${e(site.links.linkedin)}" rel="noopener">LinkedIn</a>
+<canvas id="bg-net" aria-hidden="true"></canvas>
+<section class="hero2 wrap">
+  <div class="hero2-copy">
+    <p class="eyebrow mono reveal">${e(site.headline)}</p>
+    <h1 class="hero2-title reveal">Hi, I'm <span class="grad">${e(firstName)} ${e(rest)}</span></h1>
+    <p class="hero2-sub reveal">${e(site.role)} at ${e(site.company)} · ${e(site.location)}</p>
+    <p class="lead reveal">${e(site.intro)}</p>
+    <dl class="stats reveal">
+      ${site.stats
+        .map(
+          (s) => `<div class="stat"><dt class="stat-num mono">${e(s.prefix || '')}<span class="count" data-to="${s.value}">${s.value}</span>${e(s.suffix || '')}</dt><dd>${e(s.label)}</dd></div>`
+        )
+        .join('')}
+    </dl>
+    <div class="cta reveal">
+      <a class="btn btn-grad" href="${url('/blog/')}">${icon('book', 16)} Read the blog</a>
+      <a class="btn btn-ghost" href="${e(site.links.linkedin)}" rel="noopener">LinkedIn</a>
+      <a class="btn btn-ghost" href="${e(site.links.github)}" rel="noopener">GitHub</a>
     </div>
   </div>
-  <div class="terminal" role="img" aria-label="Terminal showing kubectl output with Nithin's role, experience and clouds">
-    <div class="terminal-bar"><span></span><span></span><span></span><b class="mono">nithin@porter: ~</b></div>
-<pre class="terminal-body mono"><span class="t-dim">$</span> kubectl config current-context
-<span class="t-ok">porter/engineering-platform</span>
-
-<span class="t-dim">$</span> kubectl get engineer nithin -o wide
-<span class="t-head">NAME     ROLE                          EXPERIENCE   CLOUDS</span>
-nithin   SDE 3, Engineering Platform   6+ years     GCP, AWS
-
-<span class="t-dim">$</span> kubectl get deploy -n platform
-<span class="t-head">NAME              READY   STRATEGY</span>
-<span class="t-ok">gitops</span>            1/1     ArgoCD
-<span class="t-ok">canary-rollouts</span>   1/1     Argo Rollouts
-<span class="t-ok">helm-charts</span>       150+    umbrella chart
-<span class="t-ok">code-security</span>     1/1     in-house platform
-
-<span class="t-dim">$</span> <span class="cursor" aria-hidden="true"></span></pre>
+  <div class="term reveal" id="term" aria-label="Interactive terminal. Type help for commands.">
+    <div class="terminal-bar"><span></span><span></span><span></span><b class="mono">${e(site.handle)} — zsh</b></div>
+    <div class="term-body mono" id="term-out" role="log" aria-live="polite"></div>
+    <form class="term-line mono" id="term-form" autocomplete="off">
+      <label for="term-in"><span class="t-ok">${e(site.handle)}</span><span class="t-dim"> ~ %</span></label>
+      <input id="term-in" type="text" spellcheck="false" autocapitalize="off" aria-label="Terminal command">
+    </form>
   </div>
 </section>
 
-<section class="wrap section" id="highlights">
-  <h2 class="section-title mono"><span class="t-dim">$</span> highlights</h2>
-  <div class="cards">
-    ${site.highlights
+<section class="wrap section" id="expertise">
+  <div class="section-head reveal">
+    <h2 class="section-h">Core expertise</h2>
+    <p class="muted">The tools I use day to day to run and secure the platform.</p>
+  </div>
+  <div class="xp-grid">
+    ${site.stack
       .map(
-        (h) => `<article class="card">
-      <div class="card-icon">${icon(h.icon, 20)}</div>
-      <h3>${e(h.title)}</h3>
-      <p>${e(h.text)}</p>
+        (g) => `<article class="glass reveal">
+      <div class="glass-icon">${icon(g.icon || 'layers', 20)}</div>
+      <h3>${e(g.group)}</h3>
+      <ul class="chips">${g.items.map(chip).join('')}</ul>
     </article>`
       )
       .join('\n    ')}
   </div>
 </section>
 
-<section class="wrap section" id="stack">
-  <h2 class="section-title mono"><span class="t-dim">$</span> stack</h2>
-  <div class="stack">
-    ${site.stack
+<section class="wrap section" id="built">
+  <div class="section-head reveal">
+    <h2 class="section-h">What I've built</h2>
+    <p class="muted">Platform work at Porter, from delivery to security.</p>
+  </div>
+  <ol class="timeline">
+    ${site.highlights
       .map(
-        (g) => `<div class="stack-group"><h3 class="mono">${e(g.group)}</h3><ul class="chips">${g.items.map(chip).join('')}</ul></div>`
+        (h) => `<li class="tl-item reveal">
+      <span class="tl-dot" aria-hidden="true">${icon(h.icon, 16)}</span>
+      <div class="glass tl-card"><h3>${e(h.title)}</h3><p>${e(h.text)}</p></div>
+    </li>`
       )
       .join('\n    ')}
+  </ol>
+</section>
+
+<section class="wrap section" id="experience">
+  <div class="section-head reveal"><h2 class="section-h">Experience</h2></div>
+  <div class="exp reveal">
+    ${site.experience
+      .map((x) => `<div class="exp-row"><span class="exp-period mono">${e(x.period)}</span><span class="exp-role">${e(x.role)}</span><span class="exp-org">${e(x.org)}</span></div>`)
+      .join('')}
   </div>
 </section>
 
 <section class="wrap section" id="writing">
-  <h2 class="section-title mono"><span class="t-dim">$</span> ls ./blog</h2>
-  <ul class="post-list">${latest.map(postRow).join('')}</ul>
-  <p class="more"><a href="${url('/blog/')}">All posts →</a></p>
+  <div class="section-head reveal"><h2 class="section-h">Blog &amp; handbooks</h2><p class="muted">Blog posts and long-form handbooks.</p></div>
+  <ul class="post-list reveal">${latest.map(postRow).join('')}</ul>
+  <p class="more reveal"><a href="${url('/blog/')}">All posts →</a></p>
+  ${
+    books.length
+      ? `<div class="cards cards-2 reveal" style="margin-top:28px">${books
+          .map(
+            (b) => `<a class="glass card-link" href="${url(`/handbooks/${b.slug}/`)}">
+      <div class="glass-icon">${icon('book', 20)}</div>
+      <h3>${e(b.title)}${b.status ? ` <span class="badge">${e(b.status)}</span>` : ''}</h3>
+      <p class="muted">${e(b.description)}</p>
+    </a>`
+          )
+          .join('')}</div>`
+      : ''
+  }
 </section>
 
-${
-  books.length
-    ? `<section class="wrap section" id="handbooks">
-  <h2 class="section-title mono"><span class="t-dim">$</span> ls ./handbooks</h2>
-  <div class="cards cards-2">
-    ${books
-      .map(
-        (b) => `<a class="card card-link" href="${url(`/handbooks/${b.slug}/`)}">
-      <div class="card-icon">${icon('book', 20)}</div>
-      <h3>${e(b.title)}${b.status ? ` <span class="badge">${e(b.status)}</span>` : ''}</h3>
-      <p>${e(b.description)}</p>
-      <p class="card-foot mono">${b.chapters.length} chapter${b.chapters.length === 1 ? '' : 's'}</p>
-    </a>`
-      )
-      .join('\n    ')}
-  </div>
-</section>`
-    : ''
-}
+<section class="wrap section contact reveal" id="contact">
+  <h2 class="section-h">Let's talk platform engineering</h2>
+  <p class="muted">The easiest way to reach me is LinkedIn.</p>
+  <div class="cta" style="justify-content:center"><a class="btn btn-grad" href="${e(site.links.linkedin)}" rel="noopener">Message me on LinkedIn</a></div>
+</section>
+<script id="term-data" type="application/json">${JSON.stringify(termData).replace(/</g, '\\u003c')}</script>
 `;
-  return layout({ title: site.name, path: '/', body, active: '' });
+  return layout({ title: site.name, path: '/', body, active: '', home: true });
 }
 
 function aboutPage() {
@@ -333,15 +363,55 @@ function aboutPage() {
   return layout({ title: 'About', description: `About ${site.name}: ${site.tagline}.`, path: '/about/', body, active: 'about' });
 }
 
-function blogIndex(posts) {
+function blogIndex(posts, books) {
+  const tags = [...new Set(posts.flatMap((p) => p.tags))].sort();
+  const bookCard = (b) => `<article class="glass wr-book reveal" data-kind="handbook">
+    <div class="wr-book-main">
+      <p class="wr-kicker mono">Handbook${b.status ? ` · <span class="wr-status">${e(b.status)}</span>` : ''}</p>
+      <h2><a href="${url(`/handbooks/${b.slug}/`)}">${e(b.title)}</a></h2>
+      <p class="muted">${e(b.description)}</p>
+      <a class="btn btn-grad wr-start" href="${url(`/handbooks/${b.slug}/${b.chapters[0].slug}/`)}">Start reading →</a>
+    </div>
+    <ol class="wr-chapters">
+      ${b.chapters
+        .slice(0, 6)
+        .map((c, i) => `<li><a href="${url(`/handbooks/${b.slug}/${c.slug}/`)}"><span class="mono num">${String(i + 1).padStart(2, '0')}</span><span>${e(c.title)}</span></a></li>`)
+        .join('')}
+      ${b.chapters.length > 6 ? `<li class="muted mono" style="padding:6px 10px">+ ${b.chapters.length - 6} more</li>` : ''}
+    </ol>
+  </article>`;
+  const postCard = (p) => `<a class="glass wr-post reveal" data-kind="post" data-tags="${e(p.tags.join(' '))}" href="${e(p.href)}"${p.external ? ' target="_blank" rel="noopener"' : ''}>
+    <div class="wr-meta mono"><span>${fmtDate(p.date, { month: 'short', year: 'numeric' })}</span><span class="wr-src${p.external ? ' ext' : ''}">${p.external ? 'Medium ↗' : `${p.minutes} min read`}</span></div>
+    <h3>${e(p.title)}</h3>
+    <p>${e(p.summary)}</p>
+    ${p.tags.length ? `<div class="tags">${p.tags.map((t) => `<span class="tag">${e(t)}</span>`).join('')}</div>` : ''}
+  </a>`;
   const body = `
-<div class="wrap page">
-  <h1>Blog</h1>
-  <p class="lead">Notes on platform engineering, Kubernetes, infrastructure and Linux.</p>
-  <ul class="post-list">${posts.map(postRow).join('')}</ul>
-  <p class="more"><a href="${url('/feed.xml')}">Subscribe via RSS</a></p>
+<canvas id="bg-net" aria-hidden="true"></canvas>
+<div class="wrap wr">
+  <header class="wr-head">
+    <p class="eyebrow mono reveal">~/blog</p>
+    <h1 class="reveal">Notes from <span class="grad">running platforms</span></h1>
+    <p class="lead reveal">Engineering handbooks and blog posts on platform engineering, Kubernetes, infrastructure and Linux.</p>
+    <p class="wr-count mono reveal">${books.length} handbook${books.length === 1 ? '' : 's'} · ${posts.length} post${posts.length === 1 ? '' : 's'} · <a href="${url('/feed.xml')}">RSS</a></p>
+  </header>
+
+  <div class="wr-filters reveal" role="group" aria-label="Filter posts and handbooks">
+    <button type="button" class="wr-chip on" data-filter="all" aria-pressed="true">All</button>
+    ${books.length ? '<button type="button" class="wr-chip" data-filter="handbook" aria-pressed="false">Handbooks</button>' : ''}
+    <button type="button" class="wr-chip" data-filter="post" aria-pressed="false">Posts</button>
+    ${tags.map((t) => `<button type="button" class="wr-chip wr-tag" data-filter="tag:${e(t)}" aria-pressed="false">#${e(t)}</button>`).join('')}
+  </div>
+
+  ${books.length ? `<section class="wr-section" data-section="handbook"><h2 class="wr-h mono">Handbooks</h2>${books.map(bookCard).join('')}</section>` : ''}
+
+  <section class="wr-section" data-section="post">
+    <h2 class="wr-h mono">Posts</h2>
+    <div class="wr-grid">${posts.map(postCard).join('')}</div>
+    <p class="wr-empty muted" hidden>Nothing matches this filter yet.</p>
+  </section>
 </div>`;
-  return layout({ title: 'Blog', description: 'Blog posts on platform engineering, Kubernetes, infrastructure and Linux.', path: '/blog/', body, active: 'blog' });
+  return layout({ title: 'Blog', description: 'Engineering handbooks and blog posts on platform engineering, Kubernetes, infrastructure and Linux.', path: '/blog/', body, active: 'writing', home: true });
 }
 
 function tocHtml(toc) {
@@ -363,7 +433,7 @@ function postPage(p) {
   </article>
   <aside class="article-side">${tocHtml(p.toc)}</aside>
 </div>`;
-  return layout({ title: p.title, description: p.summary, path: `/blog/${p.slug}/`, body, active: 'blog' });
+  return layout({ title: p.title, description: p.summary, path: `/blog/${p.slug}/`, body, active: 'writing' });
 }
 
 function handbooksIndex(books) {
@@ -384,7 +454,7 @@ function handbooksIndex(books) {
       .join('\n    ')}
   </div>
 </div>`;
-  return layout({ title: 'Handbooks', description: 'Engineering handbooks on platform engineering and SRE.', path: '/handbooks/', body, active: 'handbooks' });
+  return layout({ title: 'Handbooks', description: 'Engineering handbooks on platform engineering and SRE.', path: '/handbooks/', body, active: 'writing' });
 }
 
 function sidebar(book, current) {
@@ -407,7 +477,7 @@ function handbookLanding(book) {
 <div class="wrap book-layout">
   <aside class="book-side">${sidebar(book, '')}</aside>
   <article class="article">
-    <p class="crumb mono"><a href="${url('/handbooks/')}">← handbooks</a></p>
+    <p class="crumb mono"><a href="${url('/blog/')}">← blog</a></p>
     <h1>${e(book.title)}${book.status ? ` <span class="badge">${e(book.status)}</span>` : ''}</h1>
     <p class="lead">${e(book.description)}</p>
     <ol class="chapter-list">${book.chapters
@@ -417,7 +487,7 @@ function handbookLanding(book) {
       .join('')}</ol>
   </article>
 </div>`;
-  return layout({ title: book.title, description: book.description, path: `/handbooks/${book.slug}/`, body, active: 'handbooks' });
+  return layout({ title: book.title, description: book.description, path: `/handbooks/${book.slug}/`, body, active: 'writing' });
 }
 
 function chapterPage(book, idx) {
@@ -439,7 +509,7 @@ function chapterPage(book, idx) {
   </article>
   <aside class="article-side">${tocHtml(c.toc)}</aside>
 </div>`;
-  return layout({ title: `${c.title} · ${book.title}`, description: c.summary || book.description, path: `/handbooks/${book.slug}/${c.slug}/`, body, active: 'handbooks' });
+  return layout({ title: `${c.title} · ${book.title}`, description: c.summary || book.description, path: `/handbooks/${book.slug}/${c.slug}/`, body, active: 'writing' });
 }
 
 function notFound() {
@@ -490,7 +560,7 @@ const searchIndex = [];
 
 write('index.html', homePage(posts, books));
 write('about/index.html', aboutPage());
-write('blog/index.html', blogIndex(posts));
+write('blog/index.html', blogIndex(posts, books));
 write('404.html', notFound());
 
 for (const p of posts) {
