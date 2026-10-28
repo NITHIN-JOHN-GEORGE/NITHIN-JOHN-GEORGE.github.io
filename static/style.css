@@ -616,3 +616,9 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 [data-theme='light'] .pj-tag, [data-theme='light'] .pj-icon, [data-theme='light'] .pj:hover h3 { color: color-mix(in srgb, var(--ac) 68%, #000); }
 @media (max-width: 1000px) { .pj-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 640px) { .pj-grid { grid-template-columns: 1fr; } .pj { padding: 20px; } }
+
+/* ===== about on home ===== */
+#about .ab-hero { grid-template-columns: 1.4fr 1fr; align-items: center; }
+.ab-title { font-size: clamp(1.9rem, 4vw, 2.8rem); letter-spacing: -0.03em; line-height: 1.12; margin: 0 0 16px; }
+.hero2 { min-height: 0; padding-top: 72px; padding-bottom: 24px; }
+@media (max-width: 900px) { #about .ab-hero { grid-template-columns: 1fr; } }

@@ -385,7 +385,7 @@
   }
   // on the home page, highlight the menu item for the section in view
   if (!document.body.classList.contains('home') || !document.getElementById('skills') || !('IntersectionObserver' in window)) return;
-  var ids = ['skills', 'projects', 'contact'];
+  var ids = ['about', 'skills', 'projects', 'certifications', 'contact'];
   var links = {};
   ids.forEach(function (id) { links[id] = document.querySelector('.nav a[data-nav="' + id + '"]'); });
   var homeLink = document.querySelector('.nav a[data-nav="home"]');

@@ -120,11 +120,11 @@ function loadHandbooks() {
 // ---------- layout ----------
 const NAV = [
   { key: 'home', label: 'Home', href: '/' },
-  { key: 'about', label: 'About', href: '/about/' },
+  { key: 'about', label: 'About', href: '/#about' },
   { key: 'skills', label: 'Skills', href: '/#skills' },
   { key: 'writing', label: 'Blogs', href: '/blog/' },
   { key: 'projects', label: 'Projects', href: '/#projects' },
-  { key: 'certifications', label: 'Certifications', href: '/about/#certifications' },
+  { key: 'certifications', label: 'Certifications', href: '/#certifications' },
   { key: 'contact', label: 'Contact', href: '/#contact' }
 ];
 
@@ -321,6 +321,8 @@ function homePage(posts, books) {
   </div>
 </section>
 
+${aboutSections()}
+
 <section class="wrap section" id="skills">
   <div class="section-head reveal">
     <h2 class="section-h">Skills</h2>
@@ -387,7 +389,7 @@ function homePage(posts, books) {
   return layout({ title: site.name, path: '/', body, active: 'home', home: true });
 }
 
-function aboutPage() {
+function aboutSections() {
   const y = site.aboutYaml || {};
   const glance = [
     ['Role', y.role || site.role],
@@ -395,33 +397,26 @@ function aboutPage() {
     ['Based in', y['i-am-based-in'] || site.location],
     ['Experience', '6+ years']
   ];
-  const body = `
-<canvas id="bg-net" aria-hidden="true"></canvas>
-<div class="wrap ab">
-  <section class="ab-hero">
+  return `<section class="wrap section" id="about">
+  <div class="ab-hero">
     <div>
       <p class="eyebrow mono reveal">~/about</p>
-      <h1 class="reveal">I build the platform <span class="grad">other engineers ship on</span></h1>
+      <h2 class="ab-title reveal">I build the platform <span class="grad">other engineers ship on</span></h2>
       <p class="lead reveal">I work in the ${e(site.company)} engineering platform team. Most of what I do is making it easy for application teams to ship safely: GitOps delivery, shared Helm charts, self-serve infrastructure, observability and an in-house code security platform. I care about developer velocity without compromising on security.</p>
-      <div class="cta reveal">
-        <a class="btn btn-grad" href="${e(site.links.linkedin)}" rel="noopener">Connect on LinkedIn</a>
-        <a class="btn btn-ghost" href="${e(site.links.github)}" rel="noopener">GitHub</a>
-        <a class="btn btn-ghost" href="${e(site.links.medium)}" rel="noopener">Medium</a>
-      </div>
     </div>
     <aside class="glass ab-card reveal" aria-label="At a glance">
       <p class="ab-card-title mono">At a glance</p>
       <dl class="ab-glance">${glance.map(([k, v]) => `<div><dt class="mono">${e(k)}</dt><dd>${e(v)}</dd></div>`).join('')}</dl>
-      ${y.focus ? `<p class="ab-sub mono">focus</p><ul class="ab-focus">${y.focus.map((f) => `<li>${e(f)}</li>`).join('')}</ul>` : ''}
     </aside>
-  </section>
+  </div>
+</section>
 
-  <section class="section" id="experience">
-    <div class="section-head reveal"><h2 class="section-h">Experience</h2><p class="muted">From system administration to platform engineering.</p></div>
-    ${expTimeline()}
-  </section>
+<section class="wrap section" id="experience">
+  <div class="section-head reveal"><h2 class="section-h">Experience</h2><p class="muted">From system administration to platform engineering.</p></div>
+  ${expTimeline()}
+</section>
 
-  <section class="section" id="certifications">
+<section class="wrap section" id="certifications">
   <div class="section-head reveal"><h2 class="section-h">Certifications</h2></div>
   <ol class="xtl xtl-cert">
     ${(site.certifications || [])
@@ -438,9 +433,14 @@ function aboutPage() {
       })
       .join('\n    ')}
   </ol>
-</section>
-</div>`;
-  return layout({ title: 'About', description: `About ${site.name}: ${site.tagline}.`, path: '/about/', body, active: 'about', home: true });
+</section>`;
+}
+
+function aboutPage() {
+  const target = url('/#about');
+  const body = `<div class="wrap page"><p class="lead">This page has moved. <a href="${target}">Go to About →</a></p></div>
+<script>location.replace(${JSON.stringify(target)});</script>`;
+  return layout({ title: 'About', description: `About ${site.name}: ${site.tagline}.`, path: '/about/', body, active: 'about' }).replace('<head>', `<head>\n<meta http-equiv="refresh" content="0; url=${target}">`);
 }
 
 function blogIndex(posts, books) {
@@ -473,7 +473,7 @@ function blogIndex(posts, books) {
     <p class="eyebrow mono reveal">~/blog</p>
     <h1 class="reveal">Notes from <span class="grad">running platforms</span></h1>
     <p class="lead reveal">Engineering handbooks and blog posts on platform engineering, Kubernetes, infrastructure and Linux.</p>
-    <p class="wr-count mono reveal">${books.length} handbook${books.length === 1 ? '' : 's'} · ${posts.length} post${posts.length === 1 ? '' : 's'} · <a href="${url('/feed.xml')}">RSS</a></p>
+    <p class="wr-count mono reveal">${books.length ? `${books.length} handbook${books.length === 1 ? '' : 's'} · ` : ''}${posts.length} post${posts.length === 1 ? '' : 's'} · <a href="${url('/feed.xml')}">RSS</a></p>
   </header>
 
   <div class="wr-filters reveal" role="group" aria-label="Filter posts and handbooks">
