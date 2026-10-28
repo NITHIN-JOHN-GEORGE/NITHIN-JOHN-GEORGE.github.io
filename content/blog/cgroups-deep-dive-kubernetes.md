@@ -1,186 +1,367 @@
 ---
 title: "Cgroups: A Deep Dive into Resource Management in Kubernetes"
 date: 2026-10-28
-summary: What actually happens on the node when you set CPU and memory requests and limits. Cgroups v2, the kubelet's cgroup tree, QoS classes, CPU throttling and the OOM killer, with the commands to see it all yourself.
+summary: What really happens when you set CPU and memory requests and limits, explained from zero with hand-drawn diagrams, and a free lab that lets you watch every step happen on your own laptop.
 tags: [linux, kubernetes, cgroups]
 ---
 
-Every `resources:` block you write in a Pod spec ends up as a handful of numbers in files under `/sys/fs/cgroup` on a node. Kubernetes doesn't enforce limits itself. The Linux kernel does, through **control groups** (cgroups). Once you know which file each setting becomes, a lot of confusing production behaviour starts to make sense: CPU throttling with low average usage, OOM kills that seem to come from nowhere, and noisy neighbours.
+You write this in a Pod spec:
 
-This post walks from the kernel feature up to the kubelet, and ends with the commands I use to inspect it on a real node.
+```yaml
+resources:
+  requests: { cpu: 250m, memory: 64Mi }
+  limits:   { cpu: 500m, memory: 128Mi }
+```
+
+and somehow your app can't use more than half a CPU or 128 MiB of memory. Who is actually stopping it?
+
+**Not Kubernetes.** Kubernetes writes a few numbers into files, and the **Linux kernel** does the stopping, through a feature called **control groups**, or **cgroups**. Once you know which file each setting becomes, a lot of confusing production behaviour suddenly makes sense: slow apps with "low" CPU, pods killed out of nowhere, and noisy neighbours.
+
+This post starts from zero. Every idea comes with a picture, and with a command you can run to **see it happen on your own laptop**, using a small lab I built for exactly this.
 
 > [!TIP]
-> Want to see all of this happen on your own laptop? The hands-on handbook [Kubernetes resources, under the hood](/handbooks/kubernetes-resources-under-the-hood/) runs each idea from this post on a local kind cluster and reads the real kernel files: throttling, OOM kills, QoS, eviction, priority, quotas, PIDs, PSI and in-place resize.
+> Nothing here needs a cloud account. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every example output in this post is copied from a real run on a MacBook.
 
-## What a cgroup is
+## The big picture first
 
-A cgroup is a group of processes that the kernel accounts for and limits together. Each cgroup is a directory in a virtual filesystem. The files inside it are either **controls** you write to (like `memory.max`) or **stats** you read from (like `memory.current`).
+Your YAML passes through four checkpoints before it touches a process. Keep this picture in mind; every section below lives on one of these layers.
 
-Controllers decide what is being managed:
+<figure class="sketch "><svg viewBox="0 0 760 430" role="img" aria-label="Four layers enforce Kubernetes resource settings"><title>Four layers enforce Kubernetes resource settings</title><defs><clipPath id="cbp1"><rect x="30" y="30" width="210" height="70"/></clipPath><clipPath id="cbp2"><rect x="30" y="125" width="210" height="70"/></clipPath><clipPath id="cbp3"><rect x="30" y="220" width="210" height="70"/></clipPath><clipPath id="cbp4"><rect x="30" y="315" width="210" height="70"/></clipPath></defs><path class="h b" clip-path="url(#cbp1)" d="M-30.9 102.0Q-0.5 65.3 30.2 27.2M-22.3 101.0Q9.3 64.9 39.8 28.5M-13.5 101.2Q18.6 66.3 45.9 28.1M-5.7 101.9Q23.6 63.8 56.0 28.0M3.1 103.2Q34.2 65.0 65.7 28.8M12.0 102.6Q42.7 64.3 73.7 28.8M21.1 103.0Q54.0 65.6 82.6 29.2M30.1 101.0Q59.9 64.2 91.1 29.1M39.1 102.7Q69.2 63.7 100.2 28.1M49.4 101.1Q78.8 63.9 109.7 27.3M58.5 101.3Q89.7 66.0 118.2 28.9M66.3 102.7Q96.6 63.7 127.3 27.5M75.3 101.7Q104.3 63.8 135.8 29.1M83.2 103.0Q115.0 64.9 145.6 27.4M93.4 102.9Q123.9 65.3 153.5 27.8M101.1 101.4Q130.1 63.6 162.2 28.2M108.5 102.1Q138.8 63.8 170.9 28.3M117.2 101.9Q149.1 65.6 177.5 27.2M127.4 103.2Q156.7 65.0 187.7 28.5M136.6 102.5Q164.5 63.7 197.6 26.9M146.1 101.0Q175.5 64.8 205.9 28.6M155.7 101.6Q186.0 65.9 216.0 29.0M164.6 102.3Q194.9 65.1 225.0 28.2M174.6 102.5Q203.0 64.4 234.2 28.6M183.4 100.9Q213.4 64.5 243.9 28.0M192.3 101.4Q222.3 65.6 251.0 27.5M201.0 101.9Q229.9 64.7 262.4 27.6M211.0 102.9Q239.4 64.6 270.5 28.2M219.4 102.5Q247.9 64.4 280.5 27.5M226.7 102.3Q257.0 64.6 287.8 27.6M235.5 102.9Q268.4 65.8 296.4 28.5"/><path class="s b" d="M28.8 29.9Q135.4 28.4 238.5 31.1M30.4 29.8Q134.5 28.1 240.4 30.5"/><path class="s b" d="M239.0 29.9Q239.1 65.2 239.0 98.4M239.3 29.5Q240.4 64.6 240.6 100.1"/><path class="s b" d="M240.9 101.3Q135.3 99.3 28.7 101.4M240.4 101.3Q134.5 98.8 29.6 100.2"/><path class="s b" d="M29.9 100.5Q32.2 65.6 29.1 30.7M29.1 101.3Q31.7 65.3 31.5 31.5"/><text x="135" y="63" text-anchor="middle" class="big">API server</text><text x="135" y="87" text-anchor="middle" class="m" style="font-size:18px">the front door</text><text x="270" y="72" text-anchor="start" style="font-size:21px">ResourceQuota · LimitRange · PriorityClass</text><path class="h a" clip-path="url(#cbp2)" d="M-29.9 197.9Q-0.0 159.9 29.6 122.0M-23.1 197.7Q8.9 160.1 37.8 123.7M-14.5 197.0Q16.6 159.3 47.8 123.8M-5.2 196.3Q27.5 161.5 56.7 122.5M5.4 196.5Q36.1 160.7 65.8 123.8M15.1 197.2Q44.9 159.7 75.1 123.1M24.1 196.8Q54.3 160.7 85.6 123.2M32.8 198.1Q63.6 160.5 94.9 122.4M42.9 196.9Q71.2 159.4 102.4 122.3M50.0 196.3Q82.5 161.3 111.4 123.4M60.4 196.1Q89.9 159.3 120.7 122.4M68.0 197.1Q98.7 160.0 128.3 122.3M77.8 197.9Q108.4 160.7 137.7 123.6M88.1 196.3Q118.6 160.8 149.2 123.9M94.4 197.8Q125.2 159.1 156.0 123.7M102.9 197.4Q133.9 159.3 165.5 124.1M112.3 196.3Q142.5 160.0 171.7 122.1M119.1 196.2Q150.5 160.2 180.1 123.8M131.0 196.9Q161.2 160.6 191.4 122.6M137.7 197.5Q169.3 160.1 200.5 122.2M147.0 197.0Q178.8 160.3 207.4 123.9M157.1 197.2Q188.7 160.6 218.2 124.2M167.6 197.8Q197.1 159.6 227.6 124.0M176.5 197.5Q208.0 160.7 236.5 122.6M186.0 196.4Q214.5 158.9 247.6 123.4M194.1 198.2Q225.3 160.4 255.5 123.5M204.4 196.4Q235.3 161.3 264.5 121.9M213.2 197.1Q241.9 159.5 273.1 124.1M220.4 197.2Q253.4 161.5 282.9 121.9M231.2 197.3Q260.6 158.9 291.0 124.1"/><path class="s a" d="M29.3 125.5Q135.1 125.0 240.2 124.3M29.2 123.5Q134.7 125.5 238.9 125.8"/><path class="s a" d="M238.6 126.6Q241.0 160.3 241.4 193.6M241.5 124.2Q238.0 160.0 240.1 196.4"/><path class="s a" d="M241.0 195.3Q135.0 194.5 28.8 195.4M240.1 193.8Q134.6 194.7 29.8 195.5"/><path class="s a" d="M29.7 195.9Q29.5 160.1 30.1 126.6M28.8 196.3Q32.5 159.7 30.9 125.4"/><text x="135" y="158" text-anchor="middle" class="big">Scheduler</text><text x="135" y="182" text-anchor="middle" class="m" style="font-size:18px">the seat planner</text><text x="270" y="167" text-anchor="start" style="font-size:21px">requests vs allocatable · preemption</text><path class="h y" clip-path="url(#cbp3)" d="M-30.7 292.2Q-1.1 254.8 30.3 218.6M-21.6 290.9Q7.7 254.8 37.3 217.5M-14.6 291.0Q16.8 255.3 47.7 218.1M-4.7 292.6Q25.7 254.4 57.3 217.0M3.2 291.8Q35.3 256.0 64.2 218.7M12.7 292.6Q44.0 255.2 74.5 217.8M20.4 292.2Q50.9 253.6 82.2 218.4M30.3 291.0Q60.8 255.4 90.3 218.5M39.9 291.7Q68.8 254.3 99.3 218.5M48.3 292.7Q80.6 256.4 108.9 217.6M56.9 291.7Q89.4 255.8 117.8 217.7M66.2 292.8Q95.6 254.5 127.1 217.2M75.6 292.1Q106.9 255.5 136.6 219.1M85.6 291.0Q115.8 255.8 144.7 218.6M95.3 292.4Q124.0 253.6 154.9 217.3M103.8 293.1Q134.9 255.0 165.5 218.0M113.1 292.8Q144.6 255.9 174.5 218.8M123.2 292.1Q154.7 256.3 184.2 218.7M132.9 291.7Q161.6 255.0 191.8 217.3M140.1 291.1Q170.8 254.1 201.8 218.7M149.9 290.9Q178.0 254.0 208.9 217.2M156.7 291.2Q187.2 254.4 217.7 217.2M166.8 291.4Q196.8 254.8 228.7 219.0M174.9 290.9Q206.6 255.1 237.5 218.7M185.5 292.4Q214.9 254.9 244.6 216.8M193.5 291.2Q223.6 254.9 253.3 217.6M203.0 291.4Q233.3 256.0 262.7 217.2M212.1 291.0Q240.6 254.1 271.7 218.5M219.8 292.9Q249.9 255.4 279.9 218.7M227.7 292.1Q259.6 256.3 289.3 217.2M237.6 291.9Q267.7 254.1 299.4 217.7"/><path class="s y" d="M31.5 221.1Q134.9 217.9 240.5 218.4M30.2 219.9Q135.3 219.0 238.4 221.6"/><path class="s y" d="M239.3 219.6Q238.2 255.1 240.1 289.4M239.2 219.0Q240.6 255.2 240.7 289.5"/><path class="s y" d="M239.5 291.0Q135.1 288.0 28.7 288.9M239.0 289.7Q135.2 292.3 31.1 290.3"/><path class="s y" d="M28.8 289.7Q27.7 254.6 28.6 221.3M30.9 291.0Q29.7 255.2 29.6 219.5"/><text x="135" y="253" text-anchor="middle" class="big">Kubelet</text><text x="135" y="277" text-anchor="middle" class="m" style="font-size:18px">the building manager</text><text x="270" y="262" text-anchor="start" style="font-size:21px">eviction · PID limit · disk limit · writes cgroups</text><path class="h r" clip-path="url(#cbp4)" d="M-30.4 388.2Q-1.2 349.7 30.7 313.4M-21.3 386.1Q7.2 348.7 38.9 313.0M-11.4 388.0Q19.4 350.5 48.9 312.6M-3.0 387.5Q26.5 349.6 58.6 312.3M6.2 387.2Q37.3 349.9 68.2 312.6M17.8 386.1Q46.7 349.3 78.5 313.1M27.0 387.8Q56.2 350.5 86.9 312.1M35.6 387.8Q65.6 349.2 95.6 313.1M44.7 387.4Q72.3 349.3 104.0 313.4M51.9 386.3Q83.3 350.0 113.9 312.1M61.3 387.2Q92.2 350.2 122.3 313.3M70.2 386.9Q100.5 350.9 130.6 313.3M80.5 387.8Q110.8 350.6 141.0 312.8M88.2 386.8Q119.2 350.2 150.0 312.6M96.5 387.6Q127.8 350.8 156.7 313.2M104.2 385.9Q133.7 349.1 165.8 313.1M111.9 388.0Q142.7 349.3 174.9 313.4M123.2 387.2Q153.1 349.5 184.5 312.0M131.0 386.4Q161.6 349.5 192.6 312.6M140.0 387.2Q172.3 350.9 200.1 311.9M151.3 386.9Q180.0 349.9 210.3 312.5M159.6 386.9Q191.3 351.3 220.1 313.9M170.9 385.9Q199.7 349.0 229.9 313.5M177.7 387.5Q210.6 351.2 240.5 312.9M186.0 386.2Q216.2 349.5 247.0 313.4M196.6 386.3Q226.6 350.1 256.7 314.0M206.8 386.9Q235.6 349.1 266.6 313.1M214.5 386.0Q244.3 350.0 274.1 313.6M223.2 388.2Q252.1 349.2 282.0 312.9M231.0 387.1Q262.3 349.7 293.0 312.7"/><path class="s r" d="M31.1 315.6Q135.0 316.5 240.1 316.4M30.3 314.2Q135.4 312.9 239.8 315.9"/><path class="s r" d="M240.0 314.1Q239.0 349.7 240.3 385.0M240.2 316.2Q242.4 350.3 239.0 383.9"/><path class="s r" d="M239.8 384.2Q135.0 387.4 31.0 383.6M240.9 384.2Q135.1 383.0 28.9 384.4"/><path class="s r" d="M30.1 384.2Q27.6 350.2 30.3 313.7M28.9 385.6Q31.1 349.7 31.1 315.9"/><text x="135" y="348" text-anchor="middle" class="big">Linux kernel</text><text x="135" y="372" text-anchor="middle" class="m" style="font-size:18px">the electricity meter</text><text x="270" y="357" text-anchor="start" style="font-size:21px">cpu.max · cpu.weight · memory.max · OOM · PSI</text><path class="s" d="M134.1 103.5Q136.1 111.8 133.5 122.0M134.9 102.8Q134.9 111.5 133.5 121.2"/><path class="s" d="M134.7 121.9Q133.2 116.6 129.5 111.3M134.6 121.6Q133.9 116.7 130.3 111.7"/><path class="s" d="M134.7 122.8Q137.6 116.9 140.0 111.4M134.7 122.3Q137.3 116.7 140.4 112.2"/><path class="s" d="M136.1 196.6Q133.9 206.9 135.9 216.1M133.9 196.1Q135.0 207.1 134.1 216.9"/><path class="s" d="M135.3 217.6Q132.2 212.6 129.7 206.9M134.6 216.2Q131.8 212.4 129.7 206.7"/><path class="s" d="M134.6 216.8Q137.4 212.1 139.2 207.8M135.7 216.2Q137.3 212.0 139.5 206.9"/><path class="s" d="M135.9 292.1Q136.7 301.8 133.6 311.7M135.3 290.5Q135.1 301.6 134.4 311.8"/><path class="s" d="M134.6 312.4Q132.5 307.1 130.5 301.5M134.8 311.8Q131.8 307.5 130.8 301.7"/><path class="s" d="M134.3 311.2Q136.8 306.6 140.0 302.2M135.3 312.7Q138.4 307.2 139.3 302.4"/><text x="380" y="420" text-anchor="middle" class="m" style="font-size:18px">YAML goes in at the top, numbers come out at the bottom</text></svg><figcaption>Your YAML passes four checkpoints. Only the last one, the kernel, actually stops a process.</figcaption></figure>
 
-| Controller | What it governs | Files you'll look at |
-|---|---|---|
-| `cpu` | CPU time, relative weight and hard quota | `cpu.weight`, `cpu.max`, `cpu.stat` |
-| `memory` | RAM usage, limits and OOM behaviour | `memory.max`, `memory.current`, `memory.events` |
-| `io` | Block device bandwidth and IOPS | `io.max`, `io.stat` |
-| `pids` | Number of processes and threads | `pids.max`, `pids.current` |
-| `cpuset` | Which CPUs and NUMA nodes may be used | `cpuset.cpus` |
+- The **API server** checks rules when you create the pod. A rejected pod never exists.
+- The **scheduler** picks a node, based only on what pods *ask for* (requests).
+- The **kubelet** runs on each node. It turns your numbers into cgroup files and watches the node's health.
+- The **kernel** enforces the files, all the time, for every process.
 
-Cgroups are hierarchical. A child can never use more than its parent allows, which is exactly how Kubernetes builds limits at node, QoS class, pod and container level.
+## Set up the lab (5 minutes)
 
-## Cgroups v1 vs v2
-
-Cgroups v1 had a separate tree per controller, so a process could sit in one place in the CPU hierarchy and somewhere else in the memory hierarchy. Cgroups v2 has a **single unified tree** mounted at `/sys/fs/cgroup`, a consistent interface across controllers, and features v1 never had, such as pressure stall information (PSI).
-
-Check which one a node is running:
+You need Docker Desktop (give it at least 4 CPUs and 6 GB of memory), plus `kind` and `kubectl`.
 
 ```bash
-stat -fc %T /sys/fs/cgroup/
-# cgroup2fs  -> cgroups v2
-# tmpfs      -> cgroups v1
+brew install kind kubectl          # on Windows, use WSL2: see the repo README
+git clone https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood.git
+cd kubernetes-resources-under-the-hood
+make cluster                       # a 2-node cluster inside Docker
 ```
 
-Kubernetes support for cgroups v2 went GA in v1.25, and v1 support is now in maintenance mode. Modern distributions and managed node images default to v2. The rest of this post uses v2 file names.
+Each lesson below is one `make` command. Each one prints what it's doing, reads the real kernel files, ends with `PASS`/`FAIL` checks, and cleans up after itself. When you're done, `make clean` deletes the whole cluster.
 
-> [!NOTE]
-> The kubelet and the container runtime must agree on a **cgroup driver**. On systemd-based hosts that should be `systemd` for both. A mismatch between the kubelet's `cgroupDriver` and containerd's `SystemdCgroup` setting is a classic cause of unstable nodes.
+## Lesson 1: a cgroup is just a folder
 
-## The kubelet's cgroup tree
+Imagine a box. You put some processes in it, and the box has dials on the side: *how much CPU*, *how much memory*, *how many processes*. The kernel keeps every process inside the box within those dial settings.
 
-With the systemd driver, the kubelet creates a tree like this:
+That box is a **cgroup**, and on Linux it's literally a folder under `/sys/fs/cgroup`. The dials are files in that folder. Write `50000 100000` into `cpu.max` and the kernel starts limiting CPU for everything in that folder. No restart, no API: just a file.
+
+<figure class="sketch "><svg viewBox="0 0 760 300" role="img" aria-label="A cgroup holds processes and has files that act as dials"><title>A cgroup holds processes and has files that act as dials</title><path class="s a" d="M40.3 40.4Q205.1 38.5 368.6 38.4M41.6 39.9Q204.7 41.4 371.1 39.9"/><path class="s a" d="M371.2 40.1Q368.8 150.2 370.8 260.5M369.4 38.5Q372.6 150.1 371.2 259.9"/><path class="s a" d="M371.3 259.7Q205.5 259.2 41.0 259.8M368.8 259.1Q205.5 257.3 41.5 259.8"/><path class="s a" d="M39.6 259.5Q40.4 150.0 40.3 40.3M41.1 261.6Q42.3 150.5 40.5 38.9"/><text x="55" y="30" text-anchor="start" style="font-size:22px">a cgroup (just a folder!)</text><path class="s" d="M151.6 89.3Q161.7 95.7 164.2 99.6Q166.7 103.5 167.7 107.6Q168.6 111.7 166.2 115.5Q163.7 119.4 160.8 123.2Q157.8 127.0 151.8 129.5Q145.8 132.1 138.8 133.4Q131.7 134.8 124.4 135.0Q117.0 135.2 109.4 135.0Q101.8 134.8 95.1 132.7Q88.3 130.7 84.5 127.1Q80.6 123.5 76.6 120.0Q72.5 116.6 72.5 112.5Q72.4 108.3 74.4 104.5Q76.5 100.6 80.0 97.1Q83.6 93.6 88.7 90.6Q93.8 87.6 100.8 85.9Q107.8 84.2 115.4 84.5Q123.0 84.9 130.4 85.3Q137.9 85.6 143.8 88.1Q149.7 90.6 155.4 93.3"/><path class="s" d="M96.0 133.3Q83.2 128.1 79.6 124.2Q76.0 120.4 73.2 116.3Q70.5 112.2 72.3 108.0Q74.0 103.8 77.4 100.1Q80.8 96.4 85.3 93.0Q89.8 89.5 97.0 87.9Q104.2 86.4 111.6 85.5Q119.1 84.6 126.7 85.0Q134.4 85.4 141.5 87.1Q148.6 88.9 153.5 92.2Q158.4 95.4 161.5 99.2Q164.6 102.9 166.9 107.0Q169.2 111.1 166.7 115.2Q164.2 119.3 161.1 123.2Q158.0 127.2 151.9 130.0Q145.7 132.8 138.1 134.0Q130.4 135.1 122.7 135.5Q115.0 135.8 107.4 134.7Q99.9 133.6 93.3 131.3Q86.6 129.1 81.9 125.6"/><text x="120" y="116" text-anchor="middle" style="font-size:19px">nginx</text><path class="s" d="M214.9 110.5Q221.7 103.0 227.8 100.6Q234.0 98.1 240.9 96.6Q247.8 95.0 255.3 94.3Q262.7 93.6 269.9 94.9Q277.1 96.2 283.5 98.2Q289.9 100.1 295.8 102.8Q301.7 105.5 304.1 109.4Q306.5 113.4 307.3 117.4Q308.1 121.5 305.6 125.3Q303.2 129.1 300.1 132.7Q297.0 136.3 291.5 139.2Q286.1 142.0 279.0 143.1Q271.8 144.3 264.5 145.2Q257.3 146.2 249.9 145.3Q242.5 144.5 236.5 142.0Q230.6 139.5 224.9 136.9Q219.3 134.2 216.5 130.4Q213.7 126.6 212.6 122.6Q211.5 118.5 213.6 114.6Q215.7 110.7 219.0 107.0"/><path class="s" d="M256.4 94.9Q271.5 95.6 279.0 96.8Q286.5 97.9 292.7 100.6Q298.9 103.4 301.7 107.4Q304.4 111.4 306.1 115.5Q307.8 119.6 306.9 123.8Q306.0 128.0 302.0 131.7Q298.1 135.3 292.6 138.2Q287.1 141.2 280.0 142.9Q273.0 144.7 265.4 145.2Q257.7 145.7 250.0 145.0Q242.3 144.4 235.9 142.0Q229.5 139.6 224.3 136.4Q219.2 133.3 215.7 129.5Q212.2 125.7 213.0 121.4Q213.9 117.2 215.1 113.1Q216.3 108.9 220.5 105.3Q224.8 101.7 231.5 99.5Q238.1 97.2 245.5 96.0Q252.8 94.8 260.7 94.3Q268.5 93.8 275.5 95.7"/><text x="260" y="126" text-anchor="middle" style="font-size:19px">worker</text><path class="s" d="M188.3 223.9Q173.9 226.3 166.5 225.4Q159.2 224.6 152.2 223.2Q145.3 221.9 139.6 219.3Q134.0 216.7 129.3 213.5Q124.6 210.2 123.5 206.1Q122.4 202.1 122.3 197.9Q122.2 193.8 126.1 190.3Q130.0 186.8 134.6 183.6Q139.1 180.5 145.3 178.1Q151.4 175.7 158.7 174.6Q166.1 173.4 173.6 174.1Q181.1 174.8 187.8 176.5Q194.5 178.2 200.0 180.9Q205.5 183.5 210.0 186.8Q214.4 190.0 215.6 194.0Q216.8 198.0 217.3 202.1Q217.7 206.2 214.8 210.0Q211.9 213.9 206.2 216.6Q200.5 219.3 194.3 221.5Q188.1 223.6 181.0 225.1"/><path class="s" d="M139.1 179.4Q153.5 175.9 161.1 175.3Q168.7 174.7 176.3 175.1Q183.9 175.5 191.3 177.0Q198.7 178.5 203.6 181.8Q208.5 185.2 212.0 188.9Q215.5 192.6 216.6 196.8Q217.7 200.9 216.2 205.0Q214.6 209.2 210.7 212.8Q206.8 216.4 201.4 219.6Q196.1 222.7 188.3 223.7Q180.6 224.7 173.0 224.8Q165.5 225.0 157.5 224.7Q149.6 224.4 143.0 222.0Q136.4 219.5 131.3 216.1Q126.3 212.7 124.6 208.5Q122.9 204.3 122.0 200.0Q121.1 195.7 123.7 191.6Q126.3 187.5 132.0 184.5Q137.7 181.5 143.7 178.7Q149.7 176.0 157.3 174.7"/><text x="170" y="206" text-anchor="middle" style="font-size:19px">worker</text><text x="205" y="250" text-anchor="middle" class="m" style="font-size:17px">processes live inside</text><path class="s" d="M369.5 69.1Q400.0 70.4 428.6 70.3M371.3 70.6Q400.4 68.5 431.4 71.3"/><path class="s b" d="M468.2 58.1Q470.3 63.9 471.3 66.9Q472.3 69.9 471.5 72.9Q470.6 75.9 469.3 78.7Q468.0 81.5 466.0 83.9Q464.0 86.3 461.1 87.7Q458.3 89.0 455.2 89.5Q452.1 89.9 448.9 89.8Q445.7 89.6 443.0 88.0Q440.2 86.4 438.1 84.0Q436.1 81.7 434.7 78.9Q433.3 76.2 432.4 73.1Q431.5 70.1 432.2 67.0Q433.0 63.9 434.2 61.0Q435.4 58.1 437.9 56.1Q440.3 54.0 443.1 52.7Q445.9 51.4 448.9 50.7Q451.9 50.0 455.1 50.2Q458.2 50.5 460.8 52.3Q463.4 54.1 465.9 56.0Q468.5 57.9 470.0 60.7"/><path class="s b" d="M459.0 50.8Q464.1 54.9 466.6 57.0Q469.0 59.1 470.5 62.1Q471.9 65.1 471.6 68.4Q471.3 71.7 470.7 74.8Q470.0 77.9 468.3 80.6Q466.5 83.3 464.1 85.4Q461.7 87.5 458.6 88.6Q455.5 89.6 452.3 89.7Q449.0 89.7 445.9 88.9Q442.7 88.1 440.4 85.8Q438.1 83.4 436.3 80.9Q434.5 78.3 433.6 75.3Q432.7 72.2 432.8 69.1Q433.0 65.9 434.2 63.0Q435.3 60.1 437.0 57.2Q438.6 54.3 441.5 52.6Q444.4 51.0 447.7 50.8Q451.0 50.6 454.2 50.7Q457.4 50.7 460.3 52.2Q463.2 53.7 465.5 55.9"/><path class="s b" d="M451.8 69.6Q456.9 63.9 461.8 57.5M451.5 69.6Q457.2 64.0 461.8 58.1"/><text x="485" y="68" text-anchor="start" class="code">cpu.max</text><text x="485" y="90" text-anchor="start" class="m" style="font-size:18px">how much CPU</text><path class="s" d="M370.4 139.8Q399.8 141.6 429.6 140.0M369.9 139.2Q399.9 141.1 430.1 140.6"/><path class="s b" d="M469.9 148.6Q466.4 153.8 464.0 155.9Q461.7 158.1 458.7 159.2Q455.7 160.3 452.5 160.0Q449.3 159.6 446.2 159.1Q443.1 158.5 440.5 156.6Q437.9 154.7 436.3 152.0Q434.7 149.3 433.5 146.4Q432.4 143.5 432.5 140.5Q432.7 137.4 433.1 134.2Q433.6 131.1 435.5 128.6Q437.4 126.0 439.8 124.0Q442.3 121.9 445.3 120.9Q448.4 119.9 451.6 119.9Q454.7 120.0 457.8 120.8Q460.8 121.7 463.4 123.6Q465.9 125.5 467.5 128.1Q469.1 130.8 470.5 133.6Q471.8 136.4 471.5 139.5Q471.1 142.6 470.3 145.5Q469.6 148.5 468.1 151.3"/><path class="s b" d="M470.7 145.3Q468.0 151.1 466.1 153.8Q464.2 156.5 461.1 157.5Q458.0 158.6 454.9 159.0Q451.7 159.3 448.4 159.3Q445.1 159.3 442.5 157.3Q439.9 155.3 437.4 153.2Q434.8 151.2 433.6 148.1Q432.4 145.0 432.0 141.7Q431.6 138.4 432.3 135.2Q433.0 131.9 435.0 129.2Q437.0 126.6 439.5 124.4Q442.0 122.2 445.2 121.6Q448.4 121.0 451.6 120.4Q454.8 119.8 457.9 121.0Q461.0 122.1 463.7 123.9Q466.5 125.8 468.0 128.6Q469.5 131.5 470.9 134.5Q472.2 137.5 472.2 140.8Q472.2 144.2 470.5 147.0Q468.7 149.8 466.8 152.4"/><path class="s b" d="M451.6 139.7Q457.3 134.0 462.1 128.3M451.8 139.9Q456.8 133.8 461.5 128.0"/><text x="485" y="138" text-anchor="start" class="code">memory.max</text><text x="485" y="160" text-anchor="start" class="m" style="font-size:18px">how much RAM</text><path class="s" d="M368.9 210.6Q399.9 212.4 430.8 210.6M371.3 208.9Q400.0 210.3 428.7 210.8"/><path class="s b" d="M469.3 199.9Q471.5 205.8 471.8 208.9Q472.2 212.1 471.0 215.0Q469.9 217.9 468.3 220.5Q466.7 223.1 464.3 225.0Q461.8 226.9 459.0 228.3Q456.2 229.7 453.1 229.7Q450.0 229.6 447.0 228.8Q444.1 228.0 441.3 226.5Q438.5 225.1 436.3 222.7Q434.2 220.4 433.4 217.3Q432.7 214.2 432.3 211.1Q431.8 207.9 432.8 205.0Q433.8 202.0 435.3 199.2Q436.7 196.3 439.3 194.5Q441.9 192.6 444.9 191.7Q447.8 190.8 450.9 190.6Q454.0 190.5 456.9 191.4Q459.8 192.3 462.6 193.7Q465.3 195.1 467.2 197.6Q469.1 200.0 470.1 203.0"/><path class="s b" d="M439.4 225.2Q434.6 220.7 433.8 217.5Q433.0 214.3 432.2 211.1Q431.4 207.9 432.6 204.8Q433.8 201.7 435.6 198.9Q437.3 196.2 440.0 194.3Q442.6 192.4 445.7 191.1Q448.7 189.8 452.0 189.8Q455.4 189.8 458.4 191.1Q461.5 192.3 464.0 194.3Q466.6 196.4 468.5 199.0Q470.5 201.6 471.4 204.8Q472.4 208.0 471.9 211.2Q471.3 214.5 470.3 217.6Q469.3 220.7 467.2 223.3Q465.1 225.9 462.1 227.3Q459.1 228.7 455.9 229.1Q452.7 229.6 449.5 229.2Q446.4 228.8 443.3 227.7Q440.2 226.6 437.9 224.2Q435.6 221.9 433.9 219.0"/><path class="s b" d="M451.7 209.6Q457.4 204.3 462.2 198.4M451.8 209.9Q457.5 204.7 462.3 197.5"/><text x="485" y="208" text-anchor="start" class="code">pids.max</text><text x="485" y="230" text-anchor="start" class="m" style="font-size:18px">how many processes</text></svg><figcaption>A cgroup is a folder. Processes go in, and the files in it are dials the kernel obeys.</figcaption></figure>
+
+There are two versions. **cgroups v2** has one tidy tree and is what every modern system uses, including current Kubernetes. Check your node:
+
+```bash
+make 00-setup
+```
+
+The first check runs `stat -fc %T /sys/fs/cgroup/` on the node. If it prints `cgroup2fs`, you're on cgroups v2. The module then lists the controllers the kernel offers (`cpu`, `memory`, `io`, `pids` and a few more) and shows where the kubelet keeps its pods.
+
+## Lesson 2: Kubernetes builds Russian dolls
+
+The kubelet doesn't make one box per container and stop there. It nests them: a box for all pods, inside it a box per QoS class, inside that a box per pod, and inside that a box per container.
+
+<figure class="sketch "><svg viewBox="0 0 760 360" role="img" aria-label="The kubelet nests cgroups like Russian dolls"><title>The kubelet nests cgroups like Russian dolls</title><path class="s" d="M21.2 20.6Q380.3 20.8 741.1 18.8M21.0 19.0Q380.5 20.0 739.9 19.3"/><path class="s" d="M739.3 19.4Q739.9 179.5 741.1 340.7M740.3 19.0Q741.7 179.6 738.7 341.0"/><path class="s" d="M741.0 339.5Q379.7 341.7 21.2 340.1M740.5 341.2Q379.7 339.7 21.0 339.5"/><path class="s" d="M18.9 339.5Q19.1 179.6 20.3 18.7M20.8 339.9Q20.6 179.8 19.5 20.0"/><text x="32" y="46" text-anchor="start" style="font-size:21px">the whole node</text><path class="s b" d="M48.8 60.6Q379.5 61.3 710.9 58.7M48.7 58.8Q379.9 61.3 709.2 61.2"/><path class="s b" d="M711.1 59.6Q711.5 190.4 709.6 320.1M710.8 60.9Q708.4 190.3 708.8 321.2"/><path class="s b" d="M711.1 319.6Q379.8 321.8 51.1 320.1M708.9 319.1Q379.8 320.4 50.5 321.3"/><path class="s b" d="M50.1 319.8Q48.1 190.5 49.3 60.2M48.8 321.1Q51.3 189.9 48.8 60.0"/><text x="62" y="86" text-anchor="start" style="font-size:21px">kubepods: all pods together</text><text x="698" y="86" text-anchor="end" class="m" style="font-size:17px">≤ allocatable</text><path class="s a" d="M81.2 100.3Q379.6 101.6 680.7 99.0M79.5 99.9Q379.6 100.1 681.3 100.9"/><path class="s a" d="M680.6 99.9Q678.0 200.0 679.5 299.7M681.2 100.3Q681.3 200.5 680.0 299.6"/><path class="s a" d="M681.0 299.6Q379.8 302.0 80.7 300.7M679.6 300.5Q380.2 299.5 79.4 300.0"/><path class="s a" d="M81.2 300.4Q81.3 199.8 80.2 98.7M79.9 300.8Q79.9 200.2 80.4 100.8"/><text x="92" y="126" text-anchor="start" style="font-size:21px">burstable: one QoS class</text><path class="s y" d="M110.9 139.6Q380.1 139.6 650.9 141.0M110.0 140.1Q380.5 141.3 649.1 140.9"/><path class="s y" d="M650.6 140.6Q648.2 210.2 649.1 280.7M650.3 140.7Q649.8 209.9 650.4 280.6"/><path class="s y" d="M650.4 279.3Q379.6 281.9 110.5 280.3M648.8 279.0Q380.0 281.6 109.5 279.2"/><path class="s y" d="M109.7 280.3Q108.2 210.0 110.2 139.3M109.4 279.8Q111.2 209.9 109.0 140.9"/><text x="122" y="166" text-anchor="start" style="font-size:21px">pod-1234: one pod</text><text x="638" y="166" text-anchor="end" class="m" style="font-size:17px">≤ sum of its containers</text><path class="s r" d="M138.9 180.1Q264.5 179.6 389.6 180.2M140.8 180.4Q265.3 181.8 389.7 179.1"/><path class="s r" d="M391.2 180.3Q389.7 220.5 389.6 261.0M390.3 179.1Q391.7 220.1 390.3 261.0"/><path class="s r" d="M389.5 261.2Q264.9 260.2 139.7 261.2M391.3 260.0Q265.1 258.0 139.8 259.5"/><path class="s r" d="M139.9 259.0Q142.0 219.8 140.3 179.9M138.7 260.1Q139.4 220.3 139.4 181.1"/><text x="152" y="206" text-anchor="start" style="font-size:21px">container: app</text><text x="152" y="236" text-anchor="start" class="m" style="font-size:17px">cpu.max, memory.max</text><path class="s r" d="M419.1 181.3Q524.7 180.9 629.5 180.3M420.6 179.0Q525.2 180.0 630.7 179.5"/><path class="s r" d="M630.1 179.9Q629.7 219.8 629.6 260.6M629.9 181.1Q629.1 219.7 631.0 260.1"/><path class="s r" d="M630.2 260.5Q525.3 261.9 420.3 260.0M630.9 259.2Q524.9 258.2 419.5 260.9"/><path class="s r" d="M419.8 259.4Q418.5 220.2 420.7 181.1M420.0 259.6Q418.5 220.1 419.1 180.2"/><text x="432" y="206" text-anchor="start" style="font-size:21px">container: sidecar</text></svg><figcaption>Like Russian dolls: a container can never get more than the pod, the pod never more than all pods.</figcaption></figure>
+
+Nesting is the clever part. A child box can **never** get more than its parent, so a container can't exceed its pod, and all pods together can't exceed what the node allows them.
+
+On a real node the folders look like this (kind adds a `kubelet-` prefix):
 
 ```text
-/sys/fs/cgroup/
-└── kubepods.slice/                                   # all pods
-    ├── kubepods-pod<uid>.slice/                      # Guaranteed pods sit directly here
-    │   └── cri-containerd-<container-id>.scope
-    ├── kubepods-burstable.slice/
-    │   └── kubepods-burstable-pod<uid>.slice/
-    │       └── cri-containerd-<container-id>.scope
-    └── kubepods-besteffort.slice/
-        └── kubepods-besteffort-pod<uid>.slice/
-            └── cri-containerd-<container-id>.scope
+/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/                  ← all pods
+  ├── kubelet-kubepods-burstable.slice/                               ← one QoS class
+  │     └── kubelet-kubepods-burstable-pod<uid>.slice/                ← one pod
+  │           └── cri-containerd-<id>.scope/                          ← one container
+  └── kubelet-kubepods-besteffort.slice/
 ```
 
-Each level gets its own settings: the whole `kubepods.slice` is capped at the node's allocatable resources, each pod slice is capped at the sum of its containers' limits, and each container scope carries the container's own values. In the slice names, the dashes in the pod UID are replaced with underscores.
+## Lesson 3: requests and limits become numbers in files
 
-## How requests and limits become cgroup files
+Now the magic trick. Here's where each line of your YAML goes:
 
-### CPU requests become a weight
+<figure class="sketch "><svg viewBox="0 0 760 320" role="img" aria-label="Requests and limits turn into cgroup files"><title>Requests and limits turn into cgroup files</title><path class="s" d="M18.6 30.1Q149.6 29.3 279.6 28.6M18.6 28.7Q149.4 30.0 279.8 31.0"/><path class="s" d="M281.4 30.2Q281.6 160.2 279.7 291.5M278.9 28.8Q282.8 159.7 279.4 291.0"/><path class="s" d="M279.6 290.2Q150.1 291.8 18.6 288.6M279.4 290.3Q150.2 291.4 19.9 289.4"/><path class="s" d="M20.2 290.1Q21.8 159.7 21.2 30.7M19.7 290.8Q19.5 159.5 18.9 30.0"/><text x="35" y="22" text-anchor="start" style="font-size:21px">pod.yaml</text><text x="40" y="70" text-anchor="start" class="code">resources:</text><text x="40" y="100" text-anchor="start" class="code">&#160;&#160;requests:</text><text x="40" y="130" text-anchor="start" class="code">&#160;&#160;&#160;&#160;cpu:&#160;250m</text><text x="40" y="160" text-anchor="start" class="code">&#160;&#160;&#160;&#160;memory:&#160;64Mi</text><text x="40" y="195" text-anchor="start" class="code">&#160;&#160;limits:</text><text x="40" y="225" text-anchor="start" class="code">&#160;&#160;&#160;&#160;cpu:&#160;500m</text><text x="40" y="255" text-anchor="start" class="code">&#160;&#160;&#160;&#160;memory:&#160;128Mi</text><path class="s a" d="M200.2 126.2Q302.1 93.1 404.4 65.6M201.1 126.4Q302.7 95.4 404.9 65.5"/><path class="s a" d="M405.8 65.5Q401.8 69.6 396.5 72.2M404.5 64.4Q400.3 68.4 396.1 72.8"/><path class="s a" d="M405.6 64.3Q399.3 64.9 394.1 63.3M404.6 64.9Q399.9 63.4 393.9 63.8"/><path class="s a" d="M414.4 37.4Q574.7 39.4 735.0 38.2M414.7 38.2Q574.5 37.0 736.1 38.5"/><path class="s a" d="M733.9 39.0Q735.1 69.2 735.7 100.9M734.0 38.3Q733.8 68.9 733.9 99.0"/><path class="s a" d="M733.9 98.8Q574.7 101.0 414.2 99.0M735.3 99.2Q574.5 100.9 414.4 99.6"/><path class="s a" d="M416.2 99.9Q414.1 69.3 415.0 37.0M415.8 99.2Q413.3 68.8 413.9 39.1"/><text x="430" y="64" text-anchor="start" class="code">cpu.weight = 35</text><text x="430" y="90" text-anchor="start" class="m" style="font-size:18px">a share, only used when CPUs are busy</text><path class="s r" d="M198.5 220.1Q302.1 187.7 406.5 156.2M198.9 220.9Q302.5 188.3 405.1 155.9"/><path class="s r" d="M405.8 155.6Q401.1 159.3 397.5 163.1M404.8 154.2Q400.4 158.4 396.2 162.2"/><path class="s r" d="M404.9 155.7Q399.6 155.1 394.9 154.2M404.5 154.5Q399.3 154.4 394.3 154.1"/><path class="s r" d="M415.7 127.0Q575.0 129.5 735.4 129.0M414.2 128.7Q575.2 129.1 734.6 128.7"/><path class="s r" d="M736.1 128.5Q733.1 158.9 734.2 189.1M734.2 128.8Q736.7 159.3 736.2 190.4"/><path class="s r" d="M733.8 191.1Q575.0 190.2 415.4 190.1M735.8 189.3Q574.9 188.7 414.4 189.5"/><path class="s r" d="M414.8 189.1Q414.1 158.8 416.0 127.6M414.8 191.0Q414.9 159.4 415.0 128.1"/><text x="430" y="154" text-anchor="start" class="code">cpu.max = 50000 100000</text><text x="430" y="180" text-anchor="start" class="m" style="font-size:18px">50ms of CPU every 100ms</text><path class="s r" d="M199.0 248.4Q301.9 247.5 406.0 244.0M199.4 250.1Q302.8 247.4 405.2 245.9"/><path class="s r" d="M404.6 245.4Q400.6 248.2 395.2 250.1M405.2 245.0Q400.1 246.9 395.2 250.3"/><path class="s r" d="M405.7 245.3Q400.0 242.8 395.6 241.2M405.5 244.4Q399.8 243.5 394.4 240.4"/><path class="s r" d="M415.4 218.7Q574.8 215.9 736.0 217.2M415.9 219.1Q575.2 218.5 734.3 219.1"/><path class="s r" d="M735.8 217.2Q735.4 249.5 734.8 280.0M735.5 216.8Q735.3 248.8 735.1 279.9"/><path class="s r" d="M735.0 279.0Q574.8 282.0 416.2 280.7M733.9 280.7Q574.6 278.0 414.4 279.1"/><path class="s r" d="M414.4 279.2Q415.1 249.3 416.0 218.2M415.5 279.8Q415.4 248.6 414.0 219.1"/><text x="430" y="244" text-anchor="start" class="code">memory.max = 134217728</text><text x="430" y="270" text-anchor="start" class="m" style="font-size:18px">128Mi, then the OOM killer</text><text x="212" y="165" text-anchor="start" class="m" style="font-size:16px">← no file: scheduler only</text></svg><figcaption>The kubelet turns your YAML into numbers in files. Memory requests don't become a file at all.</figcaption></figure>
 
-A CPU request does **not** reserve a core. It sets a relative weight that only matters when the CPU is contended.
+```bash
+make 01-requests-and-limits
+```
 
-The kubelet converts millicores to the old v1 "shares" unit (`requests.cpu` in millicores × 1024 / 1000, so `250m` becomes 256 shares), and the runtime converts that to `cpu.weight` on cgroups v2. The exact shares-to-weight formula depends on the runtime version, so read the file rather than calculating it.
-
-When the node is idle, a container with a small request can use as much spare CPU as it likes. When the node is busy, CPU time is split in proportion to these weights.
-
-### CPU limits become a hard quota
-
-A CPU limit becomes `cpu.max`, written as `<quota> <period>` in microseconds. The default period is 100ms:
-
-| `limits.cpu` | `cpu.max` | Meaning |
+| You wrote | The kubelet wrote | In plain words |
 |---|---|---|
-| `500m` | `50000 100000` | 50ms of CPU time per 100ms period |
-| `2` | `200000 100000` | 200ms per period, spread across any cores |
-| not set | `max 100000` | no quota |
+| `requests.cpu: 250m` | `cpu.weight` = `35` | A *share* of CPU, only used when CPUs are busy |
+| `limits.cpu: 500m` | `cpu.max` = `50000 100000` | At most 50ms of CPU in every 100ms |
+| `limits.memory: 128Mi` | `memory.max` = `134217728` | 128 MiB in bytes. Go over and you're killed |
+| `requests.memory: 64Mi` | nothing (`memory.min` = `0`) | Only the scheduler uses it, to pick a node |
 
-This is where **throttling** comes from. The quota is counted across all threads, so a multi-threaded process can burn its whole 50ms in the first 10ms of a period on five cores, then sit throttled for the remaining 90ms. Average CPU usage looks low, yet latency spikes. That pattern hits request-serving services with bursty, parallel work especially hard.
+That last row surprises a lot of people: **a memory request doesn't protect anything at runtime by default.** It only helps the scheduler find a node with room.
 
-### Memory limits become a hard ceiling
+## Lesson 4: a CPU limit is a budget, and you can run out
 
-`limits.memory` becomes `memory.max`. When the cgroup's usage hits that value and the kernel can't reclaim enough memory (mostly page cache), it invokes the OOM killer **inside that cgroup**, and the container is restarted with `OOMKilled`.
+Think of `cpu.max` like a mobile data plan that renews every 100 milliseconds. With `limits.cpu: 200m`, you get 20ms of CPU time per 100ms window. Use it up early, and you **wait** until the next window, even if the machine has 9 idle CPUs.
 
-`requests.memory` is used by the scheduler, but by default it is **not** written to any cgroup file. An alpha feature called Memory QoS can map it to `memory.min` and use `memory.high` for throttling before the hard limit, but it is off unless you enable the feature gate.
+<figure class="sketch anim"><svg viewBox="0 0 760 250" role="img" aria-label="CPU limit as a quota per 100ms window"><title>CPU limit as a quota per 100ms window</title><defs><clipPath id="cth1"><rect x="40" y="70" width="44.0" height="60"/></clipPath><clipPath id="cth2"><rect x="84.0" y="70" width="176.0" height="60"/></clipPath><clipPath id="cth3"><rect x="270" y="70" width="44.0" height="60"/></clipPath><clipPath id="cth4"><rect x="314.0" y="70" width="176.0" height="60"/></clipPath><clipPath id="cth5"><rect x="500" y="70" width="44.0" height="60"/></clipPath><clipPath id="cth6"><rect x="544.0" y="70" width="176.0" height="60"/></clipPath></defs><text x="20" y="30" text-anchor="start" style="font-size:22px">limits.cpu: 200m → 20ms of CPU in every 100ms window</text><path class="h g" clip-path="url(#cth1)" d="M-11.3 130.8Q13.7 99.6 40.0 69.0M-7.3 132.5Q19.4 99.7 45.0 68.5M-0.7 132.2Q23.2 99.4 51.1 67.7M5.4 131.8Q29.5 99.2 56.0 67.4M11.2 132.9Q36.0 99.2 61.3 67.7M15.3 132.2Q40.8 99.2 67.5 68.2M23.1 130.8Q47.7 98.9 74.2 68.0M28.9 132.2Q55.6 99.9 81.2 68.3M35.9 131.4Q61.6 99.0 90.1 69.2M42.3 130.9Q69.1 100.2 93.8 68.4M49.1 132.2Q74.7 100.5 100.2 67.8M54.7 131.8Q81.0 100.5 106.6 67.9M61.5 130.9Q85.8 98.6 113.6 68.7M66.6 131.4Q93.3 100.7 120.1 67.8M71.8 132.8Q99.6 101.0 124.1 66.9M79.8 130.8Q105.0 99.7 130.6 67.3"/><path class="s g" d="M38.9 70.2Q62.6 70.2 82.8 68.7M39.8 70.7Q62.3 69.7 84.8 69.6"/><path class="s g" d="M84.9 71.2Q81.9 100.3 84.0 128.7M84.4 68.7Q86.0 99.6 84.9 129.1"/><path class="s g" d="M84.2 129.6Q61.6 131.8 39.0 129.9M82.5 131.6Q62.0 128.9 41.2 130.1"/><path class="s g" d="M38.6 130.5Q40.2 100.5 40.1 69.4M40.6 129.9Q41.3 99.5 40.0 70.4"/><path class="h r" clip-path="url(#cth2)" d="M32.8 131.4Q56.7 98.8 84.8 68.6M42.4 132.4Q68.8 101.0 94.0 67.0M51.1 131.9Q77.6 99.8 103.7 66.9M63.1 132.2Q87.9 99.1 115.3 69.2M73.4 131.3Q97.4 98.8 124.2 67.1M82.5 131.9Q109.8 100.9 134.1 67.7M91.5 131.9Q117.3 99.4 145.4 66.9M102.2 132.3Q128.0 100.5 152.9 66.9M111.6 133.0Q136.7 100.0 164.1 68.9M121.2 132.3Q148.9 101.0 173.9 67.6M132.4 132.3Q158.0 99.5 184.8 67.9M141.9 131.3Q167.5 99.4 194.5 68.4M151.4 132.6Q177.4 100.3 204.2 68.6M160.7 131.9Q186.6 99.6 213.6 67.6M170.7 132.1Q196.9 100.2 222.3 66.8M181.1 132.8Q206.4 98.6 235.4 68.4M192.3 131.7Q219.1 100.6 243.4 67.6M201.8 130.8Q226.9 99.6 254.2 66.8M212.2 131.5Q238.9 101.3 262.9 67.9M221.6 132.2Q247.0 99.6 274.2 69.0M230.0 131.1Q256.4 99.4 282.4 68.1M241.6 132.8Q266.7 99.5 295.1 69.0M252.0 131.9Q277.9 100.3 304.7 69.1"/><path class="s r" d="M83.5 71.2Q172.6 71.6 260.9 71.5M84.1 70.5Q172.0 68.9 261.5 69.0"/><path class="s r" d="M259.0 71.1Q262.4 100.1 259.3 128.8M260.9 69.9Q260.3 99.9 261.5 128.5"/><path class="s r" d="M259.0 130.5Q171.5 131.8 84.1 130.3M258.9 129.6Q172.4 128.8 85.5 129.7"/><path class="s r" d="M85.1 130.4Q83.0 99.6 82.7 71.5M85.4 129.5Q83.8 100.1 82.4 69.0"/><text x="62.0" y="160" text-anchor="middle" style="font-size:19px">run</text><text x="172.0" y="160" text-anchor="middle" style="font-size:19px">throttled: wait…</text><text x="150.0" y="190" text-anchor="middle" class="m" style="font-size:17px">window 1 (100ms)</text><path class="h g" clip-path="url(#cth3)" d="M218.7 131.3Q242.6 98.7 268.8 67.9M223.4 133.0Q248.3 99.2 274.9 68.3M229.3 131.3Q256.1 100.6 279.8 66.8M235.9 131.0Q262.0 100.6 288.1 68.5M243.1 131.7Q267.1 98.9 294.8 69.0M249.1 131.6Q274.5 99.6 300.1 67.5M255.5 132.8Q281.0 99.7 307.2 67.3M259.9 133.1Q285.6 100.3 311.5 68.4M266.6 131.7Q293.1 99.9 319.9 69.1M273.1 130.8Q300.8 100.7 324.9 68.2M280.2 131.2Q305.3 100.1 332.1 68.1M284.6 131.9Q310.6 99.5 337.9 67.9M292.5 131.9Q318.2 100.5 344.2 68.3M298.3 131.0Q322.6 99.3 349.9 68.2M304.0 133.1Q329.1 99.3 356.2 66.8M309.9 132.6Q335.7 100.9 360.8 66.8"/><path class="s g" d="M270.9 69.6Q291.9 70.1 314.9 68.9M269.9 71.2Q292.3 71.6 313.4 70.6"/><path class="s g" d="M314.9 70.3Q312.8 99.7 315.0 128.6M313.8 68.5Q314.3 100.4 313.1 131.1"/><path class="s g" d="M314.9 131.2Q292.1 128.0 269.3 129.9M312.9 128.7Q291.4 131.1 271.3 128.7"/><path class="s g" d="M269.6 129.1Q271.5 99.7 270.7 71.5M269.7 130.7Q271.1 100.0 269.3 69.2"/><path class="h r" clip-path="url(#cth4)" d="M262.4 131.2Q288.3 100.9 312.9 68.2M270.8 132.1Q297.3 100.3 324.0 67.1M279.8 131.0Q307.6 101.2 332.6 67.9M291.6 132.3Q315.7 99.7 342.1 68.2M299.0 132.8Q324.9 98.7 351.1 67.4M308.1 133.0Q336.6 100.6 360.4 68.5M319.0 132.4Q345.8 100.1 370.8 67.9M329.4 132.4Q355.1 99.7 380.0 68.7M340.9 131.5Q366.6 100.9 391.1 67.6M348.6 130.8Q373.7 98.9 400.9 68.8M360.0 132.3Q384.2 98.6 411.5 67.8M369.2 131.3Q395.8 99.0 421.3 68.8M380.3 132.1Q405.7 100.0 431.2 68.6M389.5 132.5Q413.8 99.2 442.1 69.0M399.5 131.6Q424.2 99.1 450.1 67.3M407.8 132.5Q435.2 100.6 460.3 68.0M417.0 131.9Q445.2 101.2 469.8 67.8M427.3 132.8Q453.9 99.8 479.3 67.4M439.9 133.1Q463.6 99.0 490.3 68.3M448.5 130.9Q475.4 99.7 500.6 68.5M459.5 131.7Q484.9 99.4 512.7 68.4M469.1 130.9Q495.5 99.2 521.8 67.4M478.8 130.9Q506.9 100.7 531.6 67.8M488.8 131.2Q514.8 99.6 540.2 68.6"/><path class="s r" d="M314.4 71.4Q402.1 69.6 490.7 69.5M312.8 69.6Q401.4 71.9 489.5 69.6"/><path class="s r" d="M490.6 71.4Q489.2 100.0 491.5 129.6M491.2 68.8Q491.1 100.4 489.3 129.8"/><path class="s r" d="M489.6 130.0Q402.0 131.5 313.4 130.3M490.8 131.1Q401.6 129.2 313.5 129.0"/><path class="s r" d="M315.4 130.6Q312.4 100.1 314.2 70.3M312.8 128.8Q316.3 99.6 312.4 71.1"/><text x="292.0" y="160" text-anchor="middle" style="font-size:19px">run</text><text x="402.0" y="160" text-anchor="middle" style="font-size:19px">throttled: wait…</text><text x="380.0" y="190" text-anchor="middle" class="m" style="font-size:17px">window 2 (100ms)</text><path class="h g" clip-path="url(#cth5)" d="M448.2 132.4Q475.3 101.4 499.7 69.1M454.1 132.8Q477.9 99.3 506.3 67.3M458.7 132.4Q485.0 99.0 511.7 66.8M463.3 132.8Q489.2 99.2 516.5 68.4M469.5 132.0Q496.9 101.2 522.4 68.4M476.2 132.3Q502.5 100.6 527.4 68.5M480.6 132.4Q505.7 99.4 532.5 68.3M486.9 132.5Q513.4 100.4 537.8 66.9M491.6 132.1Q518.5 99.4 544.0 67.0M497.4 132.5Q522.1 99.2 549.4 68.6M505.3 131.1Q529.4 99.2 557.3 68.6M510.7 132.9Q536.6 100.1 561.1 67.9M515.7 132.0Q540.8 99.2 569.3 68.9M522.7 131.2Q548.4 98.8 575.9 68.2M528.1 132.5Q555.0 100.1 580.5 66.8M535.7 132.3Q561.0 99.3 587.4 67.3M541.5 132.7Q569.7 100.6 595.9 67.6"/><path class="s g" d="M498.6 70.6Q522.6 68.9 544.6 69.8M499.9 71.5Q522.6 70.6 544.4 70.9"/><path class="s g" d="M544.0 69.9Q544.1 100.4 543.0 130.5M544.7 70.5Q542.9 99.4 544.5 128.9"/><path class="s g" d="M542.9 129.3Q522.3 128.9 500.1 128.4M544.9 129.2Q521.6 127.8 500.2 130.5"/><path class="s g" d="M501.2 131.0Q498.1 100.3 498.7 69.5M501.1 131.5Q499.2 100.5 501.3 71.1"/><path class="h r" clip-path="url(#cth6)" d="M490.7 131.0Q517.5 99.9 545.2 67.0M503.6 132.4Q528.1 99.6 553.9 68.8M512.5 131.6Q539.4 101.1 565.7 69.2M521.9 133.0Q548.7 100.2 574.4 69.2M531.5 132.2Q560.3 100.8 584.9 67.6M542.4 131.8Q567.3 99.4 595.3 67.8M552.2 132.4Q579.7 100.6 605.8 69.1M564.6 132.4Q591.0 101.1 614.5 68.8M573.8 132.3Q600.6 101.0 626.7 67.7M584.4 131.9Q610.9 101.4 635.0 68.0M594.3 132.3Q618.5 99.4 646.1 68.1M601.9 132.3Q627.5 99.7 654.1 66.9M611.9 131.9Q639.1 101.2 664.4 69.0M620.9 132.1Q648.8 100.5 673.2 67.4M633.0 132.1Q657.4 99.6 684.5 69.2M642.5 133.2Q669.9 101.4 694.5 67.6M651.7 131.8Q677.4 99.4 704.2 68.3M662.6 131.8Q688.9 99.1 715.8 68.9M674.9 132.7Q699.9 100.3 726.6 68.3M684.7 131.5Q710.0 100.4 736.6 67.0M692.7 133.0Q718.0 99.2 744.1 68.9M702.7 130.9Q727.9 99.5 754.9 66.9M710.7 130.9Q737.3 99.7 763.8 67.4"/><path class="s r" d="M545.5 69.2Q632.5 72.2 720.2 68.8M545.5 69.6Q632.3 70.4 719.8 71.3"/><path class="s r" d="M720.9 68.6Q718.3 99.9 721.0 131.3M718.9 71.2Q718.9 100.1 719.2 128.6"/><path class="s r" d="M719.0 128.8Q631.7 130.7 543.6 129.8M721.2 128.8Q632.6 129.7 543.9 131.2"/><path class="s r" d="M545.6 129.6Q545.7 99.5 544.5 68.7M544.8 129.6Q542.1 100.4 543.2 70.2"/><text x="522.0" y="160" text-anchor="middle" style="font-size:19px">run</text><text x="632.0" y="160" text-anchor="middle" style="font-size:19px">throttled: wait…</text><text x="610.0" y="190" text-anchor="middle" class="m" style="font-size:17px">window 3 (100ms)</text><g class="anim-playhead"><path class="s b" d="M39.6 54.6Q40.0 99.9 40.3 145.5M39.8 55.0Q39.6 100.0 39.9 145.3"/><path class="f b" d="M33 50 L47 50 L40 60 Z"/></g><text x="380" y="232" text-anchor="middle" class="m" style="font-size:18px">4 busy threads burn the 20ms in about 5ms, then the whole container is frozen</text></svg><figcaption>A CPU limit is a budget per 100ms window. Spend it early and you wait, even if the node is idle.</figcaption></figure>
 
-### PIDs
-
-If the kubelet's `podPidsLimit` is set, it becomes `pids.max` on each pod's cgroup. It is a cheap safeguard against a fork bomb or a thread leak taking down a whole node.
-
-## QoS classes and who dies first
-
-The kubelet puts every pod into one of three QoS classes, based only on its requests and limits:
-
-| QoS class | Rule | `oom_score_adj` |
-|---|---|---|
-| Guaranteed | Every container has CPU and memory requests equal to its limits | `-997` |
-| Burstable | At least one request or limit set, but not Guaranteed | between `2` and `999`, lower for larger memory requests |
-| BestEffort | No requests or limits at all | `1000` |
-
-There are two kinds of out-of-memory events, and they behave differently:
-
-1. **Container OOM:** a container hits its own `memory.max`. The kernel kills a process inside that cgroup only. The rest of the node is unaffected.
-2. **Node pressure:** the node itself runs low on memory. The kubelet starts **evicting** pods, BestEffort first, then Burstable pods using more than they requested. If memory runs out before the kubelet reacts, the kernel's global OOM killer picks a victim using `oom_score_adj`, which is why BestEffort processes go first and Guaranteed ones go last.
-
-> [!TIP]
-> Setting memory requests equal to memory limits is the most effective single change for predictable memory behaviour. It removes overcommit for that pod, so a neighbour's spike can't push the node into a global OOM that takes your pod with it.
-
-## Seeing it on a real node
-
-All of the following is read-only and safe on a production node.
-
-Find a container's cgroup path:
+The trap: the budget is shared by **all threads**. Four busy threads burn 20ms of budget in about 5ms of real time, then the whole container is frozen for the other 95ms. Your dashboard shows "20% CPU", but every request that lands in a frozen gap is slow. This is called **throttling**.
 
 ```bash
-# from the node
-crictl ps --name my-app
-crictl inspect <container-id> | jq -r '.info.runtimeSpec.linux.cgroupsPath'
-
-# or from inside the container
-cat /proc/self/cgroup
-# 0::/kubepods.slice/kubepods-burstable.slice/kubepods-burstable-pod..._slice/cri-containerd-....scope
+make 02-cpu-throttling
 ```
-
-Read the limits the kernel is actually enforcing:
-
-```bash
-cd /sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice/<pod-slice>/<container-scope>
-
-cat cpu.weight      # from the CPU request
-cat cpu.max         # from the CPU limit
-cat memory.max      # from the memory limit
-cat pids.max
-```
-
-Check for CPU throttling:
-
-```bash
-cat cpu.stat
-# usage_usec 912345678
-# nr_periods 345678
-# nr_throttled 12345      <- periods where the quota ran out
-# throttled_usec 98765432 <- total time spent throttled
-```
-
-The same counters are exposed by cAdvisor, so you can alert on them in Prometheus:
 
 ```text
-rate(container_cpu_cfs_throttled_periods_total[5m])
-  / rate(container_cpu_cfs_periods_total[5m])
+$ kubectl -n lab exec cpu-limited -- cat /sys/fs/cgroup/cpu.max
+20000 100000
+
+  pod            periods   throttled   CPU used (millicores)
+  cpu-limited    250       249         200
+  cpu-unlimited  -         0           several thousand
+PASS cpu-limited was throttled in 249 periods
 ```
 
-Check memory pressure and OOM kills:
+The kernel counts it for you in `cpu.stat` (`nr_throttled`, `throttled_usec`). In production, alert on the ratio of throttled periods, not on average CPU:
+
+```text
+rate(container_cpu_cfs_throttled_periods_total[5m]) / rate(container_cpu_cfs_periods_total[5m])
+```
+
+## Lesson 5: a CPU request is your slice of the pizza
+
+A request does **not** reserve a core. When the node is quiet, it does nothing: anyone can use spare CPU. It only matters when everyone is hungry at once, and then the kernel cuts the pizza in proportion to the requests.
+
+<figure class="sketch anim"><svg viewBox="0 0 760 230" role="img" aria-label="CPU requests split contended CPU in proportion"><title>CPU requests split contended CPU in proportion</title><defs><clipPath id="cwt1"><rect x="180" y="60" width="62" height="40"/></clipPath><clipPath id="cwt2"><rect x="180" y="130" width="520" height="40"/></clipPath></defs><text x="20" y="32" text-anchor="start" style="font-size:22px">Both pods want all 10 CPUs. The kernel splits by request:</text><text x="20" y="85" text-anchor="start" style="font-size:20px">request 100m</text><text x="20" y="155" text-anchor="start" style="font-size:20px">request 800m</text><g class="anim-grow"><path class="h a" clip-path="url(#cwt1)" d="M146.1 101.2Q162.1 79.6 179.4 57.2M150.0 101.5Q168.4 80.6 185.3 58.8M157.8 102.7Q172.6 78.5 192.4 58.8M164.2 102.0Q182.4 80.8 198.8 58.2M168.3 102.8Q186.2 79.5 204.7 59.2M176.1 101.9Q193.4 79.8 209.6 57.3M181.4 101.1Q198.3 79.5 216.4 57.4M187.5 103.1Q203.5 78.9 221.6 58.5M194.8 102.3Q209.7 79.2 228.0 57.8M201.6 101.7Q219.6 80.6 236.0 57.1M208.0 102.2Q225.6 80.0 242.7 57.7M214.6 101.1Q230.9 79.3 248.3 57.0M220.3 101.6Q238.0 79.7 254.2 56.8M227.7 101.0Q243.5 78.9 262.1 57.7M235.2 102.0Q249.8 78.8 268.8 58.4M240.3 101.4Q255.7 79.3 274.9 58.8"/><path class="s a" d="M179.3 59.1Q210.8 60.1 241.5 58.5M180.3 58.4Q210.5 59.9 242.9 59.0"/><path class="s a" d="M241.3 59.8Q242.1 79.8 240.8 101.2M241.4 59.6Q243.8 79.6 240.5 98.8"/><path class="s a" d="M243.6 98.5Q210.9 101.1 180.1 98.8M242.1 98.8Q210.8 99.1 178.4 99.2"/><path class="s a" d="M179.6 99.5Q180.9 80.0 181.0 59.1M180.1 101.3Q181.0 80.6 179.8 60.2"/></g><g class="anim-grow d2"><path class="h b" clip-path="url(#cwt2)" d="M144.3 171.1Q163.3 150.7 180.1 128.7M150.3 170.9Q168.5 149.3 184.9 128.5M157.3 171.8Q174.9 151.0 191.6 128.8M162.5 173.2Q179.9 149.1 197.6 127.4M168.9 171.6Q186.3 149.4 205.3 127.4M176.8 172.0Q194.6 151.3 210.4 127.9M183.0 171.3Q200.2 150.0 218.0 126.9M189.2 172.9Q205.7 149.3 224.4 128.1M196.2 173.1Q213.1 149.5 230.0 128.9M201.6 173.0Q219.7 150.4 235.8 128.0M207.7 172.6Q224.5 148.9 242.2 127.3M213.5 171.0Q230.9 150.9 248.7 129.0M220.0 172.2Q238.1 151.0 253.8 127.1M226.3 172.0Q243.3 150.4 261.5 128.9M231.6 173.0Q250.1 150.8 266.4 129.1M237.2 171.0Q255.8 150.6 272.2 127.8M243.9 172.2Q262.8 150.6 279.5 127.0M250.6 171.3Q265.7 149.0 285.3 127.5M254.0 171.0Q273.3 150.8 289.4 127.3M259.6 172.2Q276.4 148.4 295.9 128.4M265.8 170.9Q284.9 150.8 301.7 128.0M272.5 171.8Q290.6 150.9 306.9 127.5M279.4 171.0Q296.8 149.9 314.0 127.2M284.9 171.5Q304.1 151.4 319.4 127.9M291.3 171.4Q308.9 150.4 325.2 127.7M296.5 172.8Q313.9 150.5 330.4 127.8M300.2 173.0Q317.0 148.6 334.7 127.7M307.7 172.3Q325.3 150.8 343.4 128.7M314.5 172.3Q332.0 150.7 348.2 126.8M320.5 171.8Q337.2 149.4 355.9 128.2M327.1 172.5Q344.6 150.7 361.8 128.9M332.4 172.0Q349.8 149.9 368.3 126.9M337.5 172.7Q356.3 150.9 372.9 128.2M343.5 171.8Q360.8 150.0 377.1 128.5M350.2 171.1Q367.5 150.4 385.2 127.0M356.3 172.0Q373.8 150.6 389.9 128.7M363.5 172.9Q378.7 149.3 397.2 126.9M370.3 171.2Q385.9 149.3 404.6 128.5M375.3 172.4Q391.6 150.3 409.0 128.2M378.6 172.1Q396.6 150.1 413.7 128.2M385.7 172.4Q400.9 149.1 420.8 127.1M390.4 172.1Q408.5 150.0 426.5 128.5M396.4 172.3Q413.5 149.0 431.4 127.5M402.5 172.4Q420.9 150.5 438.6 127.4M409.6 172.7Q426.6 149.7 444.6 126.8M416.0 172.5Q433.7 149.9 450.3 127.1M421.9 171.7Q439.7 150.2 457.9 128.4M429.6 172.5Q446.1 149.6 464.4 128.5M437.5 172.6Q453.7 149.5 472.2 128.9M441.8 172.2Q461.2 151.1 478.0 127.5M449.6 171.7Q466.2 149.5 483.1 127.5M455.3 172.3Q473.8 149.9 490.4 127.1M461.4 171.2Q480.0 150.8 496.9 128.7M468.2 173.1Q487.1 151.0 502.8 127.2M476.4 172.0Q493.9 150.4 509.6 127.0M483.5 172.8Q498.3 148.8 518.1 128.3M488.7 171.0Q505.4 151.0 522.9 127.4M492.9 171.0Q511.2 150.7 527.4 128.4M498.8 171.6Q516.1 148.7 533.5 127.0M504.9 172.4Q522.6 149.8 541.7 127.9M510.9 171.5Q528.6 149.7 546.9 128.0M517.6 172.3Q533.4 149.0 551.9 127.7M522.0 171.3Q540.1 150.2 558.7 129.0M528.7 172.8Q547.7 151.1 564.1 128.0M535.5 171.9Q552.2 149.6 570.1 127.3M540.7 171.6Q560.0 150.7 576.8 127.4M545.9 172.4Q563.0 149.2 582.4 127.4M552.3 171.9Q569.3 149.8 586.6 127.8M556.1 172.8Q573.5 149.2 590.8 127.8M563.6 171.6Q579.3 149.7 597.4 127.8M568.4 171.9Q584.9 149.7 602.0 128.9M574.1 171.9Q590.9 149.4 609.5 128.6M580.0 172.9Q597.0 150.0 614.5 127.8M585.5 171.0Q601.7 149.9 619.4 127.8M591.8 173.1Q610.7 150.6 626.5 128.4M598.2 172.6Q614.4 150.3 631.4 128.9M603.4 171.4Q619.9 149.0 639.3 127.3M608.8 171.1Q625.9 149.3 645.7 129.0M616.2 171.9Q632.6 149.7 651.2 127.0M622.5 172.9Q640.7 150.9 656.6 127.1M625.9 173.1Q644.7 150.4 661.2 128.3M632.8 171.0Q649.9 149.7 667.2 126.9M641.1 171.9Q656.9 149.4 674.2 127.0M645.3 172.3Q664.4 150.9 681.5 129.1M651.4 172.0Q670.0 151.1 685.8 127.7M656.7 171.9Q674.7 149.6 693.4 128.8M664.0 171.6Q680.2 150.2 696.6 128.1M668.6 171.3Q686.8 150.0 703.9 128.6M676.1 172.2Q691.8 150.1 710.2 127.6M680.7 172.4Q696.4 149.3 715.9 127.8M686.2 172.7Q703.1 149.6 721.9 126.9M691.4 172.4Q709.1 149.7 725.8 128.4M696.7 172.4Q713.9 150.1 731.9 128.4"/><path class="s b" d="M180.9 130.5Q439.5 129.6 700.8 129.4M180.5 131.2Q440.0 128.3 699.7 129.6"/><path class="s b" d="M700.3 131.3Q699.8 150.1 701.3 168.5M700.0 131.5Q697.8 150.1 699.1 168.5"/><path class="s b" d="M699.8 169.3Q439.9 167.6 178.5 170.2M701.5 169.4Q440.0 172.1 179.5 168.8"/><path class="s b" d="M181.3 170.2Q180.0 149.5 181.2 129.1M179.0 170.0Q178.9 150.2 180.2 130.0"/></g><text x="255" y="87" text-anchor="start" class="m" style="font-size:18px">≈ 1 share</text><text x="705" y="210" text-anchor="end" class="m" style="font-size:18px">≈ 8 shares (real run: 8.2x)</text></svg><figcaption>A CPU request isn't a reserved core. It's your slice of the pizza when everyone is hungry.</figcaption></figure>
+
+The lab runs two greedy pods on a 10-CPU node, one requesting `100m`, the other `800m`, and measures what each actually got:
 
 ```bash
-cat memory.current     # current usage in bytes
-cat memory.events      # look at the max, oom and oom_kill counters
-cat memory.pressure    # PSI: share of time tasks were stalled waiting for memory
-cat cpu.pressure       # PSI for CPU
+make 03-cpu-weight
 ```
 
-PSI is one of the most useful things v2 added. `some avg10=12.50` means that over the last 10 seconds, at least one task in the cgroup was stalled 12.5% of the time. That is a much earlier warning than an OOM kill.
+```text
+  cpu.weight 17      # request 100m
+  cpu.weight 84      # request 800m
 
-## Make the application cgroup-aware
+  CPU split high/low    8.2x
+  request ratio         8.0x
+```
 
-The kernel enforces the limits, but the runtime inside the container still has to size itself to them:
+Notice the weights themselves are 17 and 84, not a clean 1:8. Newer container runtimes convert requests to `cpu.weight` with a non-linear formula, so read the file rather than guessing. What matters is the outcome: the bigger request won about 8 times more CPU.
 
-- **JVM:** container support is on by default in JDK 10 and later, and in 8u191 and later. Size the heap with `-XX:MaxRAMPercentage` rather than a fixed `-Xmx` that ignores the limit.
-- **Go:** from Go 1.25, `GOMAXPROCS` defaults to the cgroup CPU limit. On older versions it defaults to the number of host cores, which causes heavy throttling. Set it explicitly or use `go.uber.org/automaxprocs`.
-- **Node.js:** set `--max-old-space-size` below the memory limit, leaving room for buffers and native memory.
+## Lesson 6: memory can't be throttled, so it's killed
 
-## Practical takeaways
+CPU is easy to share: make someone wait a few milliseconds and they continue. Memory is different. If a process needs more RAM and there is none left in its box, waiting doesn't help. So when a container hits `memory.max`, the kernel's **OOM killer** (out of memory) ends it.
 
-- Treat CPU requests as your guaranteed share and CPU limits as a throttle. Many teams drop CPU limits for latency-sensitive services and rely on accurate requests instead. Measure throttling before and after.
-- Always set memory limits, and set memory requests equal to them for anything important.
-- Alert on throttling ratio and `oom_kill` counts, not only on average CPU and memory usage.
-- When something looks wrong, read the files. `cpu.max`, `memory.max` and `cpu.stat` tell you what the kernel is doing, which is not always what the YAML says.
-- To try every one of these on a laptop, work through the [hands-on handbook](/handbooks/kubernetes-resources-under-the-hood/) and its [lab repo](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood).
+<figure class="sketch anim"><svg viewBox="0 0 760 330" role="img" aria-label="Memory limit as a bucket with an overflow line"><title>Memory limit as a bucket with an overflow line</title><defs><clipPath id="com1"><rect x="242" y="60" width="196" height="230"/></clipPath></defs><g class="anim-fill"><path class="h b" clip-path="url(#com1)" d="M41.6 292.6Q142.4 175.5 242.5 58.4M46.7 292.0Q145.8 174.1 246.8 58.8M54.9 292.9Q154.3 174.3 253.3 58.5M61.2 292.3Q161.3 176.2 259.8 57.0M67.9 292.8Q167.5 174.6 268.1 56.8M74.0 291.7Q171.8 173.7 273.5 58.9M78.1 291.4Q179.0 175.2 279.0 57.3M85.0 293.0Q184.8 174.8 284.1 57.6M92.0 291.6Q191.4 174.7 291.3 57.5M98.9 293.0Q198.1 175.2 296.5 58.2M104.3 291.7Q204.0 175.2 303.3 57.4M109.4 292.7Q207.9 174.4 310.3 58.7M115.3 292.4Q215.3 176.3 314.2 57.0M119.1 291.2Q219.7 175.4 319.1 58.5M125.6 291.9Q225.2 174.8 326.7 58.6M129.9 292.6Q230.2 174.4 331.2 57.8M138.0 292.3Q237.4 175.0 337.5 59.2M144.4 292.1Q243.6 174.6 343.6 58.2M150.8 292.1Q251.5 175.6 350.6 56.8M156.9 291.3Q258.0 176.2 355.7 58.0M163.0 293.2Q261.3 174.2 361.7 59.0M168.7 292.4Q268.0 174.1 370.1 58.7M175.3 291.4Q273.9 173.6 374.8 58.1M182.5 291.6Q283.1 175.7 382.4 58.8M186.5 292.1Q287.4 175.4 386.2 58.0M192.0 291.3Q291.1 174.2 392.1 57.3M199.3 292.1Q299.9 175.5 399.1 58.1M206.1 291.6Q305.0 173.8 406.6 58.9M213.4 292.7Q312.7 174.5 412.7 57.6M218.8 291.4Q320.4 175.4 418.6 56.8M224.4 291.2Q324.5 175.4 425.6 57.0M230.9 291.5Q330.9 176.1 431.1 59.0M237.3 292.4Q334.9 174.4 437.0 58.7M241.7 291.4Q341.3 174.6 440.8 57.8M248.8 290.9Q347.6 173.8 449.0 58.0M255.6 292.6Q353.6 174.8 453.8 57.3M260.6 291.7Q361.7 175.7 460.1 57.3M266.5 292.4Q367.9 175.7 465.7 58.9M274.1 292.5Q372.3 174.3 472.5 59.1M279.8 293.1Q381.1 175.9 480.0 59.1M284.9 290.9Q384.0 173.5 484.5 57.9M290.2 291.7Q390.1 174.3 490.0 58.2M298.2 292.5Q395.8 173.9 496.6 58.3M303.7 291.9Q405.5 175.7 503.5 58.6M309.0 292.0Q410.8 176.5 509.0 57.7M315.2 292.6Q417.0 176.0 515.3 57.3M324.0 291.1Q421.8 173.6 521.8 57.9M327.3 291.0Q428.6 175.2 527.2 57.9M335.8 292.9Q435.1 175.1 534.1 58.4M341.2 292.6Q442.2 176.2 539.7 57.6M345.1 291.5Q445.2 174.2 545.6 57.0M352.3 292.6Q451.7 174.7 551.8 57.4M359.3 292.8Q457.8 175.0 558.8 57.9M365.1 291.3Q463.8 174.0 564.8 58.8M370.2 291.4Q470.0 173.8 571.7 58.8M375.9 292.3Q475.8 174.3 578.2 57.6M383.9 292.2Q484.3 175.5 583.6 58.2M388.7 291.1Q490.5 174.8 589.8 58.5M397.1 291.8Q494.8 173.7 596.1 57.3M403.1 293.1Q503.9 175.1 603.6 57.4M409.6 291.5Q509.0 174.5 609.0 58.5M415.9 291.4Q515.0 174.4 614.2 58.0M420.2 291.6Q518.8 173.4 619.8 57.2M428.3 290.9Q527.5 174.7 627.8 58.4M433.9 290.9Q532.6 174.7 632.0 58.3"/><path class="s b" d="M243.0 59.0Q339.8 59.8 437.5 60.8M241.4 59.1Q340.5 62.7 437.9 61.0"/><path class="s b" d="M437.1 60.2Q437.4 175.3 437.8 291.2M438.7 60.9Q439.0 175.2 438.8 288.8"/><path class="s b" d="M437.4 288.7Q339.4 287.9 241.6 288.8M437.6 290.0Q340.6 291.9 242.3 289.4"/><path class="s b" d="M243.5 290.3Q240.1 175.4 243.0 59.7M241.0 290.1Q243.9 175.5 240.6 60.3"/></g><path class="s" d="M229.5 38.9Q235.3 167.5 239.4 295.9M229.2 39.8Q236.7 167.9 241.0 293.4"/><path class="s" d="M448.4 40.5Q443.5 167.7 438.6 294.3M449.2 39.6Q444.6 167.3 439.4 294.1"/><path class="s" d="M241.0 294.7Q340.0 294.0 441.4 294.5M241.3 295.3Q340.4 297.0 441.2 294.3"/><path class="s r" d="M199.3 89.6Q205.0 90.0 210.2 89.8"/><path class="s r" d="M216.4 89.9Q222.1 90.5 227.7 89.7"/><path class="s r" d="M233.5 90.0Q239.2 88.9 244.7 90.1"/><path class="s r" d="M250.6 90.7Q255.7 89.3 261.6 90.8"/><path class="s r" d="M268.1 90.1Q272.9 91.1 278.1 89.5"/><path class="s r" d="M284.5 90.6Q289.7 89.3 295.2 89.7"/><path class="s r" d="M302.5 89.8Q306.7 90.8 312.7 90.0"/><path class="s r" d="M318.9 90.3Q324.3 89.1 329.3 89.4"/><path class="s r" d="M335.2 89.9Q341.0 90.7 345.5 90.7"/><path class="s r" d="M353.5 89.5Q357.7 88.8 363.3 90.5"/><path class="s r" d="M369.4 89.6Q374.9 90.4 380.6 89.5"/><path class="s r" d="M387.7 89.4Q391.8 89.4 397.0 90.6"/><path class="s r" d="M404.1 90.7Q409.0 88.9 414.7 89.7"/><path class="s r" d="M420.6 89.6Q426.0 89.6 430.8 90.7"/><path class="s r" d="M438.1 89.6Q442.8 89.4 448.4 89.5"/><path class="s r" d="M455.8 89.9Q459.9 90.3 464.8 89.8"/><path class="s r" d="M471.6 90.1Q476.8 90.0 481.8 89.5"/><path class="s r" d="M488.6 89.5Q489.8 90.4 490.3 90.6"/><text x="500" y="96" text-anchor="start" style="font-size:21px">memory.max (64Mi)</text><text x="500" y="160" text-anchor="start" style="font-size:20px">your app keeps</text><text x="500" y="184" text-anchor="start" style="font-size:20px">allocating…</text><g class="anim-kill"><text x="340" y="30" text-anchor="middle" class="big r">OOMKilled · exit code 137</text></g><text x="120" y="200" text-anchor="middle" class="m" style="font-size:18px">kernel watches</text><text x="120" y="222" text-anchor="middle" class="m" style="font-size:18px">the line</text></svg><figcaption>Memory can't be throttled like CPU. Cross the line and the kernel kills the process.</figcaption></figure>
+
+```bash
+make 04-memory-and-oom
+```
+
+```text
+allocated 40 MiB
+allocated 50 MiB
+allocated 60 MiB
+  reason=OOMKilled  exitCode=137  restarts=1
+
+$ cat .../memory.events
+  max 75          ← times usage hit the limit
+  oom_kill 4      ← processes the kernel killed
+```
+
+Exit code **137** is 128 + 9, meaning the process got signal 9 (`SIGKILL`) from the kernel. It never gets a chance to clean up. Notice it died at about 60 MiB of data, before reaching 64: Python itself also lives in that box and counts against the limit.
+
+## Lesson 7: QoS classes decide who goes first
+
+Kubernetes sorts every pod into one of three classes, based only on how you set requests and limits:
+
+| Class | How you get it |
+|---|---|
+| **Guaranteed** | Every container has requests **equal** to limits, for both CPU and memory |
+| **Burstable** | Some requests or limits, but not Guaranteed |
+| **BestEffort** | Nothing set at all |
+
+The class matters when the **whole node** runs out of memory (not one container). Then the kernel has to pick a victim, and Kubernetes has already marked each process with an `oom_score_adj`:
+
+<figure class="sketch "><svg viewBox="0 0 760 270" role="img" aria-label="QoS classes decide who the OOM killer picks first"><title>QoS classes decide who the OOM killer picks first</title><defs><clipPath id="cqo1"><rect x="25" y="40" width="210" height="150"/></clipPath><clipPath id="cqo2"><rect x="275" y="40" width="210" height="150"/></clipPath><clipPath id="cqo3"><rect x="525" y="40" width="210" height="150"/></clipPath></defs><path class="s" d="M40.0 229.7Q380.4 230.9 721.6 229.3M39.4 229.3Q379.7 227.9 718.7 229.4"/><path class="s" d="M719.3 229.5Q715.3 232.6 710.2 234.6M719.4 230.4Q715.0 231.8 710.5 234.6"/><path class="s" d="M720.5 230.5Q715.1 227.5 710.8 224.8M719.8 229.4Q715.2 227.7 710.3 224.6"/><text x="40" y="258" text-anchor="start" class="r" style="font-size:20px">killed first</text><text x="720" y="258" text-anchor="end" class="g" style="font-size:20px">killed last</text><path class="h r" clip-path="url(#cqo1)" d="M-105.4 191.1Q-40.1 115.5 25.0 38.0M-94.3 190.9Q-26.9 116.4 36.4 37.1M-81.5 192.6Q-17.1 114.2 49.1 37.5M-68.3 191.0Q-5.3 114.1 60.5 38.0M-57.6 191.2Q7.1 113.6 73.3 37.9M-46.4 192.4Q20.6 115.5 85.4 36.8M-33.4 192.2Q32.5 115.8 97.9 37.3M-22.3 191.3Q42.6 114.1 108.9 38.6M-9.4 192.5Q54.4 114.3 121.2 38.3M2.0 190.9Q66.6 114.4 133.3 37.2M13.4 191.9Q80.5 116.4 144.1 37.6M24.8 192.4Q91.1 115.3 156.2 37.8M37.0 191.7Q101.4 114.5 166.7 37.5M50.2 192.1Q115.1 114.4 180.7 38.0M62.8 191.4Q127.5 115.4 193.5 38.8M73.9 191.0Q138.0 114.2 204.3 38.1M85.6 191.6Q151.3 114.8 217.6 37.3M97.2 191.3Q162.8 114.8 227.5 37.1M110.2 190.9Q175.7 114.9 239.9 37.5M121.7 191.2Q187.6 115.4 251.3 38.3M133.2 193.1Q198.7 115.2 263.8 38.8M145.4 193.1Q210.2 114.7 275.9 36.9M158.1 193.0Q221.4 114.9 288.4 37.4M167.2 192.4Q232.6 113.5 299.7 38.1M178.9 193.2Q243.5 114.0 309.2 37.2M192.6 192.0Q256.1 113.6 322.1 38.3M203.7 191.5Q270.4 115.9 334.1 37.6M215.6 191.3Q279.7 115.5 345.6 37.2M227.3 191.4Q291.3 114.3 355.9 38.0"/><path class="s r" d="M25.1 39.5Q130.0 40.2 234.0 40.1M23.4 41.5Q130.1 40.3 235.6 41.1"/><path class="s r" d="M236.5 41.3Q233.2 114.6 233.6 190.4M235.5 39.8Q234.4 115.1 234.2 191.2"/><path class="s r" d="M236.3 189.6Q129.7 189.5 25.2 188.7M236.4 188.9Q130.4 192.5 25.6 189.7"/><path class="s r" d="M23.7 189.5Q24.0 114.5 23.9 39.7M24.9 188.9Q25.7 115.5 25.2 38.5"/><text x="130" y="80" text-anchor="middle" class="big">BestEffort</text><text x="130" y="115" text-anchor="middle" style="font-size:19px">no requests, no limits</text><text x="130" y="160" text-anchor="middle" class="code">oom_score_adj 1000</text><path class="h y" clip-path="url(#cqo2)" d="M144.5 193.0Q209.9 115.4 274.1 37.5M157.3 193.1Q221.4 115.5 287.1 38.7M169.0 192.4Q232.4 114.0 297.6 37.5M179.2 191.8Q244.6 115.0 309.8 38.7M189.8 191.5Q256.7 115.9 322.0 39.1M203.3 192.0Q266.9 114.5 332.4 39.0M213.5 192.0Q281.1 116.0 344.9 38.3M228.2 192.8Q292.0 115.0 357.0 38.8M240.2 191.4Q304.2 114.8 369.9 38.4M251.9 191.6Q317.1 115.7 380.7 39.1M263.9 193.1Q326.8 113.6 392.6 38.4M275.4 192.2Q339.8 113.6 406.7 37.5M288.8 192.7Q353.3 115.1 418.3 38.7M298.9 192.8Q364.8 114.9 430.1 37.7M312.9 192.9Q378.4 115.8 442.5 38.7M325.8 192.6Q390.8 115.2 455.1 37.1M337.4 192.8Q403.9 116.0 469.7 38.1M349.8 192.4Q416.2 115.3 480.9 36.8M362.2 192.3Q428.3 115.0 493.8 37.8M374.3 191.3Q441.0 115.5 505.3 38.1M387.6 193.2Q453.1 114.9 517.4 37.2M398.8 191.9Q464.4 114.2 530.7 38.2M410.7 192.9Q477.4 115.6 541.7 38.4M423.3 191.6Q487.7 114.3 554.5 38.7M434.3 192.8Q500.5 116.5 564.9 37.8M446.1 192.0Q511.5 114.8 577.3 37.2M457.2 191.0Q521.4 113.9 588.9 36.9M469.9 191.0Q534.2 114.2 599.6 37.0M481.3 192.8Q546.2 113.6 613.3 37.1"/><path class="s y" d="M275.2 40.2Q379.8 41.6 484.3 40.1M275.0 38.4Q379.5 41.9 484.3 39.0"/><path class="s y" d="M484.7 41.0Q484.4 115.2 486.0 190.6M484.1 40.3Q486.9 115.4 486.3 189.4"/><path class="s y" d="M484.5 189.1Q379.8 190.3 276.4 189.6M484.1 189.7Q379.9 187.3 276.6 189.8"/><path class="s y" d="M275.3 188.9Q272.9 114.9 274.4 38.8M273.8 188.8Q274.1 115.4 273.8 39.7"/><text x="380" y="80" text-anchor="middle" class="big">Burstable</text><text x="380" y="115" text-anchor="middle" style="font-size:19px">some requests or limits</text><text x="380" y="160" text-anchor="middle" class="code">2 … 999</text><path class="h g" clip-path="url(#cqo3)" d="M395.6 191.5Q461.5 116.0 524.7 37.4M407.1 192.3Q471.4 114.6 536.6 37.6M419.1 192.9Q483.8 114.4 549.7 37.5M429.5 192.3Q495.0 114.9 560.2 38.1M442.5 192.2Q507.7 114.9 573.9 37.6M454.3 192.8Q520.5 115.0 584.6 37.1M465.6 192.3Q532.2 116.3 596.6 37.5M478.6 191.8Q544.3 115.6 607.0 38.1M489.5 191.0Q555.7 115.3 619.8 38.1M503.7 191.2Q567.6 114.5 632.7 38.3M512.7 192.0Q580.0 116.4 645.1 38.3M525.2 192.3Q591.3 115.7 655.3 38.1M538.2 192.4Q601.5 114.0 666.8 37.9M549.2 191.5Q615.0 115.3 679.0 38.0M561.6 192.9Q626.1 115.1 690.5 38.1M573.9 193.0Q639.8 115.8 703.0 37.5M585.3 192.1Q649.7 113.9 716.1 37.2M599.2 191.8Q663.7 114.6 729.1 38.1M610.0 191.0Q677.7 116.1 740.8 38.7M621.9 191.8Q687.0 113.7 754.2 37.6M634.0 191.4Q699.6 114.9 764.7 37.8M645.6 192.8Q711.5 114.6 777.2 37.3M658.4 191.7Q722.7 114.1 787.9 38.8M668.8 191.5Q735.3 115.3 800.8 38.6M682.5 193.0Q746.9 115.6 812.4 38.4M693.8 191.5Q758.3 114.1 823.9 37.8M707.5 191.6Q773.3 116.3 838.3 38.1M717.6 191.8Q782.8 115.0 848.2 37.1M729.8 192.9Q794.7 116.0 858.2 38.0"/><path class="s g" d="M524.6 38.8Q629.7 38.0 734.8 40.6M525.9 40.6Q630.2 38.9 734.9 39.5"/><path class="s g" d="M735.0 40.7Q735.7 114.4 734.8 190.0M736.2 40.8Q732.5 114.9 733.9 189.7"/><path class="s g" d="M736.0 188.5Q629.7 190.0 525.3 188.4M733.7 188.6Q629.4 190.2 525.7 188.6"/><path class="s g" d="M524.1 189.7Q523.7 115.1 525.7 40.2M524.3 189.0Q526.5 114.6 526.0 40.3"/><text x="630" y="80" text-anchor="middle" class="big">Guaranteed</text><text x="630" y="115" text-anchor="middle" style="font-size:19px">requests = limits</text><text x="630" y="160" text-anchor="middle" class="code">-997</text></svg><figcaption>When the whole node runs out of memory, the QoS class decides who goes first.</figcaption></figure>
+
+```bash
+make 05-qos-classes
+```
+
+```text
+  pod              qosClass     oom_score_adj
+  qos-guaranteed   Guaranteed   -997
+  qos-burstable    Burstable    996
+  qos-besteffort   BestEffort   1000
+```
+
+The Burstable pod scored `996` because its memory request is tiny compared with the node. A larger memory request lowers the score and moves the pod further from the front of the line.
+
+## Lesson 8: not all of a node is for pods
+
+A node with 8 GiB of memory can't give all 8 GiB to pods; the operating system and the kubelet need some too. The part left for pods is called **allocatable**:
+
+<figure class="sketch "><svg viewBox="0 0 760 220" role="img" aria-label="Node capacity split into reservations and allocatable"><title>Node capacity split into reservations and allocatable</title><defs><clipPath id="cal1"><rect x="20" y="60" width="125" height="70"/></clipPath><clipPath id="cal2"><rect x="145" y="60" width="125" height="70"/></clipPath><clipPath id="cal3"><rect x="270" y="60" width="125" height="70"/></clipPath><clipPath id="cal4"><rect x="395" y="60" width="345" height="70"/></clipPath></defs><text x="20" y="32" text-anchor="start" style="font-size:22px">One node's memory (capacity)</text><path class="h m" clip-path="url(#cal1)" d="M-41.8 132.2Q-8.7 96.4 19.8 58.1M-32.7 130.9Q-3.1 94.0 27.3 58.5M-24.8 132.7Q6.9 94.9 37.3 58.4M-14.8 132.2Q17.2 96.4 46.7 57.6M-6.5 132.3Q24.2 95.0 53.8 57.2M1.3 130.9Q33.4 95.4 62.6 58.2M11.5 132.7Q41.8 94.4 72.9 57.4M19.5 132.1Q51.6 96.0 82.0 58.2M29.9 130.9Q60.0 93.8 91.7 58.4M41.2 132.6Q71.8 95.8 100.5 59.1M48.0 133.0Q77.9 94.2 110.7 57.3M57.7 131.4Q87.2 95.1 117.6 59.0M66.8 132.5Q96.2 94.9 126.5 58.5M75.3 132.7Q106.1 95.1 136.5 58.1M85.3 132.8Q114.6 93.9 145.4 59.1M93.5 131.9Q124.0 94.9 154.1 58.5M102.2 131.3Q131.7 94.4 162.6 57.2M110.2 132.5Q140.0 95.0 171.2 58.1M120.2 132.9Q149.5 94.1 180.1 58.7M128.3 131.5Q159.2 95.1 190.6 57.6M137.5 131.4Q167.9 94.8 197.7 57.0"/><path class="s m2" d="M18.8 59.9Q83.0 58.8 143.8 60.2M21.1 59.2Q83.0 59.4 146.5 60.4"/><path class="s m2" d="M144.6 58.9Q147.6 94.7 146.1 128.7M144.3 58.7Q143.7 95.2 146.3 130.5"/><path class="s m2" d="M144.0 128.5Q83.1 132.2 20.4 128.8M145.2 130.9Q82.5 129.1 21.0 130.3"/><path class="s m2" d="M18.7 131.1Q20.2 94.5 19.1 59.8M21.1 129.8Q19.3 95.0 19.6 60.5"/><text x="82.5" y="160" text-anchor="middle" style="font-size:18px">systemReserved</text><path class="h m" clip-path="url(#cal2)" d="M85.1 133.2Q115.7 95.4 146.2 57.1M92.7 132.5Q124.5 95.2 154.4 58.1M101.2 132.8Q131.1 94.6 162.4 57.8M109.0 132.8Q139.9 94.5 170.9 59.1M119.9 133.2Q149.6 95.4 180.1 57.8M126.0 130.9Q158.4 95.7 187.6 59.1M135.7 132.2Q167.7 95.3 196.3 58.2M145.5 131.1Q175.7 94.7 206.7 57.5M154.0 131.6Q186.0 95.6 216.8 57.4M162.8 133.1Q193.8 95.3 223.0 58.7M173.6 132.4Q203.8 96.2 232.4 59.0M181.4 132.7Q212.0 93.6 243.8 59.1M192.9 132.4Q221.9 95.1 253.4 57.3M200.4 131.3Q231.9 95.9 261.0 58.4M210.1 132.2Q240.8 96.5 270.5 58.7M218.9 132.0Q248.4 94.0 280.5 57.8M228.7 132.8Q257.4 94.1 288.6 58.7M239.2 132.3Q267.0 94.2 298.7 58.0M248.7 132.7Q278.2 95.1 309.3 57.4M257.8 131.1Q288.4 96.2 317.7 57.7M264.3 131.4Q296.1 95.3 325.8 58.9"/><path class="s m2" d="M143.5 60.3Q207.6 57.9 271.6 60.9M145.4 60.8Q207.1 61.3 269.8 58.6"/><path class="s m2" d="M269.9 60.9Q267.6 95.3 269.5 128.7M269.7 60.5Q270.3 95.4 269.6 130.7"/><path class="s m2" d="M268.5 131.1Q208.0 132.2 145.9 130.6M270.4 131.5Q207.8 132.4 146.4 130.4"/><path class="s m2" d="M145.1 130.1Q146.6 94.7 146.4 60.4M144.7 130.8Q145.7 95.6 145.3 59.7"/><text x="207.5" y="160" text-anchor="middle" style="font-size:18px">kubeReserved</text><path class="h r" clip-path="url(#cal3)" d="M208.8 131.5Q238.8 94.1 269.0 58.0M218.7 131.5Q249.8 96.2 277.8 58.3M225.7 131.0Q258.1 96.6 287.5 58.5M236.0 133.2Q267.0 96.2 294.8 58.6M244.5 132.8Q275.3 95.6 304.1 57.7M252.0 131.1Q283.9 95.3 313.6 58.9M261.8 132.6Q291.1 93.9 322.4 58.6M271.5 131.5Q302.6 96.2 331.8 58.7M280.6 132.3Q311.9 95.9 340.2 57.9M289.3 132.9Q321.9 96.0 351.1 57.3M299.2 132.2Q329.6 95.5 359.5 58.7M306.3 132.7Q336.7 95.2 366.4 57.3M316.2 131.2Q344.1 94.2 376.9 57.3M322.8 131.2Q354.4 95.0 383.9 59.0M330.6 131.7Q362.1 95.3 393.3 56.9M339.7 132.9Q370.6 94.7 401.0 58.7M348.3 131.1Q377.9 93.6 408.8 58.8M356.9 130.9Q388.4 95.3 419.2 56.8M366.8 131.6Q398.1 94.8 428.0 56.9M377.3 132.8Q408.3 96.3 438.1 58.0M384.2 133.1Q416.3 95.9 445.8 57.5M393.2 132.9Q423.6 94.7 454.9 58.2"/><path class="s r" d="M270.0 59.1Q332.1 61.5 394.8 58.8M269.3 59.6Q332.6 57.3 393.7 61.0"/><path class="s r" d="M394.0 60.7Q392.5 95.4 393.6 130.8M394.5 61.2Q392.6 94.6 395.9 128.9"/><path class="s r" d="M396.5 128.9Q332.8 128.5 270.7 128.5M394.1 129.5Q332.5 131.2 269.9 131.3"/><path class="s r" d="M269.0 131.0Q270.5 95.3 270.8 61.0M269.9 130.5Q269.8 94.5 271.4 61.3"/><text x="332.5" y="160" text-anchor="middle" style="font-size:18px">evictionHard</text><path class="h a" clip-path="url(#cal4)" d="M335.3 132.4Q364.3 94.9 394.6 58.9M340.5 131.3Q370.8 95.5 400.2 56.9M347.8 131.3Q378.8 95.4 408.6 57.6M354.5 133.1Q385.1 95.3 414.3 57.5M360.1 132.5Q390.7 94.9 421.6 58.2M367.6 132.7Q398.3 95.4 429.0 57.8M376.3 131.0Q404.9 93.9 437.3 57.0M383.6 132.5Q412.8 95.2 443.0 59.0M390.1 132.6Q420.8 95.6 450.9 57.2M397.0 131.1Q426.1 94.2 456.9 56.8M405.0 132.6Q434.2 95.7 465.4 58.5M410.2 132.2Q439.4 94.0 470.4 58.6M417.2 132.0Q445.8 94.2 477.8 58.9M423.5 132.9Q454.1 94.3 485.0 57.6M431.8 132.4Q462.7 95.4 493.0 58.0M438.5 132.3Q470.0 95.6 499.6 59.2M446.1 131.4Q477.5 95.6 506.4 57.9M453.3 132.1Q483.4 95.2 514.0 58.9M460.4 132.4Q491.5 95.3 521.3 57.0M466.8 131.9Q495.7 93.8 527.2 57.4M474.6 130.9Q503.5 94.5 533.6 57.9M482.2 132.8Q512.4 95.8 543.4 56.9M487.1 133.1Q519.3 96.1 549.3 57.8M496.5 131.2Q526.3 94.8 556.2 57.0M501.4 130.8Q531.2 94.5 562.6 57.5M509.3 133.1Q538.7 94.7 568.5 58.4M514.9 131.9Q545.2 94.2 575.2 57.4M523.0 132.8Q554.5 96.1 583.8 58.9M529.9 132.7Q561.5 95.8 592.0 57.1M536.1 131.5Q566.2 93.8 597.8 59.0M544.2 131.4Q575.5 95.5 604.1 57.5M552.9 130.9Q581.4 93.6 613.2 58.5M560.2 132.8Q589.0 93.7 621.0 58.9M565.7 132.9Q596.7 95.4 626.4 58.1M571.8 133.2Q601.6 93.8 633.5 57.2M578.6 133.1Q609.7 94.7 640.3 58.1M586.5 131.2Q617.4 95.9 647.0 59.2M594.0 132.6Q625.9 96.1 655.2 57.7M601.2 131.5Q632.2 95.3 663.0 57.3M609.6 130.9Q639.4 95.0 669.3 57.1M616.5 131.2Q646.4 94.4 677.2 58.8M623.6 132.4Q654.0 95.0 685.7 58.9M630.1 132.0Q659.3 93.8 690.8 57.6M637.2 131.1Q667.4 94.2 698.9 56.8M644.7 132.7Q675.9 95.6 705.4 58.3M651.0 132.0Q681.4 94.3 712.6 57.3M658.2 132.7Q686.6 93.5 718.8 58.3M663.9 131.5Q694.1 94.2 726.0 58.5M671.8 131.2Q701.0 94.8 731.6 59.0M677.3 131.9Q707.1 94.3 737.2 58.3M683.7 131.6Q714.6 94.9 744.2 58.3M690.5 132.2Q720.2 94.0 751.4 58.0M697.9 132.4Q730.0 95.9 758.5 57.4M704.8 131.5Q735.8 95.4 766.7 57.9M712.3 132.5Q742.8 93.8 774.8 57.1M720.4 130.8Q748.9 93.8 780.7 58.7M726.3 132.8Q757.1 96.0 787.6 58.7M734.4 132.0Q763.1 94.1 794.6 57.9M739.9 132.9Q771.6 96.1 800.6 58.1"/><path class="s a" d="M394.5 58.9Q567.9 58.4 740.0 59.3M396.3 60.8Q567.9 57.8 739.7 61.3"/><path class="s a" d="M740.6 58.7Q740.9 95.0 738.6 131.4M741.5 61.1Q742.6 95.0 739.9 130.1"/><path class="s a" d="M741.6 130.1Q567.2 128.4 396.0 130.1M741.5 131.0Q567.0 131.8 394.3 129.8"/><path class="s a" d="M395.1 128.9Q397.3 94.8 395.2 58.6M395.8 130.0Q394.6 94.4 393.9 59.7"/><text x="567.5" y="160" text-anchor="middle" style="font-size:18px">allocatable: what pods can request</text><text x="145" y="195" text-anchor="middle" class="m" style="font-size:16px">for the OS · for kubelet + runtime · safety margin</text></svg><figcaption>The scheduler only hands out the last part. kind reserves nothing, so there it is the whole node.</figcaption></figure>
+
+The scheduler only compares **requests** with allocatable. It never looks at what pods are really using. Ask for more than any node has, and the pod waits forever:
+
+```bash
+make 06-node-allocatable
+```
+
+```text
+  memory             8126480Ki      8126480Ki       ← capacity, allocatable
+  too-big   0/1     Pending
+  0/2 nodes are available: 1 Insufficient memory, ...
+```
+
+kind reserves nothing, which is why the two numbers are equal here. On a real cluster, always set `systemReserved` and `kubeReserved`, or pods will be scheduled into the memory the OS needs.
+
+## Lesson 9: the kubelet evicts before the kernel kills
+
+Lesson 6 was one container hitting its own limit. What if the **node** runs low, because many pods use more than they asked for? The kubelet watches node memory and, before the kernel's OOM killer has to act, it **evicts** a pod.
+
+<figure class="sketch anim"><svg viewBox="0 0 760 290" role="img" aria-label="The kubelet evicts pods when node memory runs low"><title>The kubelet evicts pods when node memory runs low</title><defs><clipPath id="cev1"><rect x="50" y="150" width="60" height="50"/></clipPath></defs><path class="s" d="M49.6 200.0Q51.1 188.1 51.8 175.5M49.5 199.7Q52.1 187.9 53.0 175.4"/><path class="s" d="M52.0 175.1Q55.5 164.1 58.3 152.0M52.4 175.3Q56.1 163.9 58.5 151.6"/><path class="s" d="M58.9 152.6Q63.6 141.0 68.9 130.3M57.7 152.9Q63.4 141.1 68.5 129.4"/><path class="s" d="M68.6 129.8Q74.8 119.1 83.0 109.9M69.4 130.4Q76.9 120.6 83.6 110.4"/><path class="s" d="M83.6 109.1Q92.1 102.2 100.8 93.5M83.6 110.7Q90.4 100.9 100.4 93.2"/><path class="s" d="M100.7 93.6Q109.3 85.4 120.0 77.9M99.2 92.2Q109.4 84.8 120.0 78.1"/><path class="s" d="M120.5 79.4Q130.3 72.3 141.6 68.7M120.7 79.2Q131.3 74.5 142.3 69.0"/><path class="s" d="M142.6 67.6Q153.8 65.6 165.4 61.8M142.0 68.2Q154.0 66.5 165.7 62.8"/><path class="s" d="M165.4 62.1Q177.8 61.3 190.3 60.9M165.6 61.6Q178.1 60.9 189.5 60.8"/><path class="s" d="M189.4 59.2Q202.3 60.2 214.6 61.3M189.7 59.3Q202.5 61.2 214.0 61.8"/><path class="s" d="M214.7 61.4Q226.5 64.3 237.4 69.2M213.8 61.6Q226.4 64.1 238.1 68.0"/><path class="s" d="M238.2 68.9Q249.1 73.0 260.5 79.6M238.4 68.9Q249.3 72.8 259.5 78.1"/><path class="s" d="M259.8 79.0Q270.6 85.4 280.4 92.4M260.6 79.2Q270.9 85.0 279.7 93.0"/><path class="s" d="M280.3 92.5Q289.2 100.8 298.0 110.6M280.8 93.2Q288.9 100.5 297.6 109.5"/><path class="s" d="M297.5 109.2Q304.9 119.6 311.9 129.5M297.9 109.5Q303.6 120.2 311.3 130.7"/><path class="s" d="M311.5 130.0Q315.7 141.3 321.2 152.6M310.6 129.6Q316.2 141.2 322.0 152.5"/><path class="s" d="M320.8 151.4Q324.2 164.1 328.4 175.0M322.1 152.8Q324.2 163.8 327.5 175.1"/><path class="s" d="M327.0 175.7Q328.8 188.2 329.4 199.1M328.4 176.2Q327.6 188.1 330.2 200.3"/><path class="s" d="M50.8 200.8Q189.5 199.3 330.5 198.7M48.4 199.2Q189.5 201.2 330.1 201.2"/><path class="h r" clip-path="url(#cev1)" d="M5.8 201.6Q28.4 175.6 49.7 148.7M11.3 201.7Q32.9 174.3 54.6 147.4M17.1 202.2Q39.4 174.9 61.8 149.1M21.7 202.0Q45.8 175.8 65.4 147.5M28.1 201.3Q50.1 174.7 72.7 147.1M32.4 203.0Q54.5 175.0 77.2 148.6M39.1 201.4Q60.5 175.3 82.0 146.8M43.8 201.6Q66.7 175.6 88.0 148.0M50.3 202.4Q71.5 174.7 94.1 148.0M56.9 201.6Q80.6 176.6 100.5 147.6M64.7 202.0Q85.4 174.4 108.7 146.9M72.0 200.9Q92.4 174.2 115.5 147.4M77.8 203.2Q100.8 174.8 120.6 147.5M83.6 201.6Q105.8 174.8 127.1 148.5M90.2 202.5Q112.4 175.6 134.8 148.0M97.3 201.9Q117.7 175.0 140.0 147.9M100.9 202.5Q124.6 175.7 144.1 148.7M107.8 202.4Q129.3 175.5 150.2 147.4"/><text x="54" y="226" text-anchor="start" class="r" style="font-size:19px">low!</text><text x="326" y="226" text-anchor="end" class="g" style="font-size:19px">plenty</text><g class="anim-needle"><path class="s r" d="M190.9 201.5Q131.0 182.0 73.5 161.2M189.7 201.1Q130.0 181.9 73.0 160.2"/></g><ellipse class="f r" cx="190" cy="200" rx="7" ry="7"/><path class="s" d="M187.0 206.1Q185.0 205.1 184.5 204.1Q183.9 203.2 183.5 202.2Q183.1 201.2 183.2 200.1Q183.3 199.0 183.4 197.9Q183.6 196.8 184.4 196.0Q185.1 195.2 186.0 194.6Q186.8 193.9 187.8 193.5Q188.8 193.1 189.9 193.2Q191.0 193.3 192.0 193.5Q193.1 193.8 194.1 194.3Q195.0 194.9 195.6 195.8Q196.2 196.8 196.4 197.8Q196.7 198.9 196.8 200.0Q196.9 201.0 196.6 202.1Q196.4 203.2 195.7 204.1Q195.1 205.0 194.2 205.7Q193.3 206.3 192.2 206.7Q191.2 207.1 190.1 207.1Q189.0 207.0 187.9 206.7Q186.9 206.3 185.9 205.7"/><path class="s" d="M196.7 197.4Q196.8 199.7 196.9 200.9Q196.9 202.0 196.3 203.0Q195.7 204.0 195.0 204.9Q194.2 205.8 193.2 206.3Q192.1 206.8 191.0 206.8Q189.8 206.8 188.7 206.7Q187.6 206.6 186.7 205.9Q185.8 205.3 184.9 204.5Q184.1 203.8 183.7 202.7Q183.3 201.6 183.3 200.5Q183.2 199.4 183.4 198.3Q183.6 197.2 184.2 196.2Q184.8 195.3 185.8 194.7Q186.7 194.1 187.7 193.5Q188.7 193.0 189.9 192.9Q191.1 192.9 192.1 193.3Q193.2 193.7 194.1 194.5Q195.0 195.2 195.6 196.1Q196.3 197.0 196.6 198.1Q196.9 199.2 196.9 200.3"/><text x="190" y="40" text-anchor="middle" style="font-size:21px">memory.available on the node</text><text x="380" y="90" text-anchor="start" style="font-size:20px">1. kubelet checks every ~10s</text><text x="380" y="130" text-anchor="start" style="font-size:20px">2. below evictionHard?</text><text x="410" y="154" text-anchor="start" style="font-size:20px">→ node has MemoryPressure</text><text x="380" y="194" text-anchor="start" style="font-size:20px">3. evict the pod furthest above</text><text x="410" y="218" text-anchor="start" style="font-size:20px">its request (BestEffort first)</text><text x="380" y="258" text-anchor="start" class="r" style="font-size:20px">Status: Evicted, not restarted here</text></svg><figcaption>Before the kernel's OOM killer has to act, the kubelet steps in like a bouncer and asks one pod to leave.</figcaption></figure>
+
+The lab temporarily tunes the kubelet so the node is only ~600 MiB from "low memory", then starts a hungry BestEffort pod next to two calm ones:
+
+```bash
+make 07-node-pressure-eviction
+```
+
+```text
+  MemoryPressure: status=True
+  calm-burstable    1/1     Running
+  calm-guaranteed   1/1     Running
+  memory-hog        0/1     Error
+
+  The node was low on resource: memory. ... Container main was using 721996Ki, request is 0
+```
+
+`request is 0` is the whole story: the kubelet evicts the pod furthest above its request first. Pods that stay within their memory request are the last ones it touches. (The lab always puts the kubelet's settings back when it's done.)
+
+## Lesson 10: priority lets important pods jump the queue
+
+A **PriorityClass** is a number you attach to pods. If a high-priority pod can't fit anywhere, the scheduler is allowed to remove lower-priority pods to make room. This is **preemption**.
+
+```bash
+make 08-priority-preemption
+```
+
+```text
+  REASON      MESSAGE
+  Preempted   Preempted by pod 2cb1a068-... on node under-the-hood-worker
+
+  NAME        PRIORITY   STATUS
+  prio-high   1000000    Running
+  prio-low    1000       Failed
+```
+
+No cgroup is involved here at all; it's a decision made by the scheduler. Keep the number of priority classes small. If everything is "critical", nothing is.
+
+## Lesson 11: ResourceQuota and LimitRange guard the front door
+
+These two work at the API server, the first checkpoint. Neither touches a cgroup.
+
+- **ResourceQuota** is a team budget: "this namespace may request 500m CPU in total".
+- **LimitRange** is a dress code: "every container gets these defaults, and nothing above 256Mi".
+
+```bash
+make 09-resourcequota
+make 10-limitrange
+```
+
+```text
+pods "q-big" is forbidden: exceeded quota: compute, requested: requests.cpu=400m,
+  used: requests.cpu=200m, limited: requests.cpu=500m
+
+{"limits":{"cpu":"200m","memory":"128Mi"},"requests":{"cpu":"100m","memory":"64Mi"}}
+  cpu.max     20000 100000       ← defaults injected by the LimitRange…
+  memory.max  134217728          ← …end up in the cgroup like hand-written ones
+
+pods "lr-too-big" is forbidden: maximum memory usage per Container is 256Mi, but limit is 512Mi
+```
+
+The two go together: a quota on CPU requests rejects any pod without a request, and a LimitRange default quietly adds one.
+
+## Lesson 12: limits people forget, PIDs and disk
+
+**PIDs.** Every process and thread needs an ID, and a node has a limited number. One runaway pod spawning processes (a "fork bomb") can use them all and break the whole node. The kubelet's `podPidsLimit` becomes `pids.max` on each pod's cgroup, and the kernel refuses new processes past it.
+
+**Local disk.** `limits.ephemeral-storage` caps how much a pod writes to the node's disk (its logs, temp files and `emptyDir` volumes). There's no cgroup for disk space, so the kubelet measures usage itself and evicts the pod when it goes over.
+
+```bash
+make 11-pids-and-ephemeral-storage
+```
+
+You'll see the pod's process count stop short of 100 with `can't fork: Resource temporarily unavailable`, and a second pod evicted with a message about `ephemeral local storage`.
+
+## Lesson 13: pressure tells you how long you waited
+
+Usage tells you how *busy* something is. **Pressure** (PSI, "pressure stall information") tells you how long things *waited*. Imagine a queue in front of a single checkout:
+
+<figure class="sketch "><svg viewBox="0 0 760 240" role="img" aria-label="Pressure stall information measures waiting time"><title>Pressure stall information measures waiting time</title><defs><clipPath id="cps1"><rect x="560" y="60" width="150" height="110"/></clipPath></defs><path class="h b" clip-path="url(#cps1)" d="M464.8 171.1Q510.4 113.7 559.1 57.4M473.0 172.1Q520.9 114.3 569.4 57.8M483.7 171.3Q530.0 114.4 579.1 57.7M493.9 173.1Q540.5 114.4 590.2 57.7M502.8 172.9Q551.5 115.4 598.2 57.3M511.1 170.9Q560.0 115.7 607.0 57.6M521.7 173.2Q569.2 115.8 616.9 57.5M528.0 171.3Q577.2 115.5 625.6 58.2M538.7 173.2Q584.9 114.4 633.2 57.9M547.0 171.0Q595.9 114.9 644.7 57.1M556.3 172.0Q603.9 114.9 652.6 57.5M564.1 171.1Q613.3 114.8 661.2 58.5M576.2 171.6Q623.4 115.9 669.5 57.7M584.5 170.9Q630.0 113.8 679.5 57.3M591.9 172.5Q640.5 115.5 687.6 58.9M601.3 171.9Q648.9 115.0 695.5 57.1M610.5 171.2Q659.3 115.8 706.8 57.1M619.0 172.5Q665.8 113.9 714.9 57.4M629.0 172.9Q677.6 115.1 723.8 57.3M638.1 171.3Q685.7 115.0 733.3 57.6M647.2 172.3Q695.4 114.3 743.3 58.0M657.6 171.5Q704.5 114.0 753.2 56.8M666.6 172.2Q713.3 114.5 761.0 58.7M673.7 171.0Q722.6 115.3 769.9 57.3M682.9 172.9Q731.2 115.3 778.0 57.7M693.0 171.4Q739.9 115.0 788.3 56.9M702.8 170.9Q750.3 115.9 797.1 58.0"/><path class="s b" d="M558.5 59.7Q634.4 57.9 710.1 59.8M559.8 59.9Q634.4 58.6 709.9 60.6"/><path class="s b" d="M709.5 58.9Q708.4 115.3 708.7 171.1M709.4 59.6Q712.4 115.5 709.7 171.4"/><path class="s b" d="M710.7 169.8Q635.4 168.5 559.7 171.0M711.3 169.8Q635.5 169.1 560.2 170.9"/><path class="s b" d="M561.2 171.2Q559.3 115.1 558.8 59.6M559.7 169.4Q558.4 115.6 559.3 59.8"/><text x="635" y="122" text-anchor="middle" class="big">1 CPU</text><path class="s y" d="M42.7 89.1Q53.3 86.2 58.8 86.0Q64.3 85.8 69.6 87.0Q74.9 88.3 80.1 90.3Q85.2 92.4 88.0 96.6Q90.7 100.8 93.4 105.0Q96.0 109.2 95.4 113.9Q94.8 118.5 94.0 123.2Q93.3 127.9 89.6 131.5Q85.9 135.1 81.9 138.4Q77.8 141.7 72.3 143.0Q66.9 144.3 61.3 144.1Q55.8 143.9 50.5 142.7Q45.2 141.4 40.1 139.4Q34.9 137.4 31.7 133.5Q28.4 129.6 26.6 125.2Q24.7 120.7 24.7 116.1Q24.6 111.4 25.8 106.8Q26.9 102.2 30.3 98.4Q33.7 94.6 38.4 92.1Q43.1 89.6 48.1 87.5"/><path class="s y" d="M45.7 143.3Q36.0 137.5 32.1 133.8Q28.1 130.1 26.9 125.4Q25.6 120.6 24.7 115.7Q23.8 110.9 25.7 106.2Q27.5 101.5 30.8 97.4Q34.0 93.2 38.9 90.3Q43.7 87.3 49.5 86.2Q55.4 85.1 61.2 85.3Q67.1 85.4 72.7 87.0Q78.4 88.6 82.5 92.1Q86.6 95.6 90.0 99.5Q93.4 103.5 95.0 108.2Q96.6 113.0 95.8 117.9Q95.0 122.8 92.5 127.2Q90.1 131.7 86.3 135.5Q82.5 139.4 77.3 141.8Q72.0 144.3 66.1 144.4Q60.1 144.5 54.5 143.5Q48.9 142.6 43.5 140.8Q38.0 139.1 34.5 135.2"/><text x="60" y="121" text-anchor="middle" style="font-size:17px">waiting</text><path class="s y" d="M185.3 109.2Q185.8 118.6 184.6 123.3Q183.4 127.9 180.2 131.9Q177.1 135.9 172.1 138.3Q167.1 140.6 162.0 142.4Q156.9 144.3 151.3 144.2Q145.8 144.1 140.3 143.1Q134.9 142.1 130.5 139.3Q126.1 136.4 121.9 133.2Q117.7 130.0 116.4 125.4Q115.0 120.7 114.8 116.1Q114.5 111.4 115.5 106.7Q116.4 102.0 119.7 98.1Q123.0 94.1 127.9 91.6Q132.7 89.1 137.9 87.3Q143.1 85.6 148.7 85.2Q154.4 84.9 159.6 86.6Q164.8 88.4 169.4 91.0Q173.9 93.6 178.1 96.8Q182.2 100.0 183.4 104.7Q184.5 109.4 185.4 114.0"/><path class="s y" d="M147.2 84.9Q158.8 86.2 164.4 87.7Q170.1 89.2 174.5 92.6Q178.8 96.0 180.9 100.6Q182.9 105.2 184.9 109.9Q187.0 114.5 185.8 119.4Q184.6 124.3 181.5 128.5Q178.5 132.6 174.3 135.9Q170.0 139.1 164.8 141.1Q159.6 143.0 153.9 144.3Q148.2 145.6 142.4 144.6Q136.5 143.6 131.8 140.6Q127.0 137.7 123.4 133.9Q119.9 130.1 117.9 125.7Q115.9 121.2 115.2 116.5Q114.4 111.7 116.1 107.1Q117.9 102.5 121.3 98.7Q124.8 94.9 129.2 91.8Q133.6 88.8 139.0 86.7Q144.4 84.7 150.2 85.5Q156.0 86.3 161.6 87.6"/><text x="150" y="121" text-anchor="middle" style="font-size:17px">waiting</text><path class="s y" d="M205.0 112.4Q207.9 103.6 210.8 99.8Q213.7 95.9 217.8 92.9Q221.9 89.9 226.8 87.4Q231.7 84.8 237.4 84.6Q243.2 84.4 248.8 85.7Q254.3 87.0 259.3 89.4Q264.3 91.7 267.4 95.7Q270.5 99.8 272.5 104.1Q274.5 108.4 275.6 113.0Q276.8 117.7 275.1 122.3Q273.4 126.8 270.7 131.1Q268.0 135.3 263.1 137.9Q258.3 140.5 253.2 142.3Q248.0 144.1 242.4 144.7Q236.8 145.3 231.2 144.3Q225.5 143.3 221.2 140.2Q216.9 137.1 213.3 133.6Q209.6 130.2 207.9 125.8Q206.1 121.5 205.1 116.9Q204.0 112.4 204.9 107.6"/><path class="s y" d="M208.0 102.9Q213.3 94.2 218.1 91.3Q222.8 88.3 228.5 87.3Q234.2 86.2 240.1 85.4Q245.9 84.5 251.5 86.4Q257.0 88.2 261.6 91.3Q266.2 94.4 269.3 98.5Q272.4 102.6 273.7 107.3Q275.0 112.0 275.0 116.8Q275.0 121.6 272.7 126.1Q270.4 130.5 266.5 134.1Q262.6 137.6 257.8 140.5Q253.1 143.3 247.3 144.3Q241.5 145.3 235.5 145.0Q229.5 144.7 224.1 142.5Q218.6 140.3 214.8 136.5Q211.0 132.7 208.1 128.4Q205.1 124.1 204.7 119.2Q204.3 114.3 205.3 109.6Q206.3 104.8 209.1 100.5Q211.8 96.1 215.9 92.5"/><text x="240" y="121" text-anchor="middle" style="font-size:17px">waiting</text><path class="s y" d="M364.7 122.8Q359.8 131.2 356.5 135.0Q353.1 138.8 348.2 141.4Q343.2 143.9 337.5 144.4Q331.8 144.9 326.4 144.0Q320.9 143.1 315.6 141.7Q310.2 140.3 306.0 137.1Q301.8 134.0 298.9 129.9Q295.9 125.8 294.6 121.2Q293.4 116.5 294.3 111.9Q295.3 107.2 297.5 102.9Q299.7 98.6 303.4 94.9Q307.0 91.2 312.3 89.6Q317.6 87.9 322.9 86.7Q328.2 85.6 333.9 85.6Q339.5 85.7 344.9 87.3Q350.3 89.0 354.6 92.3Q358.9 95.6 361.0 100.0Q363.1 104.5 365.1 108.9Q367.1 113.4 365.7 118.1Q364.2 122.7 362.1 127.0"/><path class="s y" d="M349.7 140.4Q338.7 143.9 332.9 144.6Q327.1 145.3 321.2 144.4Q315.3 143.4 310.9 140.1Q306.5 136.7 302.4 133.3Q298.2 129.8 296.3 125.2Q294.4 120.5 294.6 115.7Q294.9 110.8 296.9 106.3Q298.9 101.9 301.5 97.4Q304.0 92.9 309.1 90.2Q314.2 87.6 319.9 86.3Q325.6 85.0 331.4 85.7Q337.1 86.4 343.0 87.4Q348.8 88.4 352.9 92.0Q357.1 95.5 360.2 99.7Q363.3 103.8 364.7 108.5Q366.1 113.2 365.3 118.1Q364.6 122.9 362.7 127.6Q360.8 132.4 356.2 135.6Q351.7 138.8 346.6 141.3Q341.5 143.8 335.7 144.7"/><text x="330" y="121" text-anchor="middle" style="font-size:17px">waiting</text><path class="s g" d="M452.0 102.9Q455.4 111.7 455.9 116.5Q456.4 121.3 453.9 125.6Q451.5 130.0 447.8 133.5Q444.0 137.0 439.6 140.0Q435.2 143.1 429.5 143.5Q423.9 144.0 418.4 143.9Q412.8 143.9 407.8 142.1Q402.7 140.3 397.9 137.9Q393.1 135.4 390.1 131.4Q387.2 127.3 386.0 122.8Q384.7 118.3 384.8 113.6Q384.9 109.0 387.1 104.7Q389.3 100.4 392.3 96.5Q395.4 92.5 400.1 89.8Q404.9 87.2 410.5 86.3Q416.1 85.4 421.8 85.1Q427.5 84.9 432.4 87.3Q437.3 89.8 442.0 92.2Q446.7 94.7 449.4 98.8Q452.0 102.9 453.4 107.4"/><path class="s g" d="M387.3 104.6Q393.1 96.4 397.3 93.3Q401.6 90.1 406.8 88.1Q412.0 86.0 417.8 85.2Q423.7 84.5 429.2 86.3Q434.7 88.1 439.3 90.9Q444.0 93.7 448.2 97.2Q452.4 100.6 454.3 105.3Q456.3 110.0 456.5 115.0Q456.8 120.0 453.8 124.4Q450.8 128.7 447.4 132.5Q444.1 136.4 439.5 139.3Q434.8 142.2 429.3 144.0Q423.7 145.9 417.8 145.1Q411.9 144.3 406.2 142.8Q400.6 141.2 396.7 137.5Q392.8 133.8 389.6 129.7Q386.4 125.7 385.0 120.9Q383.6 116.1 384.9 111.4Q386.2 106.6 388.4 102.1Q390.6 97.6 394.5 93.9"/><text x="420" y="121" text-anchor="middle" style="font-size:17px">running</text><path class="s" d="M463.6 115.3Q506.3 117.0 549.2 114.1M462.3 116.2Q506.5 112.8 550.6 114.7"/><path class="s" d="M549.7 115.5Q544.7 117.0 540.4 120.0M549.3 114.8Q545.1 117.5 540.8 120.3"/><path class="s" d="M549.5 114.8Q544.8 113.3 540.2 109.7M550.3 114.8Q545.2 112.0 539.8 110.8"/><text x="20" y="40" text-anchor="start" style="font-size:21px">cpu.pressure counts the time threads spend in this queue</text><text x="20" y="205" text-anchor="start" class="m" style="font-size:19px">some = at least one thread waiting · full = nobody making progress</text></svg><figcaption>PSI measures the queue, not the work. Usage says how busy you are; pressure says how much you wait.</figcaption></figure>
+
+Each cgroup has `cpu.pressure`, `memory.pressure` and `io.pressure` files. The lab runs 20 busy threads on 10 CPUs, with no limit:
+
+```bash
+make 12-psi
+```
+
+```text
+$ kubectl -n lab exec psi-cpu -- cat /sys/fs/cgroup/cpu.pressure
+  some avg10=75.19 avg60=24.03 avg300=5.60 total=17362896
+```
+
+`some avg10=75.19` means that over the last 10 seconds, at least one thread was stuck waiting for a CPU 75% of the time. When a pod is slow but its CPU graph looks fine, check pressure.
+
+## Lesson 14: change limits without a restart
+
+Since Kubernetes 1.33 you can change a running pod's CPU and memory **in place**. The kubelet simply rewrites the cgroup files of the live container.
+
+<figure class="sketch anim"><svg viewBox="0 0 760 250" role="img" aria-label="In-place resize turns the cgroup dial on a running pod"><title>In-place resize turns the cgroup dial on a running pod</title><path class="s b" d="M127.6 59.3Q150.7 49.9 163.5 49.8Q176.2 49.7 188.2 54.2Q200.2 58.7 209.6 67.2Q218.9 75.8 226.2 86.1Q233.4 96.4 236.1 108.6Q238.7 120.9 238.7 133.4Q238.6 145.8 233.2 157.0Q227.8 168.2 221.3 178.9Q214.8 189.6 204.2 196.4Q193.5 203.2 181.3 205.8Q169.1 208.3 156.7 208.0Q144.3 207.8 132.2 204.3Q120.1 200.9 110.7 192.4Q101.3 183.9 93.1 174.2Q84.9 164.4 81.4 151.9Q77.9 139.5 78.8 126.7Q79.7 113.8 86.0 102.8Q92.3 91.9 99.9 82.4Q107.5 72.9 117.3 65.6Q127.2 58.3 139.0 54.8"/><path class="s b" d="M137.0 51.5Q163.3 49.7 176.2 52.2Q189.1 54.6 200.3 61.4Q211.5 68.2 218.7 78.9Q226.0 89.6 232.1 101.0Q238.2 112.3 238.1 125.2Q238.0 138.2 235.1 150.7Q232.3 163.2 224.2 173.2Q216.1 183.1 207.0 192.3Q197.8 201.5 185.4 206.4Q173.1 211.3 160.1 208.9Q147.1 206.5 134.5 203.7Q121.9 200.8 112.6 191.8Q103.4 182.7 95.6 172.6Q87.8 162.5 85.0 150.0Q82.3 137.5 81.2 124.4Q80.1 111.3 85.6 99.2Q91.0 87.1 99.4 76.8Q107.8 66.5 120.1 61.5Q132.3 56.6 144.8 52.7Q157.2 48.8 170.3 50.6"/><g class="anim-knob"><path class="s r" d="M159.3 130.7Q160.6 96.2 159.9 61.1M160.2 128.4Q160.0 95.9 160.5 60.7"/></g><ellipse class="f r" cx="160" cy="130" rx="8" ry="8"/><path class="s" d="M155.3 123.6Q157.6 122.7 158.8 122.2Q160.0 121.7 161.2 122.2Q162.4 122.6 163.5 123.1Q164.6 123.7 165.5 124.5Q166.5 125.3 167.0 126.4Q167.5 127.5 167.7 128.8Q168.0 130.0 167.8 131.2Q167.6 132.4 167.1 133.6Q166.5 134.7 165.6 135.6Q164.7 136.5 163.6 137.0Q162.5 137.5 161.2 137.7Q160.0 137.8 158.8 137.8Q157.5 137.7 156.4 137.1Q155.3 136.5 154.4 135.6Q153.5 134.7 152.9 133.7Q152.2 132.6 152.2 131.3Q152.3 130.0 152.4 128.8Q152.5 127.6 153.0 126.4Q153.5 125.3 154.5 124.5Q155.4 123.7 156.4 123.0"/><path class="s" d="M153.6 134.6Q152.5 132.3 152.1 131.0Q151.7 129.7 152.2 128.5Q152.7 127.3 153.2 126.0Q153.7 124.8 154.7 124.0Q155.7 123.1 156.9 122.6Q158.1 122.0 159.4 122.0Q160.8 121.9 162.0 122.4Q163.2 122.8 164.4 123.4Q165.5 124.1 166.4 125.1Q167.2 126.1 167.4 127.4Q167.6 128.7 167.9 130.0Q168.1 131.3 167.6 132.5Q167.2 133.8 166.3 134.7Q165.4 135.7 164.4 136.6Q163.5 137.5 162.1 137.7Q160.8 137.8 159.6 137.7Q158.3 137.5 157.1 137.1Q155.9 136.7 154.9 135.9Q153.9 135.1 153.3 134.0Q152.8 132.8 152.4 131.6"/><text x="85" y="60" text-anchor="middle" class="m" style="font-size:18px">200m</text><text x="250" y="140" text-anchor="middle" class="m" style="font-size:18px">500m</text><text x="160" y="235" text-anchor="middle" class="code">cpu.max: 20000 → 50000</text><text x="320" y="80" text-anchor="start" class="code">kubectl patch pod … --subresource resize</text><text x="320" y="125" text-anchor="start" style="font-size:20px">the kubelet turns the dial on the live container</text><text x="320" y="160" text-anchor="start" class="g" style="font-size:20px">restartCount stays 0, same container ID</text><text x="320" y="195" text-anchor="start" class="m" style="font-size:18px">(Kubernetes 1.33 and newer)</text></svg><figcaption>In-place resize: change the numbers while the process keeps running.</figcaption></figure>
+
+```bash
+make 13-in-place-resize
+```
+
+```text
+before  cpu.max 20000 100000   memory.max 67108864    cpu.weight 29
+after   cpu.max 50000 100000   memory.max 134217728   cpu.weight 59
+  restartCount 0
+```
+
+Same container, same process, new numbers. It's the clearest proof in the whole lab that `resources:` really is just a few numbers in a few files.
+
+## Cheat sheet
+
+| Setting | Who enforces it | How |
+|---|---|---|
+| `requests.cpu` | Scheduler, then kernel | Fits pods on nodes; becomes `cpu.weight` |
+| `limits.cpu` | Kernel | `cpu.max` quota per 100ms, causes throttling |
+| `requests.memory` | Scheduler, kubelet | Placement; ranking during eviction |
+| `limits.memory` | Kernel | `memory.max`, OOM kill at the line |
+| QoS class | Kernel, kubelet | `oom_score_adj` and eviction order |
+| PriorityClass | Scheduler, kubelet | Preemption and eviction order |
+| ResourceQuota, LimitRange | API server | Rejects or fills in pod specs |
+| `podPidsLimit` | Kernel | `pids.max` |
+| `ephemeral-storage` | Kubelet | Measures disk use and evicts |
+
+## Make your app cgroup-aware
+
+The kernel enforces the box, but the program inside should know how big the box is:
+
+- **Java:** container support is on by default in JDK 10+ and 8u191+. Size the heap with `-XX:MaxRAMPercentage` rather than a fixed `-Xmx`.
+- **Go:** from Go 1.25, `GOMAXPROCS` follows the cgroup CPU limit. On older versions, use `go.uber.org/automaxprocs`, or it will run one thread per host core and get throttled.
+- **Node.js:** set `--max-old-space-size` below the memory limit, leaving room for buffers.
+
+## Takeaways
+
+- **Requests** are for the scheduler and for sharing CPU fairly when it's busy. Make them honest.
+- **CPU limits** throttle, even on an idle node. Many teams drop them for latency-sensitive services and rely on good requests instead. Measure throttling before and after.
+- **Memory limits** kill. Always set them, and set memory requests equal to limits for anything important.
+- When something looks wrong, **read the files**: `cpu.max`, `memory.max`, `cpu.stat`, `memory.events` and the pressure files tell you what the kernel is really doing.
+
+Clone the [lab](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood), run `make all`, and watch it happen.
