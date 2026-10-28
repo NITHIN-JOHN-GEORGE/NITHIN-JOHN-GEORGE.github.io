@@ -117,8 +117,13 @@ function loadHandbooks() {
 
 // ---------- layout ----------
 const NAV = [
-  { key: 'writing', label: 'blog', href: '/blog/' },
-  { key: 'about', label: 'about', href: '/about/' }
+  { key: 'home', label: 'Home', href: '/' },
+  { key: 'about', label: 'About', href: '/about/' },
+  { key: 'skills', label: 'Skills', href: '/#skills' },
+  { key: 'writing', label: 'Blogs', href: '/blog/' },
+  { key: 'projects', label: 'Projects', href: '/#projects' },
+  { key: 'certifications', label: 'Certifications', href: '/#certifications' },
+  { key: 'contact', label: 'Contact', href: '/#contact' }
 ];
 
 function layout({ title, description, path, body, active = '', wide = false, home = false }) {
@@ -163,8 +168,9 @@ function layout({ title, description, path, body, active = '', wide = false, hom
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="${url('/')}" aria-label="${e(site.name)}, home"><span class="brand-user">${e(site.handle)}</span><span class="brand-path">&nbsp;~ %</span><span class="cursor" aria-hidden="true"></span></a>
-    <nav class="nav" aria-label="Primary">
-      ${NAV.map((n) => `<a href="${url(n.href)}"${active === n.key ? ' aria-current="page"' : ''}>${n.label}</a>`).join('')}
+    <button class="btn-icon nav-toggle" id="nav-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="primary-nav">${icon('menu', 18)}</button>
+    <nav class="nav" id="primary-nav" aria-label="Primary">
+      ${NAV.map((n) => `<a href="${url(n.href)}" data-nav="${n.key}"${active === n.key ? ' aria-current="page"' : ''}>${n.label}</a>`).join('')}
     </nav>
     <div class="tools">
       <button class="btn-icon" id="search-open" type="button" aria-label="Search (press /)">${icon('search', 18)}</button>
@@ -222,6 +228,23 @@ function postRow(p) {
 }
 
 // ---------- pages ----------
+
+function expTimeline() {
+  return `<ol class="xtl">
+    ${site.experience
+      .map((x) => {
+        const current = /present/i.test(x.period);
+        const [from, to] = x.period.split(/\s+to\s+/);
+        return `<li class="xtl-item reveal${current ? ' current' : ''}">
+      <div class="xtl-date mono"><span>${e(from)}</span><span class="xtl-to">${e(to || '')}</span></div>
+      <div class="xtl-node" aria-hidden="true"></div>
+      <div class="glass xtl-card"><h3>${e(x.role)}</h3><p class="xtl-org">${e(x.org)}${current ? ' <span class="xtl-now mono">current</span>' : ''}</p></div>
+    </li>`;
+      })
+      .join('\n    ')}
+  </ol>`;
+}
+
 function homePage(posts, books) {
   const latest = posts.slice(0, 3);
   const termData = {
@@ -230,6 +253,8 @@ function homePage(posts, books) {
     role: `${site.role} at ${site.company}`,
     location: site.location,
     about: site.intro,
+    motd: site.motd || site.intro,
+    aboutYaml: site.aboutYaml || null,
     skills: site.stack.map((g) => ({ group: g.group, items: g.items.map((i) => i[0]) })),
     experience: site.experience,
     posts: posts.map((p) => ({ title: p.title, date: fmtMonth(p.date), href: p.href })),
@@ -269,9 +294,9 @@ function homePage(posts, books) {
   </div>
 </section>
 
-<section class="wrap section" id="expertise">
+<section class="wrap section" id="skills">
   <div class="section-head reveal">
-    <h2 class="section-h">Core expertise</h2>
+    <h2 class="section-h">Skills</h2>
     <p class="muted">The tools I use day to day to run and secure the platform.</p>
   </div>
   <div class="xp-grid">
@@ -287,10 +312,10 @@ function homePage(posts, books) {
   </div>
 </section>
 
-<section class="wrap section" id="built">
+<section class="wrap section" id="projects">
   <div class="section-head reveal">
-    <h2 class="section-h">What I've built</h2>
-    <p class="muted">Platform work at Porter, from delivery to security.</p>
+    <h2 class="section-h">Projects</h2>
+    <p class="muted">Platform work I've built and run at Porter, from delivery to security.</p>
   </div>
   <ol class="timeline">
     ${site.highlights
@@ -306,11 +331,26 @@ function homePage(posts, books) {
 
 <section class="wrap section" id="experience">
   <div class="section-head reveal"><h2 class="section-h">Experience</h2></div>
-  <div class="exp reveal">
-    ${site.experience
-      .map((x) => `<div class="exp-row"><span class="exp-period mono">${e(x.period)}</span><span class="exp-role">${e(x.role)}</span><span class="exp-org">${e(x.org)}</span></div>`)
-      .join('')}
-  </div>
+  ${expTimeline()}
+</section>
+
+<section class="wrap section" id="certifications">
+  <div class="section-head reveal"><h2 class="section-h">Certifications</h2></div>
+  <ol class="xtl xtl-cert">
+    ${(site.certifications || [])
+      .map((c) => {
+        const logo = c.logo
+          ? `<img class="only-dark" src="https://cdn.simpleicons.org/${c.logo}/c9d1d9" alt="" width="18" height="18" loading="lazy" onerror="this.remove()"><img class="only-light" src="https://cdn.simpleicons.org/${c.logo}/1f2328" alt="" width="18" height="18" loading="lazy" onerror="this.remove()">`
+          : '';
+        const expired = /expired/i.test(c.status || '');
+        return `<li class="xtl-item reveal${expired ? ' expired' : ' current'}">
+      <div class="xtl-date mono"><span class="cert-issuer">${logo}${e(c.issuer)}</span></div>
+      <div class="xtl-node" aria-hidden="true"></div>
+      <div class="glass xtl-card"><h3>${e(c.name)}</h3><p class="xtl-org">${e(c.issuer)}${c.status ? ` <span class="cert-pill mono${expired ? ' is-expired' : ''}">${e(c.status)}</span>` : ''}</p></div>
+    </li>`;
+      })
+      .join('\n    ')}
+  </ol>
 </section>
 
 <section class="wrap section" id="writing">
@@ -332,6 +372,7 @@ function homePage(posts, books) {
   }
 </section>
 
+
 <section class="wrap section contact reveal" id="contact">
   <h2 class="section-h">Let's talk platform engineering</h2>
   <p class="muted">The easiest way to reach me is LinkedIn.</p>
@@ -339,28 +380,55 @@ function homePage(posts, books) {
 </section>
 <script id="term-data" type="application/json">${JSON.stringify(termData).replace(/</g, '\\u003c')}</script>
 `;
-  return layout({ title: site.name, path: '/', body, active: '', home: true });
+  return layout({ title: site.name, path: '/', body, active: 'home', home: true });
 }
 
 function aboutPage() {
+  const y = site.aboutYaml || {};
+  const glance = [
+    ['Role', y.role || site.role],
+    ['Company', y.company || site.company],
+    ['Based in', y['i-am-based-in'] || site.location],
+    ['Experience', '6+ years']
+  ];
   const body = `
-<div class="wrap page">
-  <h1>About</h1>
-  <p class="lead">${e(site.intro)}</p>
-  <p>I work in the ${e(site.company)} engineering platform team. Most of what I do is making it easy for application teams to ship safely: GitOps delivery, shared Helm charts, self-serve infrastructure, observability and an in-house security platform.</p>
-  <h2 class="section-title mono"><span class="t-dim">$</span> kubectl get roles -A</h2>
-  <div class="table-wrap"><table>
-    <thead><tr><th>Role</th><th>Company</th><th>Period</th></tr></thead>
-    <tbody>${site.experience.map((x) => `<tr><td>${e(x.role)}</td><td>${e(x.org)}</td><td>${e(x.period)}</td></tr>`).join('')}</tbody>
-  </table></div>
-  <h2 class="section-title mono"><span class="t-dim">$</span> ./connect.sh</h2>
-  <ul class="plain">
-    <li><a href="${e(site.links.linkedin)}" rel="noopener">LinkedIn</a></li>
-    <li><a href="${e(site.links.github)}" rel="noopener">GitHub</a></li>
-    <li><a href="${e(site.links.medium)}" rel="noopener">Medium</a></li>
-  </ul>
+<canvas id="bg-net" aria-hidden="true"></canvas>
+<div class="wrap ab">
+  <section class="ab-hero">
+    <div>
+      <p class="eyebrow mono reveal">~/about</p>
+      <h1 class="reveal">I build the platform <span class="grad">other engineers ship on</span></h1>
+      <p class="lead reveal">${e(site.motd || site.intro)}</p>
+      <p class="reveal">I work in the ${e(site.company)} engineering platform team. Most of what I do is making it easy for application teams to ship safely: GitOps delivery, shared Helm charts, self-serve infrastructure, observability and an in-house code security platform. I care about developer velocity without compromising on security.</p>
+      <div class="cta reveal">
+        <a class="btn btn-grad" href="${e(site.links.linkedin)}" rel="noopener">Connect on LinkedIn</a>
+        <a class="btn btn-ghost" href="${e(site.links.github)}" rel="noopener">GitHub</a>
+        <a class="btn btn-ghost" href="${e(site.links.medium)}" rel="noopener">Medium</a>
+      </div>
+    </div>
+    <aside class="glass ab-card reveal" aria-label="At a glance">
+      <p class="ab-card-title mono"><span class="t-dim">$</span> cat ~/.about-me.yaml</p>
+      <dl class="ab-glance">${glance.map(([k, v]) => `<div><dt class="mono">${e(k)}</dt><dd>${e(v)}</dd></div>`).join('')}</dl>
+      ${y.focus ? `<p class="ab-sub mono">focus</p><ul class="ab-focus">${y.focus.map((f) => `<li>${e(f)}</li>`).join('')}</ul>` : ''}
+    </aside>
+  </section>
+
+  <section class="section">
+    <div class="section-head reveal"><h2 class="section-h">Experience</h2><p class="muted">From system administration to platform engineering.</p></div>
+    ${expTimeline()}
+  </section>
+
+  <section class="section">
+    <div class="section-head reveal"><h2 class="section-h">What I work on</h2></div>
+    <div class="xp-grid">
+      ${site.highlights
+        .slice(0, 6)
+        .map((h) => `<article class="glass reveal"><div class="glass-icon">${icon(h.icon, 18)}</div><h3>${e(h.title)}</h3><p class="muted" style="margin:0;font-size:.9rem">${e(h.text)}</p></article>`)
+        .join('\n      ')}
+    </div>
+  </section>
 </div>`;
-  return layout({ title: 'About', description: `About ${site.name}: ${site.tagline}.`, path: '/about/', body, active: 'about' });
+  return layout({ title: 'About', description: `About ${site.name}: ${site.tagline}.`, path: '/about/', body, active: 'about', home: true });
 }
 
 function blogIndex(posts, books) {

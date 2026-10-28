@@ -367,7 +367,7 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .btn-ghost { background: transparent; border-color: color-mix(in srgb, var(--accent) 55%, transparent); }
 
 .term { background: color-mix(in srgb, var(--code-bg) 88%, transparent); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 30px 80px -30px rgba(96,165,250,0.35); overflow: hidden; backdrop-filter: blur(8px); }
-.term-body { padding: 16px 18px 4px; font-size: 0.8rem; line-height: 1.65; height: 330px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
+.term-body { padding: 16px 18px 4px; font-size: 0.8rem; line-height: 1.65; height: 400px; overflow-y: auto; white-space: pre-wrap; word-break: break-word; }
 .term-body a { color: var(--accent); }
 .term-line { display: flex; gap: 8px; align-items: center; padding: 4px 18px 16px; font-size: 0.8rem; }
 .term-line input { flex: 1; background: transparent; border: 0; outline: none; color: var(--text); font: inherit; caret-color: var(--green); padding: 0; }
@@ -474,3 +474,71 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
   .wr-chapters { border-left: 0; padding-left: 0; border-top: 1px solid var(--border); padding-top: 12px; }
   .wr-grid { grid-template-columns: 1fr; }
 }
+
+/* ===== about page ===== */
+.ab { padding-top: 56px; padding-bottom: 40px; }
+.ab-hero { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; align-items: start; }
+.ab-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.2rem); letter-spacing: -0.03em; line-height: 1.1; margin: 0 0 16px; }
+.ab-hero p { max-width: 62ch; }
+.ab-card { padding: 24px; position: sticky; top: 90px; }
+.ab-card:hover { transform: none; }
+.ab-card-title { font-size: 0.8rem; margin: 0 0 16px; color: var(--text); }
+.ab-glance { margin: 0; display: grid; gap: 12px; }
+.ab-glance div { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: baseline; }
+.ab-glance dt { color: var(--muted); font-size: 0.78rem; }
+.ab-glance dd { margin: 0; font-weight: 500; }
+.ab-sub { color: var(--muted); font-size: 0.78rem; margin: 20px 0 8px; }
+.ab-focus { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.ab-focus li { padding: 8px 12px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--border); font-size: 0.9rem; }
+.ab-period { color: var(--accent); font-size: 0.76rem; margin: 0 0 4px !important; }
+@media (max-width: 900px) { .ab-hero { grid-template-columns: 1fr; } .ab-card { position: static; } }
+
+/* ===== primary nav: 7 items + mobile menu ===== */
+.nav-toggle { display: none; margin-left: auto; }
+.nav a.active { color: var(--text); background: var(--panel-2); }
+.cert-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.cert { display: flex; gap: 14px; align-items: flex-start; }
+.cert h3 { margin: 2px 0 6px; font-size: 0.98rem; line-height: 1.35; }
+.cert p { margin: 0; font-size: 0.78rem; }
+.cert-status { color: var(--amber); }
+@media (max-width: 1000px) {
+  .nav-toggle { display: inline-flex; }
+  .nav { display: none; position: absolute; top: 60px; left: 0; right: 0; flex-direction: column; gap: 2px; padding: 10px 16px 16px; margin: 0; background: var(--bg); border-bottom: 1px solid var(--border); box-shadow: 0 20px 40px -20px rgba(0,0,0,.6); }
+  .nav.open { display: flex; }
+  .nav a { padding: 10px 12px !important; font-size: 0.95rem !important; }
+  .site-header .header-inner { position: relative; }
+  .tools { margin-left: 4px; }
+  .cert-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== experience timeline ===== */
+.xtl { list-style: none; margin: 0; padding: 0; position: relative; }
+.xtl::before { content: ''; position: absolute; left: 185px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px; background: linear-gradient(var(--accent), var(--accent-2, var(--accent))); opacity: 0.45; }
+.xtl-item { display: grid; grid-template-columns: 160px 24px 1fr; gap: 0 14px; align-items: start; padding-bottom: 18px; }
+.xtl-item:last-child { padding-bottom: 0; }
+.xtl-date { display: flex; flex-direction: column; align-items: flex-end; padding-top: 16px; font-size: 0.8rem; color: var(--text); text-align: right; }
+.xtl-to { color: var(--muted); font-size: 0.74rem; }
+.xtl-to::before { content: '→ '; }
+.xtl-node { width: 14px; height: 14px; margin: 20px auto 0; border-radius: 50%; background: var(--bg); border: 2px solid var(--accent); position: relative; z-index: 1; }
+.xtl-item.current .xtl-node { background: var(--accent); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent); }
+.xtl-item.current .xtl-node::after { content: ''; position: absolute; inset: -6px; border-radius: 50%; border: 2px solid var(--accent); opacity: 0; animation: xtl-ping 2.2s ease-out infinite; }
+@keyframes xtl-ping { 0% { transform: scale(0.6); opacity: 0.7; } 100% { transform: scale(1.8); opacity: 0; } }
+.xtl-card { padding: 16px 20px; }
+.xtl-card h3 { margin: 0 0 4px; font-size: 1.02rem; }
+.xtl-org { margin: 0; color: var(--accent); font-size: 0.9rem; display: flex; align-items: center; gap: 10px; }
+.xtl-now { font-size: 0.68rem; color: var(--green, var(--accent)); border: 1px solid color-mix(in srgb, var(--green, var(--accent)) 45%, transparent); border-radius: 999px; padding: 1px 8px; }
+@media (max-width: 640px) {
+  .xtl::before { left: 6px; }
+  .xtl-item { grid-template-columns: 14px 1fr; gap: 6px 14px; }
+  .xtl-date { grid-column: 2; grid-row: 1; flex-direction: row; gap: 8px; align-items: baseline; padding-top: 0; text-align: left; }
+  .xtl-node { grid-column: 1; grid-row: 1; margin: 3px 0 0; }
+  .xtl-card { grid-column: 2; grid-row: 2; }
+}
+
+/* ===== certifications timeline ===== */
+.cert-issuer { display: inline-flex; align-items: center; gap: 8px; }
+.cert-issuer img { display: block; }
+.xtl-cert .xtl-item.expired .xtl-node { border-color: var(--amber); background: var(--bg); }
+.xtl-cert::before { background: linear-gradient(var(--accent-2, var(--accent)), var(--amber)); }
+.cert-pill { font-size: 0.68rem; border-radius: 999px; padding: 1px 8px; border: 1px solid color-mix(in srgb, var(--green, var(--accent)) 45%, transparent); color: var(--green, var(--accent)); }
+.cert-pill.is-expired { color: var(--amber); border-color: color-mix(in srgb, var(--amber) 45%, transparent); }

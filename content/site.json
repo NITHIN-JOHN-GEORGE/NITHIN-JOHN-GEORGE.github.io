@@ -315,17 +315,38 @@
       "value": 6,
       "suffix": "+",
       "label": "Years in cloud infrastructure"
+    }
+  ],
+  "motd": "I build and operate cloud platforms that help engineering teams deliver software safely and independently. With 6+ years of experience across GCP, AWS and Kubernetes, I focus on Platform Engineering, Progressive Delivery, Infrastructure Automation, Observability and Developer Experience.",
+  "aboutYaml": {
+    "name": "Nithin John George",
+    "role": "SDE-3, Engineering Platform",
+    "company": "Porter",
+    "i-am-based-in": "Kottayam, Kerala, India",
+    "focus": [
+      "Platform Engineering & SRE",
+      "Cloud Infrastructure & GitOps",
+      "Developer Experience & Security"
+    ]
+  },
+  "certifications": [
+    {
+      "name": "Red Hat Certified Engineer (RHCE)",
+      "issuer": "Red Hat",
+      "status": "Expired",
+      "logo": "redhat"
     },
     {
-      "value": 150,
-      "suffix": "+",
-      "label": "Microservices on shared Helm charts"
+      "name": "Red Hat Certified System Administrator (RHCSA)",
+      "issuer": "Red Hat",
+      "status": "Expired",
+      "logo": "redhat"
     },
     {
-      "prefix": "₹",
-      "value": 50,
-      "suffix": "L+",
-      "label": "Saved per year by replacing a SaaS tool"
+      "name": "HashiCorp Certified: Terraform Associate (003)",
+      "issuer": "HashiCorp",
+      "status": "Expired",
+      "logo": "terraform"
     }
   ]
 }

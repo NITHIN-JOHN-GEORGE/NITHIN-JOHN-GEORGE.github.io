@@ -235,7 +235,18 @@
   function print(html) { out.insertAdjacentHTML('beforeend', html + '\n'); out.scrollTop = out.scrollHeight; }
   function pad(s, n) { s = String(s); while (s.length < n) s += ' '; return s; }
 
+  function yaml(obj) {
+    var k = function (s) { return '<span class="t-head">' + esc(s) + '</span>:'; };
+    return Object.keys(obj).map(function (key) {
+      var v = obj[key];
+      if (Array.isArray(v)) return k(key) + '\n' + v.map(function (x) { return '  <span class="t-dim">-</span> <span class="t-ok">' + esc(x) + '</span>'; }).join('\n');
+      return k(key) + ' <span class="t-ok">' + esc(v) + '</span>';
+    }).join('\n');
+  }
   var files = {
+    '/etc/motd': function () { return esc(D.motd); },
+    '~/.about-me.yaml': function () { return D.aboutYaml ? yaml(D.aboutYaml) : esc(D.about); },
+    '.about-me.yaml': function () { return files['~/.about-me.yaml'](); },
     'about.txt': function () { return esc(D.about); },
     'experience.log': function () {
       return D.experience.map(function (x) { return '<span class="t-dim">' + esc(pad(x.period, 22)) + '</span>' + esc(x.role) + ' <span class="t-head">@ ' + esc(x.org) + '</span>'; }).join('\n');
@@ -253,16 +264,18 @@
   var cmds = {
     help: function () {
       return 'Commands:\n' + [
-        ['whoami', 'who I am'], ['cat about.txt', 'a short intro'], ['ls', 'list files'], ['ls skills', 'tools I work with'],
+        ['whoami', 'who I am'], ['cat /etc/motd', 'what I do'], ['cat ~/.about-me.yaml', 'the short version'], ['ls -a', 'list files'], ['ls skills', 'tools I work with'],
         ['cat experience.log', 'where I have worked'], ['ls blog', 'posts'], ['ls handbooks', 'engineering handbooks'],
         ['cat contact.txt', 'how to reach me'], ['history', 'commands you ran'], ['clear', 'clear the screen']
-      ].map(function (r) { return '  <span class="t-ok">' + pad(r[0], 20) + '</span>' + r[1]; }).join('\n');
+      ].map(function (r) { return '  <span class="t-ok">' + pad(r[0], 22) + '</span>' + r[1]; }).join('\n');
     },
     whoami: function () { return esc(D.name) + ' · ' + esc(D.role); },
     pwd: function () { return '/home/' + esc(D.user); },
     ls: function (args) {
+      var all = args[0] === '-a' || args[0] === '-la' || args[0] === '-al';
+      if (all) args = args.slice(1);
       var a = (args[0] || '').replace(/\/$/, '');
-      if (!a || a === '.' || a === '~') return '<span class="t-head">skills/  blog/  handbooks/</span>  about.txt  experience.log  contact.txt';
+      if (!a || a === '.' || a === '~') return (all ? '.about-me.yaml  ' : '') + '<span class="t-head">skills/  blog/  handbooks/</span>  about.txt  experience.log  contact.txt';
       if (dirs[a]) return dirs[a]();
       return 'ls: ' + esc(a) + ': No such file or directory';
     },
@@ -308,7 +321,7 @@
   document.getElementById('term').addEventListener('click', function (e) { if (e.target.tagName !== 'A') input.focus({ preventScroll: true }); });
 
   // short intro sequence, typed like a real session
-  var script = ['whoami', 'ls'];
+  var script = ['whoami', 'cat /etc/motd', 'cat ~/.about-me.yaml'];
   if (reduce) {
     script.forEach(function (c) { exec(c); });
     print('<span class="term-hint">Type <span class="t-ok">help</span> and press Enter.</span>');
@@ -355,4 +368,54 @@
     if (empty) empty.hidden = shown > 0 || f === 'handbook';
   }
   chips.forEach(function (c) { c.addEventListener('click', function () { apply(c.getAttribute('data-filter')); }); });
+})();
+
+/* ===== mobile menu and section highlighting ===== */
+(function () {
+  var btn = document.getElementById('nav-toggle');
+  var nav = document.getElementById('primary-nav');
+  if (btn && nav) {
+    btn.addEventListener('click', function () {
+      var open = nav.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    nav.addEventListener('click', function (e) {
+      if (e.target.tagName === 'A') { nav.classList.remove('open'); btn.setAttribute('aria-expanded', 'false'); }
+    });
+  }
+  // on the home page, highlight the menu item for the section in view
+  if (!document.body.classList.contains('home') || !document.getElementById('skills') || !('IntersectionObserver' in window)) return;
+  var ids = ['skills', 'projects', 'certifications', 'contact'];
+  var links = {};
+  ids.forEach(function (id) { links[id] = document.querySelector('.nav a[data-nav="' + id + '"]'); });
+  var homeLink = document.querySelector('.nav a[data-nav="home"]');
+  var lockUntil = 0;
+  function setActive(a) {
+    Object.keys(links).forEach(function (k) { if (links[k]) links[k].classList.remove('active'); });
+    if (a) a.classList.add('active');
+    if (homeLink) homeLink.removeAttribute('aria-current');
+  }
+  Object.keys(links).forEach(function (k) {
+    if (links[k]) links[k].addEventListener('click', function () { setActive(links[k]); lockUntil = Infinity; });
+  });
+  ['wheel', 'touchmove', 'keydown'].forEach(function (ev) { window.addEventListener(ev, function () { lockUntil = 0; }, { passive: true }); });
+  var io = new IntersectionObserver(function (entries) {
+    if (Date.now() < lockUntil) return;
+    entries.forEach(function (en) {
+      var a = links[en.target.id];
+      if (!a) return;
+      if (en.isIntersecting) {
+        Object.keys(links).forEach(function (k) { if (links[k]) links[k].classList.remove('active'); });
+        a.classList.add('active');
+        if (homeLink) homeLink.removeAttribute('aria-current');
+      }
+    });
+  }, { rootMargin: '-45% 0px -50% 0px' });
+  ids.forEach(function (id) { var el = document.getElementById(id); if (el) io.observe(el); });
+  window.addEventListener('scroll', function () {
+    if (window.scrollY < 300 && Date.now() >= lockUntil) {
+      Object.keys(links).forEach(function (k) { if (links[k]) links[k].classList.remove('active'); });
+      if (homeLink) homeLink.setAttribute('aria-current', 'page');
+    }
+  }, { passive: true });
 })();
