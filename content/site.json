@@ -446,19 +446,22 @@
       "name": "Red Hat Certified Engineer (RHCE)",
       "issuer": "Red Hat",
       "status": "Expired",
-      "logo": "redhat"
+      "logo": "redhat",
+      "id": "190-245-951"
     },
     {
       "name": "Red Hat Certified System Administrator (RHCSA)",
       "issuer": "Red Hat",
       "status": "Expired",
-      "logo": "redhat"
+      "logo": "redhat",
+      "id": "190-245-951"
     },
     {
       "name": "HashiCorp Certified: Terraform Associate (003)",
       "issuer": "HashiCorp",
       "status": "Expired",
-      "logo": "terraform"
+      "logo": "terraform",
+      "url": "https://www.credly.com/badges/abca7cfe-5bc2-499c-9a52-2e8d3d021607/public_url"
     }
   ],
   "heroLine": "SDE 3 on Porter's Engineering Platform team. I build the delivery, infrastructure and security platform that application teams ship on.",

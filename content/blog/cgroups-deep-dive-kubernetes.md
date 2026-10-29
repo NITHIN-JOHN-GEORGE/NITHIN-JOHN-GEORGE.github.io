@@ -5,11 +5,13 @@ summary: What actually happens when you set CPU and memory requests and limits. 
 tags: [linux, kubernetes, cgroups]
 ---
 
-Most of us learn Kubernetes resources the same way. You copy the `resources:` block from another service, nudge the numbers, and ship it. I did exactly that for years, and it works fine, right up until a pod gets OOMKilled while the dashboard says it's using half its memory, or a service crawls along at 30% CPU and nobody on the call can say why.
+You're setting up a new deployment. You open an older service's manifest, copy its `resources:` block, nudge the numbers, and ship it.
 
-The thing that finally changed how I think about this: Kubernetes doesn't enforce any of those numbers. It writes them into a few small files on the node, and the Linux kernel takes it from there. Once you've seen those files, the weird behaviour stops being weird.
+Most of the time, that's fine. Then one day a pod gets `OOMKilled` while your Grafana dashboard swears it never went above 50% memory. Or a service idles along at 30% CPU while its latency graph climbs, and nobody on the incident call can explain why.
 
-So this post goes all the way down, from the YAML you write to the files the kernel reads. You don't need any kernel background. Every idea gets a hand-drawn sketch and a command you can run on your own laptop to watch it happen.
+Here's what changed how I look at all of this: Kubernetes doesn't enforce those numbers itself. The kubelet translates your YAML and writes it into a few small files on the node, and from then on the Linux kernel does the enforcing, through a feature called control groups, or *cgroups*.
+
+Once you open those files and see what the kernel is doing, the weird production behaviour stops being a mystery. So let's go all the way down, from the YAML you write to the files the kernel reads, with hand-drawn sketches and real commands you can run on your own laptop to watch it happen.
 
 ## From YAML to a file on the node
 
@@ -21,7 +23,7 @@ resources:
   limits:   { cpu: 500m, memory: 128Mi }
 ```
 
-Your app now can't use more than half a CPU or 128 MiB of memory. The kubelet turned those lines into numbers in files under `/sys/fs/cgroup`, and the kernel enforces them through a feature called control groups, or *cgroups*. That's the whole trick. The rest of this post is about which number goes into which file, and what the kernel does with it.
+Your app now can't use more than half a CPU or 128 MiB of memory. Those lines end up as numbers in files under `/sys/fs/cgroup`. The rest of this post is about which number goes into which file, and what the kernel does with it.
 
 > [!TIP]
 > You don't need a cloud account for any of this. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every output in this post is copied from a real run on my MacBook.
@@ -143,6 +145,23 @@ rate(container_cpu_cfs_throttled_periods_total[5m]) / rate(container_cpu_cfs_per
 > [!KEY]
 > A CPU limit never kills. It makes you **wait**, even on an idle node.
 
+### Should you even set CPU limits?
+
+This is one of the longest-running debates in Kubernetes, and after building this lab I understand why.
+
+**The case against.** A CPU limit throttles you even when the node is idle, like the lab showed. And if your requests are honest, you're already protected when CPUs are busy: `cpu.weight` makes sure everyone gets their share. So a lot of teams set good CPU requests and simply drop CPU limits for latency-sensitive services. Spare CPU gets used instead of wasted, and those frozen gaps disappear.
+
+**The case for.** Limits still earn their place when:
+
+- you run untrusted or multi-tenant workloads and need hard isolation between them;
+- you want predictable performance. Without a limit, a service is fast on a quiet node and slower on a busy one, which makes load tests misleading;
+- you need the Guaranteed QoS class, for example for exclusive CPU cores with the static CPU manager, since Guaranteed requires limits equal to requests;
+- it's a batch job you deliberately want capped.
+
+**What I do.** Always set memory limits. For CPU, set honest requests everywhere, drop limits on latency-sensitive services, and keep them where isolation or predictability matters more than raw speed. Either way, watch the throttling ratio before and after the change. One catch: runtimes like Go and the JVM size their thread pools from the CPU limit, so without one they see every core on the host. Set `GOMAXPROCS` or `-XX:ActiveProcessorCount` explicitly to match your request.
+
+If you want both sides argued in depth, [learnk8s on CPU requests and limits](https://itnext.io/cpu-limits-and-requests-in-kubernetes-fa9d55948b7c) and [Why you should keep using CPU limits](https://dnastacio.medium.com/why-you-should-keep-using-cpu-limits-on-kubernetes-60c4e50dfc61) are good reads.
+
 ## Lesson 5: A CPU request is your slice of the pizza
 
 A request does not reserve a core. When the node is quiet, it does nothing: anyone can use spare CPU. It only matters when everyone is hungry at once, and then the kernel cuts the pizza in proportion to the requests.
@@ -190,6 +209,8 @@ $ cat .../memory.events
 ```
 
 Exit code 137 is 128 + 9, meaning the process got signal 9 (`SIGKILL`) from the kernel. It never gets a chance to clean up. Notice it died at about 60 MiB of data, before reaching 64: Python itself also lives in that box and counts against the limit.
+
+This is also how a pod can get OOM-killed while the dashboard shows 50%. Most dashboards sample memory every 15 to 60 seconds, but the kernel acts the instant usage touches `memory.max`, so a short spike between two samples never shows up on the graph. It's also worth checking what your panel divides by: many show memory as a share of the *request* or of the node, not of the limit. The `max` and `oom_kill` counters in `memory.events` don't miss anything, so trust those over the graph.
 
 > [!KEY]
 > Cross `memory.max` and the kernel kills the process: `OOMKilled`, exit code 137.
@@ -268,6 +289,8 @@ make 07-node-pressure-eviction
   The node was low on resource: memory. ... Container main was using 721996Ki, request is 0
 ```
 
+Notice the difference from lesson 6. A container using more than its request but less than its limit is fine as far as the kernel is concerned; nothing happens. It only becomes a problem when the node runs short. Then the kubelet ranks it as an eviction candidate, and it gets **Evicted** (and recreated elsewhere by its Deployment, if it has one), not OOMKilled.
+
 `request is 0` is the whole story: the kubelet evicts the pod furthest above its request first. Pods that stay within their memory request are the last ones it touches. (The lab always puts the kubelet's settings back when it's done.)
 
 > [!KEY]
@@ -327,7 +350,7 @@ The two go together: a quota on CPU requests rejects any pod without a request, 
 
 **PIDs.** Every process and thread needs an ID, and a node has a limited number. One runaway pod spawning processes (a "fork bomb") can use them all and break the whole node. The kubelet's `podPidsLimit` becomes `pids.max` on each pod's cgroup, and the kernel refuses new processes past it.
 
-**Local disk.** `limits.ephemeral-storage` caps how much a pod writes to the node's disk (its logs, temp files and `emptyDir` volumes). There's no cgroup for disk space, so the kubelet measures usage itself and evicts the pod when it goes over.
+**Local disk.** `limits.ephemeral-storage` caps how much a pod writes to the node's disk (its logs, temp files and `emptyDir` volumes). There's no cgroup for disk space, so the kubelet measures usage itself and evicts the pod when it goes over. Without these limits, one runaway log file or scratch directory can fill the node's disk. The node then reports `DiskPressure`, and the kubelet starts evicting pods, including ones that did nothing wrong.
 
 ```bash
 make 11-pids-and-ephemeral-storage

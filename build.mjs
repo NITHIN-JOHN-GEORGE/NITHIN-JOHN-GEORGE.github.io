@@ -429,7 +429,7 @@ function aboutSections() {
         return `<li class="xtl-item reveal${expired ? ' expired' : ' current'}">
       <div class="xtl-date mono"><span class="cert-issuer">${logo}${e(c.issuer)}</span></div>
       <div class="xtl-node" aria-hidden="true"></div>
-      <div class="glass xtl-card"><h3>${e(c.name)}</h3><p class="xtl-org">${e(c.issuer)}${c.status ? ` <span class="cert-pill mono${expired ? ' is-expired' : ''}">${e(c.status)}</span>` : ''}</p></div>
+      <div class="glass xtl-card"><h3>${e(c.name)}</h3><p class="xtl-org">${e(c.issuer)}${c.status ? ` <span class="cert-pill mono${expired ? ' is-expired' : ''}">${e(c.status)}</span>` : ''}</p>${c.id ? `<p class="cert-id mono">Certification ID: ${e(c.id)}</p>` : ''}${c.url ? `<p class="cert-id mono"><a href="${e(c.url)}" rel="noopener" target="_blank">Verify on Credly ↗</a></p>` : ''}</div>
     </li>`;
       })
       .join('\n    ')}
