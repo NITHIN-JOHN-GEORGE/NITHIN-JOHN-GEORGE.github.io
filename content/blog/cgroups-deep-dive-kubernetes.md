@@ -25,11 +25,6 @@ resources:
 
 Your app now can't use more than half a CPU or 128 MiB of memory. Those lines end up as numbers in files under `/sys/fs/cgroup`. The rest of this post is about which number goes into which file, and what the kernel does with it.
 
-> [!NOTE]
-> **How to read this post.** The core path is lessons 1 to 6: cgroups, how they nest, requests and limits, CPU throttling, CPU weight and memory OOM kills. That's enough to explain most of what you'll see in production. Lessons 7 to 14 (QoS, allocatable, eviction, priority, quotas, PIDs and disk, pressure, resize) go deeper; read them when you need them.
->
-> Everything here uses **cgroups v2** and this lab's kind setup. On cgroups v1, and on clusters with different runtimes, kubelet settings or Kubernetes versions, some paths, file names and behaviour differ. I call out the main differences as we go.
-
 > [!TIP]
 > You don't need a cloud account for any of this. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every output in this post is copied from a real run on my MacBook.
 
