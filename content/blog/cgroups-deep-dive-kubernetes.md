@@ -192,7 +192,7 @@ kubectl get --raw /api/v1/nodes/under-the-hood-worker/proxy/configz | grep -o '"
 > [!KEY]
 > A cgroup is a folder of processes, and the files in it are limits the kernel enforces.
 
-## Lesson 2: Kubernetes builds Russian dolls
+## Lesson 2: Kubernetes nests cgroups in a tree
 
 The kubelet doesn't make one box per container and stop there. It nests them: a box for all pods, inside it a box per QoS class (lesson 7), inside that a box per pod, and inside that a box per container.
 
