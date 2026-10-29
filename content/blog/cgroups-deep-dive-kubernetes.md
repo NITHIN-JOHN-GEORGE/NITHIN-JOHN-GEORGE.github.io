@@ -5,21 +5,15 @@ summary: What actually happens when you set CPU and memory requests and limits. 
 tags: [linux, kubernetes, cgroups]
 ---
 
-## Why I wrote this
+Most of us learn Kubernetes resources the same way. You copy the `resources:` block from another service, nudge the numbers, and ship it. I did exactly that for years, and it works fine, right up until a pod gets OOMKilled while the dashboard says it's using half its memory, or a service crawls along at 30% CPU and nobody on the call can say why.
 
-I work on a platform team, and a fair share of the questions that come my way sound like one of these:
+The thing that finally changed how I think about this: Kubernetes doesn't enforce any of those numbers. It writes them into a few small files on the node, and the Linux kernel takes it from there. Once you've seen those files, the weird behaviour stops being weird.
 
-- *"My pod keeps restarting. It says OOMKilled, but our dashboards show we're nowhere near the limit."*
-- *"CPU is at 30%, so why is latency so bad?"*
-- *"What should I even put in requests and limits?"*
+So this post goes all the way down, from the YAML you write to the files the kernel reads. You don't need any kernel background. Every idea gets a hand-drawn sketch and a command you can run on your own laptop to watch it happen.
 
-For a long time I answered these from memory: "raise the limit", "drop the CPU limit", "set requests equal to limits". It mostly worked, but I couldn't always explain *why*. So I went digging, and the answer to almost every one of these questions turned out to be the same: a handful of files in `/sys/fs/cgroup` on the node.
+## From YAML to a file on the node
 
-This post is what I wish someone had handed me early on. No kernel background needed. Every idea comes with a sketch, and with a command you can run to see it happen on your own laptop, using a small lab I put together while writing this.
-
-## So who actually enforces your limits?
-
-Here's the bit of YAML everyone writes:
+Here's the block everyone writes:
 
 ```yaml
 resources:
@@ -27,9 +21,7 @@ resources:
   limits:   { cpu: 500m, memory: 128Mi }
 ```
 
-Somehow, your app now can't use more than half a CPU or 128 MiB of memory. Who's stopping it?
-
-Not Kubernetes, which surprised me the first time. Kubernetes only writes a few numbers into files. The **Linux kernel** does the actual stopping, through a feature called control groups, or *cgroups*. Once you know which file each setting turns into, a lot of confusing production behaviour starts to make sense: slow apps with "low" CPU, pods killed out of nowhere, noisy neighbours.
+Your app now can't use more than half a CPU or 128 MiB of memory. The kubelet turned those lines into numbers in files under `/sys/fs/cgroup`, and the kernel enforces them through a feature called control groups, or *cgroups*. That's the whole trick. The rest of this post is about which number goes into which file, and what the kernel does with it.
 
 > [!TIP]
 > You don't need a cloud account for any of this. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every output in this post is copied from a real run on my MacBook.
