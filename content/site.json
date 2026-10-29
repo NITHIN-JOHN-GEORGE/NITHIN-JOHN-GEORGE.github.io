@@ -128,7 +128,7 @@
   ],
   "stack": [
     {
-      "group": "Cloud and compute",
+      "group": "Cloud, compute and orchestration",
       "items": [
         [
           "GCP",
@@ -139,6 +139,11 @@
           "AWS",
           "amazonaws",
           "#232F3E"
+        ],
+        [
+          "Docker",
+          "docker",
+          "#2496ED"
         ],
         [
           "Kubernetes",
@@ -176,10 +181,42 @@
           "#FCC624"
         ]
       ],
+      "subs": [
+        {
+          "label": "Cloud providers",
+          "names": [
+            "GCP",
+            "AWS"
+          ]
+        },
+        {
+          "label": "Containers and orchestration",
+          "names": [
+            "Docker",
+            "Kubernetes",
+            "GKE",
+            "EKS",
+            "Amazon ECS"
+          ]
+        },
+        {
+          "label": "Autoscaling",
+          "names": [
+            "Karpenter",
+            "KEDA"
+          ]
+        },
+        {
+          "label": "Operating system",
+          "names": [
+            "Linux"
+          ]
+        }
+      ],
       "icon": "cloud"
     },
     {
-      "group": "GitOps and delivery",
+      "group": "GitOps and continuous delivery",
       "items": [
         [
           "ArgoCD",
@@ -212,16 +249,6 @@
           "#D24939"
         ],
         [
-          "Concourse CI",
-          "concourse",
-          "#3398DC"
-        ],
-        [
-          "Docker",
-          "docker",
-          "#2496ED"
-        ],
-        [
           "Git",
           "git",
           "#F05032"
@@ -231,6 +258,31 @@
           "github",
           "#24292F"
         ]
+      ],
+      "subs": [
+        {
+          "label": "Deployment",
+          "names": [
+            "ArgoCD",
+            "Argo Rollouts",
+            "Helm"
+          ]
+        },
+        {
+          "label": "CI/CD and runners",
+          "names": [
+            "GitHub Actions",
+            "ARC runners",
+            "Jenkins"
+          ]
+        },
+        {
+          "label": "Version control",
+          "names": [
+            "Git",
+            "GitHub"
+          ]
+        }
       ],
       "icon": "rocket"
     },
@@ -248,11 +300,6 @@
           "#326CE5"
         ],
         [
-          "HashiCorp Vault",
-          "vault",
-          "#FFEC6E"
-        ],
-        [
           "Backstage",
           "backstage",
           "#9BF0E1"
@@ -266,7 +313,45 @@
           "Confluent Kafka",
           "confluent",
           "#000000"
-        ],
+        ]
+      ],
+      "subs": [
+        {
+          "label": "Infrastructure as code",
+          "names": [
+            "Terraform"
+          ]
+        },
+        {
+          "label": "Secrets management",
+          "names": [
+            "External Secrets Operator"
+          ]
+        },
+        {
+          "label": "Developer portal",
+          "names": [
+            "Backstage"
+          ]
+        },
+        {
+          "label": "Workflow orchestration",
+          "names": [
+            "Temporal"
+          ]
+        },
+        {
+          "label": "Streaming and messaging",
+          "names": [
+            "Confluent Kafka"
+          ]
+        }
+      ],
+      "icon": "layers"
+    },
+    {
+      "group": "Programming and scripting",
+      "items": [
         [
           "Python",
           "python",
@@ -278,7 +363,16 @@
           "#4EAA25"
         ]
       ],
-      "icon": "layers"
+      "subs": [
+        {
+          "label": "Languages",
+          "names": [
+            "Python",
+            "Shell scripting"
+          ]
+        }
+      ],
+      "icon": "code"
     },
     {
       "group": "Observability",
@@ -304,11 +398,6 @@
           "#E6522C"
         ],
         [
-          "Datadog",
-          "datadog",
-          "#632CA6"
-        ],
-        [
           "OpenTelemetry",
           "opentelemetry",
           "#425CC7"
@@ -324,15 +413,52 @@
           "#5C2D91"
         ],
         [
+          "Datadog",
+          "datadog",
+          "#632CA6"
+        ],
+        [
           "Cloud Monitoring",
           "googlecloud",
           "#4285F4"
         ],
         [
-          "DevLake (DORA)",
+          "Apache DevLake",
           "",
           "#1F6FEB"
         ]
+      ],
+      "subs": [
+        {
+          "label": "Metrics, logs and traces",
+          "names": [
+            "Grafana LGTM",
+            "Loki",
+            "Alloy",
+            "Prometheus"
+          ]
+        },
+        {
+          "label": "Telemetry pipelines",
+          "names": [
+            "OpenTelemetry",
+            "Fluent Bit",
+            "Vector"
+          ]
+        },
+        {
+          "label": "APM and monitoring",
+          "names": [
+            "Datadog",
+            "Cloud Monitoring"
+          ]
+        },
+        {
+          "label": "Engineering metrics (DORA)",
+          "names": [
+            "Apache DevLake"
+          ]
+        }
       ],
       "icon": "chart"
     },
@@ -355,10 +481,25 @@
           "#0096D6"
         ]
       ],
+      "subs": [
+        {
+          "label": "API gateway and routing",
+          "names": [
+            "Kong",
+            "GKE Gateway"
+          ]
+        },
+        {
+          "label": "Edge security",
+          "names": [
+            "Akamai WAF"
+          ]
+        }
+      ],
       "icon": "server"
     },
     {
-      "group": "Security",
+      "group": "Security and compliance",
       "items": [
         [
           "SAST",
@@ -371,6 +512,11 @@
           "#5C2D91"
         ],
         [
+          "SonarQube",
+          "sonarqubeserver",
+          "#4E9BCD"
+        ],
+        [
           "SBOM",
           "",
           "#1F6FEB"
@@ -379,11 +525,6 @@
           "DAST",
           "",
           "#5C2D91"
-        ],
-        [
-          "SonarQube",
-          "sonarqubeserver",
-          "#4E9BCD"
         ],
         [
           "AppSentinels",
@@ -395,6 +536,35 @@
           "openpolicyagent",
           "#7D9199"
         ]
+      ],
+      "subs": [
+        {
+          "label": "Code and dependency analysis",
+          "names": [
+            "SAST",
+            "SCA",
+            "SonarQube"
+          ]
+        },
+        {
+          "label": "Software supply chain",
+          "names": [
+            "SBOM"
+          ]
+        },
+        {
+          "label": "Runtime and API security",
+          "names": [
+            "DAST",
+            "AppSentinels"
+          ]
+        },
+        {
+          "label": "Policy as code",
+          "names": [
+            "OPA"
+          ]
+        }
       ],
       "icon": "shield"
     }

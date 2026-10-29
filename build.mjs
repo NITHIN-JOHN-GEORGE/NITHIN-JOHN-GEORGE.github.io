@@ -41,6 +41,7 @@ const ICONS = {
   book: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>',
   network: '<rect x="9" y="2" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="16" y="16" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
   github: '<path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>',
+  code: '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
   menu: '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>'
 };
 const icon = (name, size = 20) =>
@@ -333,7 +334,7 @@ ${aboutSections()}
       .map(
         (g) => `<div class="skx-group reveal">
       <h3 class="skx-h mono">${icon(g.icon || 'layers', 15)}${e(g.group)}</h3>
-      <ul class="skx-badges">${g.items.map(brandBadge).join('')}</ul>
+      ${g.subs ? `<div class="skx-subs">${g.subs.map((sb) => `<div class="skx-sub"><p class="skx-sub-l">${e(sb.label)}</p><ul class="skx-badges">${sb.names.map((n) => g.items.find((i) => i[0] === n)).filter(Boolean).map(brandBadge).join('')}</ul></div>`).join('')}</div>` : `<ul class="skx-badges">${g.items.map(brandBadge).join('')}</ul>`}
     </div>`
       )
       .join('\n    ')}

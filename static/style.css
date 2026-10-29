@@ -696,3 +696,7 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 [data-theme='light'] .pj-quote footer { color: color-mix(in srgb, var(--ac) 68%, #000); }
 .cert-id { margin: 6px 0 0; font-size: 0.76rem; color: var(--muted); letter-spacing: 0.02em; }
 .cert-id a { color: var(--accent); }
+.skx-subs { display: grid; gap: 10px; }
+.skx-sub { display: grid; grid-template-columns: 210px minmax(0, 1fr); align-items: center; gap: 14px; }
+.skx-sub-l { margin: 0; font-size: 0.86rem; color: var(--muted); }
+@media (max-width: 720px) { .skx-sub { grid-template-columns: 1fr; gap: 6px; } .skx-sub + .skx-sub { margin-top: 6px; } }
