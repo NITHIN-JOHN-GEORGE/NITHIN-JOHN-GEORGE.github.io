@@ -645,7 +645,7 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .sketch text.code { font-family: 'Fira Code', ui-monospace, monospace; font-size: 14.5px; }
 /* animations */
 .sketch .anim-playhead { animation: sk-play 4.5s linear infinite; }
-@keyframes sk-play { from { transform: translateX(0); } to { transform: translateX(690px); } }
+@keyframes sk-play { from { transform: translateX(0); } to { transform: translateX(600px); } }
 .sketch .anim-grow { transform-box: fill-box; transform-origin: left center; animation: sk-grow 3.5s ease-out infinite; }
 .sketch .anim-grow.d2 { animation-duration: 3.5s; }
 @keyframes sk-grow { 0% { transform: scaleX(0); } 55%, 100% { transform: scaleX(1); } }
