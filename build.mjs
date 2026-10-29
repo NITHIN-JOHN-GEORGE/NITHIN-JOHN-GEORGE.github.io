@@ -352,6 +352,7 @@ ${aboutSections()}
       <div class="pj-top"><span class="pj-icon">${icon(h.icon, 22)}</span>${h.tag ? `<span class="pj-tag mono">${e(h.tag)}</span>` : ''}</div>
       <h3>${e(h.title)}</h3>
       <p>${e(h.text)}</p>
+      ${h.quote ? `<blockquote class="pj-quote"><p>“${e(h.quote.text)}”</p><footer><strong>— ${e(h.quote.by)}</strong></footer></blockquote>` : ''}
       ${h.tech && h.tech.length ? `<ul class="pj-tech">${h.tech.map((t) => `<li>${e(t)}</li>`).join('')}</ul>` : ''}
     </article>`
       )

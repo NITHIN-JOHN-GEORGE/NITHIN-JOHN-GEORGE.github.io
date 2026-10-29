@@ -689,3 +689,8 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .callout-key p:not(.callout-title) { font-size: 1.12rem; font-weight: 600; color: var(--text); }
 .callout-key strong { background: none; }
 .callout > :last-child { margin-bottom: 0 !important; }
+.pj-quote { position: relative; margin: 0 0 18px; padding: 14px 16px 14px 18px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--ac) 30%, var(--border)); border-left: 3px solid var(--ac); background: color-mix(in srgb, var(--ac) 7%, transparent); }
+.pj-quote p { margin: 0 0 10px; font-size: 0.88rem; line-height: 1.6; font-style: italic; color: var(--text); }
+.pj-quote footer { font-size: 0.8rem; color: var(--ac); }
+.pj-quote footer strong { font-weight: 650; }
+[data-theme='light'] .pj-quote footer { color: color-mix(in srgb, var(--ac) 68%, #000); }
