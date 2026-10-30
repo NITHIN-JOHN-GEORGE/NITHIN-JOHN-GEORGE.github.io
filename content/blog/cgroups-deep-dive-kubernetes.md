@@ -5,7 +5,7 @@ summary: What actually happens when you set CPU and memory requests and limits. 
 tags: [linux, kubernetes, cgroups]
 ---
 
-In June, one of our backend services started restarting on its own. A few times a day, at random, its liveness and readiness probes failed and the kubelet restarted the pods. Every restart showed up in the services calling it as timeouts and a spike in p99 latency.
+On a day when nothing had shipped and traffic was flat, one of our backend services quietly started restarting itself. A few times a day, at no time we could predict, its health probes would time out. Failed liveness probes got the pods restarted, and failed readiness probes pulled them out of rotation. The services calling it saw timeouts and p99 latency spikes.
 
 We went through the usual suspects, and every one came back clean:
 
@@ -631,7 +631,7 @@ Every second it prints the limit from `cpu.max`, the CPU used and the throttled 
 
 ### Back to the outage
 
-Now the June outage makes sense, one symptom at a time.
+Now the outage from the intro makes sense, one symptom at a time.
 
 **Why the CPU graph looked healthy.** Three things hid the problem:
 
