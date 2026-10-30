@@ -613,6 +613,14 @@
   },
   "certifications": [
     {
+      "name": "Certified Kubernetes Application Developer (CKAD)",
+      "issuer": "The Linux Foundation · CNCF",
+      "status": "Active",
+      "logo": "kubernetes",
+      "id": "LF-c6x8bd5b26",
+      "url": "https://www.credly.com/badges/e5a9c1b5-3d1f-44ff-a4fa-06474dc89c2b/public_url"
+    },
+    {
       "name": "Red Hat Certified Engineer (RHCE)",
       "issuer": "Red Hat",
       "status": "Expired",

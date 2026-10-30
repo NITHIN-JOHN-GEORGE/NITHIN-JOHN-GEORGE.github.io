@@ -700,3 +700,32 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .skx-sub { display: grid; grid-template-columns: 210px minmax(0, 1fr); align-items: center; gap: 14px; }
 .skx-sub-l { margin: 0; font-size: 0.86rem; color: var(--muted); }
 @media (max-width: 720px) { .skx-sub { grid-template-columns: 1fr; gap: 6px; } .skx-sub + .skx-sub { margin-top: 6px; } }
+
+/* ---------- throttling simulator ---------- */
+.sim { margin: 1.8em 0; padding: 16px 18px 14px; border: 1.5px solid color-mix(in srgb, var(--accent) 35%, var(--border)); border-radius: 16px; background: var(--panel-solid); }
+.sim-head { font-weight: 650; color: var(--text); margin-bottom: 12px; font-size: 0.98rem; }
+.sim-badge { display: inline-block; font-family: 'Fira Code', monospace; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); border-radius: 999px; padding: 1px 8px; margin-right: 6px; vertical-align: 1px; }
+.sim-controls { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; margin-bottom: 10px; }
+.sim-controls label { display: grid; grid-template-columns: 1fr auto; gap: 4px 8px; align-items: center; font-size: 0.86rem; color: var(--muted); }
+.sim-controls input { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.sim-controls output { font-family: 'Fira Code', monospace; font-size: 0.82rem; color: var(--text); grid-row: 1; grid-column: 2; }
+#sim-svg { display: block; width: 100%; height: auto; }
+.sim-t { font-family: 'Fira Code', monospace; font-size: 12px; fill: var(--text); }
+.sim-m { fill: var(--muted); }
+.sim-run { fill: color-mix(in srgb, var(--green) 70%, transparent); }
+.sim-thr { fill: color-mix(in srgb, var(--red) 22%, transparent); stroke: color-mix(in srgb, var(--red) 55%, transparent); stroke-dasharray: 3 3; }
+.sim-out { margin-top: 8px; font-size: 0.95rem; line-height: 1.65; color: var(--text); }
+.sim-good { color: var(--green); } .sim-bad { color: var(--red); }
+.sim-note { margin: 10px 0 0 !important; font-size: 0.78rem; color: var(--muted); }
+@media (max-width: 640px) { .sim-controls { grid-template-columns: 1fr; } }
+.prose :not(pre) > code { overflow-wrap: anywhere; }
+
+/* Predict-first boxes: a question, with the answer hidden until clicked */
+.predict { margin: 1.4em 0; border: 1px dashed var(--accent-2); border-radius: 12px; background: var(--panel); }
+.predict summary { cursor: pointer; padding: 12px 16px; list-style: none; color: var(--text); }
+.predict summary::-webkit-details-marker { display: none; }
+.predict summary::after { content: "Show answer"; display: block; margin-top: 6px; font-size: 0.8rem; color: var(--accent-2); }
+.predict[open] summary::after { content: "Hide answer"; }
+.predict-tag { display: inline-block; margin-right: 6px; font-family: 'Fira Code', monospace; font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--accent-2); }
+.predict-answer { padding: 0 16px 12px; border-top: 1px solid var(--border); }
+.predict-answer p { margin: 0.7em 0 0; }
