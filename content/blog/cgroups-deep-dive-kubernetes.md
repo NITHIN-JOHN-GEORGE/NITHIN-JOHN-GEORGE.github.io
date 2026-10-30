@@ -32,25 +32,119 @@ Every idea comes with a hand-drawn sketch and a command you can run on your own 
 > [!TIP]
 > You don't need a cloud account for any of this. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every output in this post comes from running the lab on my MacBook; where yours might differ, I say so.
 
-## Who actually enforces your limits?
+## The short version
 
-Here's the block everyone writes:
+Here's the whole answer in five minutes. The rest of the post opens each piece up and shows it on a real cluster.
 
-```yaml
-resources:
-  requests: { cpu: 250m, memory: 64Mi }
-  limits:   { cpu: 500m, memory: 128Mi }
+### What is a cgroup?
+
+A **control group (cgroup)** is a Linux kernel feature that groups processes and applies resource controls to the group as a whole. Containers are built from two kernel features:
+
+| Feature | Question it answers |
+| --- | --- |
+| **Namespaces** | *What can this process see?* (PIDs, network, mounts, hostname…) |
+| **cgroups** | *How much can this process use?* (CPU, memory, I/O, PIDs…) |
+
+A "container" is ordinary processes, isolated by namespaces and limited by cgroups.
+
+### cgroups are files
+
+You don't call an API to configure cgroups. You **read and write files**. The kernel exposes cgroups as a virtual filesystem, usually mounted at `/sys/fs/cgroup`:
+
+```text
+$ ls /sys/fs/cgroup/
+cgroup.controllers  cgroup.procs  cpu.max  cpu.stat  cpu.weight
+memory.max  memory.current  io.max  pids.max  ...
 ```
 
-Your app now can't use more than half a CPU or 128 MiB of memory. But Kubernetes never sits next to your process counting milliseconds. It makes decisions and writes settings: the scheduler picks a node, and the kubelet on that node turns these lines into a few numbers in a few small files. From then on, the **Linux kernel** does the enforcing, every time your process asks for CPU or memory, through a feature called **control groups**, or **cgroups**.
+- **Directories are groups.** Running `mkdir` creates a child cgroup.
+- **`cgroup.procs`** lists the PIDs in the group. Writing a PID into it moves that process.
+- **Controller files** (`cpu.*`, `memory.*`, …) set limits and report statistics.
 
-There's no magic in between. Kubernetes, Docker and systemd all control resources the same way: by writing to those files.
+Kubernetes never sits next to your process counting milliseconds. The kubelet writes your numbers into these files, and from then on the **kernel** does the enforcing.
+
+### It's a tree
+
+cgroups form a tree. Limits on a parent apply to all its children, so a child can never use more than its ancestors allow. On a Kubernetes node using the systemd cgroup driver, the tree looks like this:
+
+```text
+/sys/fs/cgroup/
+└── kubepods.slice/                                   ← all pods
+    ├── kubepods-burstable.slice/                     ← QoS class: Burstable
+    │   └── kubepods-burstable-pod<uid>.slice/        ← one pod
+    │       ├── cri-containerd-<id1>.scope/           ← container 1
+    │       └── cri-containerd-<id2>.scope/           ← container 2
+    ├── kubepods-besteffort.slice/
+    └── (Guaranteed pods sit directly under kubepods.slice)
+```
+
+### v1 vs v2
+
+|  | cgroup v1 | cgroup v2 (the default on recent distros and GKE, EKS and AKS node images) |
+| --- | --- | --- |
+| Layout | One separate tree per controller (`/sys/fs/cgroup/cpu/`, `/memory/`…) | One unified tree, all controllers together |
+| CPU limit file | `cpu.cfs_quota_us` + `cpu.cfs_period_us` | `cpu.max` |
+| CPU weight file | `cpu.shares` | `cpu.weight` |
+
+Check which one you're on:
+
+```bash
+stat -fc %T /sys/fs/cgroup     # cgroup2fs = v2, tmpfs = v1
+```
 
 ### Why cgroups exist
 
 Picture one machine running dozens of services from different teams, all sharing the same kernel. Without some way to fence them off, a single service with a memory leak or a runaway loop can starve everything else. That's the *noisy neighbour* problem.
 
 Engineers at Google ran into it early, running huge numbers of jobs on shared machines. In 2006 they started work on "process containers", a way for the kernel to group processes and limit them as one. It was renamed **control groups** and merged into Linux 2.6.24 in 2008. A cleaner redesign, **cgroups v2**, became stable in Linux 4.5 in 2016, and Kubernetes made it generally available in version 1.25. Everything in this post uses v2.
+
+### From YAML to kernel files
+
+You write this:
+
+```yaml
+resources:
+  requests:
+    cpu: "2"
+  limits:
+    cpu: "5"
+```
+
+This is how it reaches the kernel:
+
+```text
+kubelet ──CRI──▶ containerd ──▶ runc ──(via systemd)──▶ /sys/fs/cgroup/.../cpu.max
+                                                         /sys/fs/cgroup/.../cpu.weight
+```
+
+**Request and limit become two separate kernel settings:**
+
+| K8s field | Conversion | v2 file | Meaning |
+| --- | --- | --- | --- |
+| `requests.cpu: 2` | shares = 2000m × 1024 / 1000 = 2048 → weight 174 | `cpu.weight` | A **relative weight** for sharing contended CPU |
+| `limits.cpu: 5` | quota = 5 × 100000 µs = 500000 | `cpu.max` → `500000 100000` | A **hard ceiling**: 500 ms of CPU per 100 ms period |
+
+You can see both from inside the container:
+
+```text
+$ cat /sys/fs/cgroup/cpu.weight
+174
+$ cat /sys/fs/cgroup/cpu.max
+500000 100000
+```
+
+(Older runtimes turn 2048 shares into a weight of 79 instead. Chapter 6 shows both formulas.)
+
+**This split is the first key fact of the outage:**
+
+- **`cpu.weight` (request) never pauses anything.** It only decides how contested CPU time is divided between cgroups.
+- **`cpu.max` (limit) is the only setting that throttles.**
+
+So "usage below 80% of request" compares usage to a setting that cannot cause throttling.
+
+### What enforces `cpu.max`
+
+`cpu.max` is enforced by the **CFS bandwidth controller**, part of Linux's Completely Fair Scheduler. (Since kernel 6.6 the core scheduling algorithm is EEVDF, but the bandwidth controller and its files work the same way.) It hands the 500 ms budget out to CPUs in small slices, and when the budget runs out before the 100 ms period ends, **every thread in the cgroup waits** until the next period. Chapter 7 shows that happening, step by step, and then comes back to the outage.
 
 ## The Linux you need for this post
 
