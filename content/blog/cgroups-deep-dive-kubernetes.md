@@ -14,11 +14,11 @@ We went through the usual suspects, and every one came back clean:
 - **Deploys:** nothing had shipped around the time it started.
 - **Traffic and log volume** looked the same as before.
 
-One metric didn't fit. `container_cpu_cfs_throttled_periods_total` was climbing, and when we worked out the ratio, some pods were being **throttled in about 40% of their CPU periods**, while the CPU graph showed plenty of headroom.
+One metric didn't fit: `container_cpu_cfs_throttled_periods_total` was spiking. When the team computed the throttle ratio, some pods were being throttled in about 40% of their CPU scheduling periods, while their CPU charts showed plenty of headroom.
 
-We raised the CPU limit from 5 cores to 8. Throttling dropped to almost zero, the restarts stopped, and tail latency came back down. We didn't change a line of code.
+Raising the pod's CPU limit from 5 to 8 cores brought throttling to almost zero. The restarts stopped and tail latency dropped sharply. No code changed.
 
-That fixed the outage, but it left me with a question I couldn't answer properly: how does a pod get throttled on CPU it isn't even using? The answer wasn't in another Kubernetes doc. It was one layer down, in the Linux kernel, in a handful of files that hold every number from your `resources:` block.
+So how can a pod be throttled on CPU while barely using its CPU? The answer is in cgroups and the Linux scheduler, the machinery underneath every container.
 
 That's what this post is about. We'll start from zero, and by the end you'll be able to:
 
