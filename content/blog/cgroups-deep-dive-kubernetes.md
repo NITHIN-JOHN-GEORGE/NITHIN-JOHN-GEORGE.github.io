@@ -5,20 +5,29 @@ summary: What actually happens when you set CPU and memory requests and limits. 
 tags: [linux, kubernetes, cgroups]
 ---
 
-You're setting up a new deployment. You open an older service's manifest, copy its `resources:` block, nudge the numbers, and ship it.
+In June, one of our backend services started restarting on its own. A few times a day, at random, its liveness and readiness probes failed and the kubelet restarted the pods. Every restart showed up in the services calling it as timeouts and a spike in p99 latency.
 
-Most of the time, that's fine. Then one day a pod gets `OOMKilled` while your Grafana dashboard swears it never went above 50% memory. Or a service idles along at 30% CPU while its latency graph climbs, and nobody on the incident call can explain why.
+We went through the usual suspects, and every one came back clean:
 
-I've been on the confused end of both of those. What finally made them make sense wasn't another Kubernetes doc. It was going one layer down, to the Linux kernel, and looking at what it was actually doing with my numbers.
+- **CPU** was below 80% of the pod's request. Nowhere near saturated.
+- **Memory** was flat. No OOM kills.
+- **Deploys:** nothing had shipped around the time it started.
+- **Traffic and log volume** looked the same as before.
 
-That's what this post does. We'll start from zero, and by the end you'll be able to:
+One metric didn't fit. `container_cpu_cfs_throttled_periods_total` was climbing, and when we worked out the ratio, some pods were being **throttled in about 40% of their CPU periods**, while the CPU graph showed plenty of headroom.
+
+We raised the CPU limit from 5 cores to 8. Throttling dropped to almost zero, the restarts stopped, and tail latency came back down. We didn't change a line of code.
+
+That fixed the outage, but it left me with a question I couldn't answer properly: how does a pod get throttled on CPU it isn't even using? The answer wasn't in another Kubernetes doc. It was one layer down, in the Linux kernel, in a handful of files that hold every number from your `resources:` block.
+
+That's what this post is about. We'll start from zero, and by the end you'll be able to:
 
 - open the exact files on a node that hold your pod's CPU and memory limits, and read them;
-- explain why a pod at 30% CPU can still be slowed down every tenth of a second;
+- explain how a pod using a fraction of its CPU can still be frozen for most of every tenth of a second, and how that turns into a restart loop;
 - explain why a pod can be OOM-killed while the dashboard says it had room to spare;
 - choose requests and limits for a reason, not out of habit.
 
-Every idea comes with a hand-drawn sketch and a command you can run on your own laptop to watch it happen.
+Every idea comes with a hand-drawn sketch and a command you can run on your own laptop to watch it happen. We'll come back to the outage in chapter 7, once you've seen the mechanism for yourself.
 
 > [!TIP]
 > You don't need a cloud account for any of this. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every output in this post comes from running the lab on my MacBook; where yours might differ, I say so.
@@ -619,6 +628,50 @@ Every second it prints the limit from `cpu.max`, the CPU used and the throttled 
 
 > [!KEY]
 > A CPU limit never kills. It makes you **wait**, even on an idle node, and every thread in the container spends the same budget.
+
+### Back to the outage
+
+Now the June outage makes sense, one symptom at a time.
+
+**Why the CPU graph looked healthy.** Three things hid the problem:
+
+- **We compared usage with the wrong number.** "Below 80% of request" measures against `cpu.weight`, which never throttles anything. Throttling only comes from `cpu.max`, the limit.
+- **Averages hide bursts.** A one-minute CPU graph averages 600 periods. Throttling happens inside a single 100 ms period: a burst of threads empties the wallet in a few milliseconds, then everything waits. A pod can be quiet most of the time and still hit the wall whenever a burst arrives.
+- **`nr_periods` only counts busy periods.** It goes up only when the cgroup had work to do. So "40% throttled" meant 40% of the periods when the service was actually doing something, not 40% of the day.
+
+**Why throttling turned into restarts.** The kubelet's probe is an HTTP request with a deadline (`timeoutSeconds`, 1 second by default). The handler that answers it is just another thread in the same cgroup, so it freezes with everything else. A single freeze of a few tens of milliseconds won't break a 1 second timeout, but the effects stack up:
+
+1. **CPU time stretches into much more real time.** If the cgroup only gets to run for 25 ms of every 100 ms, a request that needs 100 ms of CPU takes about 400 ms to finish.
+2. **Queues fill up.** Slow requests hold on to worker threads, and new requests, including the probe, wait behind them.
+3. **The probe misses its deadline** `failureThreshold` times in a row (3 by default), and the kubelet restarts the container.
+4. **The restart makes it worse.** Warming up (loading caches, opening connection pools, compiling code) is often the most parallel work a service ever does, so a fresh container throttles hardest of all.
+
+```text
+burst of threads ──▶ wallet empty ──▶ whole cgroup waits
+        ▲                                      │
+        │                                      ▼
+  warmup burst ◀── restart ◀── probe timeout ◀── slow requests, full queues
+```
+
+**Why raising the limit fixed it.** Going from 5 cores to 8 grew the wallet from 500 ms to 800 ms per period. Normal bursts now finished before it ran dry, so `nr_throttled` stopped climbing. We still saw a little throttling during warmup, which fits: warmup runs more threads in parallel than even 8 cores of budget covers.
+
+**Why it started "out of nowhere".** Throttling depends on how many threads want to run at once, and that can change without anyone changing code. Thread pools are often sized from the number of CPUs the container can *see*, which is every core on the node, not the limit. Move to bigger nodes and the same service starts more threads against the same budget. Traffic can also get burstier at the same daily volume: synchronized retries, fan-out from callers, cron-driven clients. We never confirmed the exact trigger, which is common, and it's why the throttling ratio belongs on a dashboard before you need it.
+
+**What I check now.** The throttling ratio above, plus how many seconds per second a pod spends frozen:
+
+```text
+rate(container_cpu_cfs_throttled_seconds_total[5m])
+```
+
+And, when the image has `ps` (from procps), how many threads want a CPU right now. `R` means running or waiting to run:
+
+```bash
+kubectl exec <pod> -- sh -c 'for i in $(seq 20); do ps -eLo stat | grep -c ^R; sleep 0.2; done'
+```
+
+If that number regularly goes above your CPU limit in cores, the wallet is being drained. The lasting fix is to size thread pools and workers to the limit (or the request, if you drop the limit); raising the limit, like we did, buys time.
+
+*Try a small version of this outage yourself: `make incident-1` in the lab.*
 
 ### Should you even set CPU limits?
 
