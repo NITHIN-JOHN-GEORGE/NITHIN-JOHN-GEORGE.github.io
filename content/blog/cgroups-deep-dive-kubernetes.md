@@ -27,13 +27,6 @@ That's what this post is about. We'll start from zero, and by the end you'll be 
 * explain why a pod can be OOM-killed while the dashboard says it had room to spare;
 * set requests and limits deliberately, not out of habit.
 
-> [!TLDR]
-> - A cgroup is a folder in `/sys/fs/cgroup`. Its files are limits the kernel enforces.
-> - Your `resources:` block becomes numbers in those files: requests become `cpu.weight`, limits become `cpu.max` and `memory.max`.
-> - A CPU limit is a budget per 100 ms, shared by all your threads. Spend it early and the whole container waits. That's throttling, and it can happen at low average CPU.
-> - A memory limit can't make you wait. At the limit the kernel reclaims cache, then OOM-kills.
-> - Watch the throttle ratio, the working set and `oom_kill` counts, not average CPU and `memory.current`.
-
 ## How to read this post
 
 The post is in six parts, and each one builds on the last:
@@ -49,8 +42,12 @@ The post is in six parts, and each one builds on the last:
 
 Every chapter starts with a question, explains it with a sketch, lets you try it, and ends with **one line to remember**. Boxes marked **Going deeper** hold the extra detail. Skip them on a first read; nothing later depends on them.
 
-> [!TIP]
-> You don't need a cloud account for any of this. The lab is [kubernetes-resources-under-the-hood](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood): Docker Desktop, kind and `make`. Every output in this post comes from running the lab on my MacBook; where yours might differ, I say so. The lab is optional, and you can read straight through.
+> [!TLDR]
+> - A cgroup is a folder in `/sys/fs/cgroup`. Its files are limits the kernel enforces.
+> - Your `resources:` block becomes numbers in those files: requests become `cpu.weight`, limits become `cpu.max` and `memory.max`.
+> - A CPU limit is a budget per 100 ms, shared by all your threads. Spend it early and the whole container waits. That's throttling, and it can happen at low average CPU.
+> - A memory limit can't make you wait. At the limit the kernel reclaims cache, then OOM-kills.
+> - Watch the throttle ratio, the working set and `oom_kill` counts, not average CPU and `memory.current`.
 
 ---
 
