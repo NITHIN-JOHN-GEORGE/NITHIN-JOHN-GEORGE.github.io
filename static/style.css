@@ -734,3 +734,6 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .callout-tldr { border-left-color: var(--accent); } .callout-tldr .callout-title { color: var(--accent); }
 .callout-deeper { border-style: dashed; border-left-style: solid; border-left-color: var(--muted); } .callout-deeper .callout-title { color: var(--muted); }
 .prose h4 { font-size: 1.02rem; font-weight: 700; margin: 1.5em 0 0.4em; color: var(--text); }
+
+/* Industry under each experience entry */
+.xtl-domain { margin: 4px 0 0; color: var(--muted); font-size: 0.82rem; }

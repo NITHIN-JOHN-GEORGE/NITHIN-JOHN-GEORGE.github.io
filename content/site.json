@@ -573,22 +573,26 @@
     {
       "role": "SDE 3, DevOps (Cloud & Developer Experience)",
       "org": "Porter",
-      "period": "Oct 2024 to present"
+      "period": "Oct 2024 to present",
+      "domain": "Tech-based logistics"
     },
     {
       "role": "SDE 2, DevOps (Cloud Infrastructure)",
       "org": "Porter",
-      "period": "Jun 2023 to present"
+      "period": "Jun 2023 to Oct 2024",
+      "domain": "Tech-based logistics"
     },
     {
       "role": "DevOps Engineer",
       "org": "Apton Works",
-      "period": "Mar 2022 to May 2023"
+      "period": "Mar 2022 to May 2023",
+      "domain": "Crypto wallet"
     },
     {
       "role": "Junior System Engineer",
       "org": "Geojit Financial",
-      "period": "Mar 2020 to Oct 2021"
+      "period": "Mar 2020 to Oct 2021",
+      "domain": "Financial services and stock broking"
     }
   ],
   "headline": "Platform Engineer · SRE · Cloud Infrastructure",

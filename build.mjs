@@ -241,7 +241,7 @@ function expTimeline() {
         return `<li class="xtl-item reveal${current ? ' current' : ''}">
       <div class="xtl-date mono"><span>${e(from)}</span><span class="xtl-to">${e(to || '')}</span></div>
       <div class="xtl-node" aria-hidden="true"></div>
-      <div class="glass xtl-card"><h3>${e(x.role)}</h3><p class="xtl-org">${e(x.org)}${current ? ' <span class="xtl-now mono">current</span>' : ''}</p></div>
+      <div class="glass xtl-card"><h3>${e(x.role)}</h3><p class="xtl-org">${e(x.org)}${current ? ' <span class="xtl-now mono">current</span>' : ''}</p>${x.domain ? `<p class="xtl-domain">${e(x.domain)}</p>` : ''}</div>
     </li>`;
       })
       .join('\n    ')}
