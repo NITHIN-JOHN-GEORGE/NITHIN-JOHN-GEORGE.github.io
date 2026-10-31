@@ -1,6 +1,6 @@
 # nithin-john-george.github.io
 
-Source for my personal site: **[nithin-john-george.github.io](https://nithin-john-george.github.io)**
+Source for my personal site: **[nithinjohngeorge.com](https://nithinjohngeorge.com)**
 
 Platform engineering, SRE and cloud infrastructure. Blog posts and engineering handbooks.
 
