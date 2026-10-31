@@ -42,6 +42,9 @@ The post is in six parts, and each one builds on the last:
 
 Every chapter starts with a question, explains it with a sketch, lets you try it, and ends with **one line to remember**. Boxes marked **Going deeper** hold the extra detail. Skip them on a first read; nothing later depends on them.
 
+> [!TIP]
+> **Short on time?** Read these five chapters for the core story, about 15 minutes: [5](#5-your-first-look-at-cpumax-and-cpuweight) (the files), [13](#13-cpu-requests-become-weights) (requests), [14](#14-cpu-limits-become-a-budget-throttling) (limits and throttling), [15](#15-the-outage-explained) (the outage, explained) and [17](#17-not-all-memory-is-equal) (why memory graphs mislead). Come back for the rest when you want the whole picture.
+
 > [!TLDR]
 > - A cgroup is a folder in `/sys/fs/cgroup`. Its files are limits the kernel enforces.
 > - Your `resources:` block becomes numbers in those files: requests become `cpu.weight`, limits become `cpu.max` and `memory.max`.
@@ -98,7 +101,6 @@ Since every request goes through the kernel, the kernel is the one place where l
 > [!KEY]
 > Programs run as processes, processes run as threads, and the kernel decides which thread gets each CPU core and how much memory everyone gets.
 
-*Next question: if the kernel holds all these decisions, how do we see them?*
 
 ---
 
@@ -155,7 +157,6 @@ These special folders are called **virtual filesystems**. Two of them matter for
 > [!KEY]
 > On Linux, the kernel shows its information and its settings as files. Read a file to ask it something, write a file to change something.
 
-*Next question: what's inside those two folders?*
 
 ---
 
@@ -213,7 +214,6 @@ Every process belongs to a **cgroup**, and this file says which one. Inside our 
 > [!KEY]
 > `/proc` is a live report on every process, one folder per PID, and it includes which cgroup each process lives in.
 
-*Next question: `/proc` tells us what's happening. Where are the settings?*
 
 ---
 
@@ -272,7 +272,6 @@ cgroup on /sys/fs/cgroup type cgroup2 (ro,nosuid,nodev,noexec,relatime)
 > [!KEY]
 > `/sys` holds the kernel's settings, one value per file, and `/sys/fs/cgroup` is the part that controls how much CPU and memory each group of processes may use.
 
-*Next question: what do those files actually say?*
 
 ---
 
@@ -378,7 +377,6 @@ Kernel files use raw units. Keep this table nearby:
 > [!KEY]
 > `cpu.max` is a hard CPU budget per 100 ms, `cpu.weight` is a share when CPUs are busy, `memory.max` is a byte ceiling, and `cgroup.procs` lists who they apply to.
 
-*Next question: why does a CPU limit only make you wait, while a memory limit can kill you?*
 
 ---
 
@@ -404,7 +402,6 @@ Almost everything in the rest of this post follows from this difference.
 > [!KEY]
 > CPU can be delayed, so limits cause waiting (throttling). Memory can't be, so limits end in OOM kills.
 
-*Next question: where do containers fit into all of this?*
 
 ---
 
@@ -575,7 +572,6 @@ docker exec under-the-hood-worker sh -c 'kill -9 $(cat /sys/fs/cgroup/lab-cpu/cg
 > [!KEY]
 > A cgroup is a folder. Its files are dials the kernel enforces, and a process joins it by writing its PID into `cgroup.procs`.
 
-*Next question: Kubernetes does these same four steps for every pod. How does your YAML get there?*
 
 ---
 
@@ -601,7 +597,6 @@ When something goes wrong in production, asking **"which checkpoint did this?"**
 > [!KEY]
 > Kubernetes decides and configures; the kernel enforces.
 
-*Next question: let's follow one pod through the last two checkpoints.*
 
 ---
 
@@ -699,7 +694,7 @@ The same kind of files you wrote by hand in chapter 8. Here's the map to keep:
 | `requests.cpu: 250m` | `cpu.weight` | `35` | A share of CPU, only used when groups compete |
 | `requests.memory: 64Mi` | `memory.min` | `0` | **No kernel protection.** Used for scheduling and eviction instead |
 
-That last row surprises almost everyone I show this to. By default, Kubernetes uses the memory request to pick a node and, later, to decide who to evict first when the node runs short (chapter 18), but it doesn't ask the kernel to protect that memory. Clusters that turn on the `MemoryQoS` feature (still alpha) map requests to `memory.min`; chapter 17 covers it.
+That last row surprises almost everyone I show this to. By default, Kubernetes uses the memory request to pick a node and, later, to decide who to evict first when the node runs short (chapter 18), but it doesn't ask the kernel to protect that memory. Since Kubernetes 1.37 the `MemoryQoS` feature can change that, but only if you opt in; chapter 17 covers it.
 
 <figure class="sketch "><svg viewBox="0 0 760 340" role="img" aria-label="Requests and limits turn into cgroup files"><title>Requests and limits turn into cgroup files</title><path class="s" d="M18.6 30.1Q149.6 29.3 279.6 28.6M18.6 28.7Q149.4 30.0 279.8 31.0"/><path class="s" d="M281.4 30.2Q281.6 160.2 279.7 291.5M278.9 28.8Q282.8 159.7 279.4 291.0"/><path class="s" d="M279.6 290.2Q150.1 291.8 18.6 288.6M279.4 290.3Q150.2 291.4 19.9 289.4"/><path class="s" d="M20.2 290.1Q21.8 159.7 21.2 30.7M19.7 290.8Q19.5 159.5 18.9 30.0"/><text x="35" y="22" text-anchor="start" style="font-size:21px">pod.yaml</text><text x="40" y="70" text-anchor="start" class="code">resources:</text><text x="40" y="100" text-anchor="start" class="code">&#160;&#160;requests:</text><text x="40" y="130" text-anchor="start" class="code">&#160;&#160;&#160;&#160;cpu:&#160;250m</text><text x="40" y="160" text-anchor="start" class="code">&#160;&#160;&#160;&#160;memory:&#160;64Mi</text><text x="40" y="195" text-anchor="start" class="code">&#160;&#160;limits:</text><text x="40" y="225" text-anchor="start" class="code">&#160;&#160;&#160;&#160;cpu:&#160;500m</text><text x="40" y="255" text-anchor="start" class="code">&#160;&#160;&#160;&#160;memory:&#160;128Mi</text><path class="s a" d="M200.2 126.2Q302.1 93.1 404.4 65.6M201.1 126.4Q302.7 95.4 404.9 65.5"/><path class="s a" d="M405.8 65.5Q401.8 69.6 396.5 72.2M404.5 64.4Q400.3 68.4 396.1 72.8"/><path class="s a" d="M405.6 64.3Q399.3 64.9 394.1 63.3M404.6 64.9Q399.9 63.4 393.9 63.8"/><path class="s a" d="M414.4 37.4Q574.7 39.4 735.0 38.2M414.7 38.2Q574.5 37.0 736.1 38.5"/><path class="s a" d="M733.9 39.0Q735.1 69.2 735.7 100.9M734.0 38.3Q733.8 68.9 733.9 99.0"/><path class="s a" d="M733.9 98.8Q574.7 101.0 414.2 99.0M735.3 99.2Q574.5 100.9 414.4 99.6"/><path class="s a" d="M416.2 99.9Q414.1 69.3 415.0 37.0M415.8 99.2Q413.3 68.8 413.9 39.1"/><text x="430" y="64" text-anchor="start" class="code">cpu.weight = 35</text><text x="430" y="90" text-anchor="start" class="m" style="font-size:18px">a share of CPU when groups compete</text><path class="s r" d="M198.5 220.1Q302.1 187.7 406.5 156.2M198.9 220.9Q302.5 188.3 405.1 155.9"/><path class="s r" d="M405.8 155.6Q401.1 159.3 397.5 163.1M404.8 154.2Q400.4 158.4 396.2 162.2"/><path class="s r" d="M404.9 155.7Q399.6 155.1 394.9 154.2M404.5 154.5Q399.3 154.4 394.3 154.1"/><path class="s r" d="M415.7 127.0Q575.0 129.5 735.4 129.0M414.2 128.7Q575.2 129.1 734.6 128.7"/><path class="s r" d="M736.1 128.5Q733.1 158.9 734.2 189.1M734.2 128.8Q736.7 159.3 736.2 190.4"/><path class="s r" d="M733.8 191.1Q575.0 190.2 415.4 190.1M735.8 189.3Q574.9 188.7 414.4 189.5"/><path class="s r" d="M414.8 189.1Q414.1 158.8 416.0 127.6M414.8 191.0Q414.9 159.4 415.0 128.1"/><text x="430" y="154" text-anchor="start" class="code">cpu.max = 50000 100000</text><text x="430" y="180" text-anchor="start" class="m" style="font-size:18px">50 ms of CPU per 100 ms period</text><path class="s r" d="M199.0 248.4Q301.9 247.5 406.0 244.0M199.4 250.1Q302.8 247.4 405.2 245.9"/><path class="s r" d="M404.6 245.4Q400.6 248.2 395.2 250.1M405.2 245.0Q400.1 246.9 395.2 250.3"/><path class="s r" d="M405.7 245.3Q400.0 242.8 395.6 241.2M405.5 244.4Q399.8 243.5 394.4 240.4"/><path class="s r" d="M415.4 218.7Q574.8 215.9 736.0 217.2M415.9 219.1Q575.2 218.5 734.3 219.1"/><path class="s r" d="M735.8 217.2Q735.4 249.5 734.8 280.0M735.5 216.8Q735.3 248.8 735.1 279.9"/><path class="s r" d="M735.0 279.0Q574.8 282.0 416.2 280.7M733.9 280.7Q574.6 278.0 414.4 279.1"/><path class="s r" d="M414.4 279.2Q415.1 249.3 416.0 218.2M415.5 279.8Q415.4 248.6 414.0 219.1"/><text x="430" y="244" text-anchor="start" class="code">memory.max = 134217728</text><text x="430" y="270" text-anchor="start" class="m" style="font-size:18px">128 MiB hard limit</text><path class="s m2" d="M215.6 159.3Q218.8 163.2 223.3 166.3"/><path class="s m2" d="M227.7 170.3Q232.2 174.0 235.8 176.8"/><path class="s m2" d="M240.7 181.4Q245.4 183.9 248.5 188.5"/><path class="s m2" d="M254.0 191.8Q258.4 195.2 261.5 198.2"/><path class="s m2" d="M267.2 204.2Q270.8 206.9 274.3 210.4"/><path class="s m2" d="M280.2 214.4Q284.3 217.6 288.3 221.5"/><path class="s m2" d="M293.6 225.1Q297.7 228.3 300.9 230.9"/><path class="s m2" d="M306.1 235.5Q310.6 238.8 313.5 243.0"/><path class="s m2" d="M319.2 246.6Q323.0 250.7 327.2 252.8"/><path class="s m2" d="M333.4 257.9Q336.4 261.2 339.9 265.0"/><path class="s m2" d="M345.5 268.7Q349.8 271.2 353.4 274.6"/><path class="s m2" d="M358.1 279.4Q362.3 282.6 365.7 285.2"/><path class="s m2" d="M371.9 290.8Q375.8 293.3 379.8 297.2"/><path class="s m2" d="M385.7 300.7Q388.1 305.1 393.0 307.9"/><path class="s m2" d="M398.2 312.5Q402.4 314.5 405.5 317.4"/><text x="415" y="312" text-anchor="start" style="font-size:18px">memory request → scheduler input</text><text x="415" y="334" text-anchor="start" class="m" style="font-size:16px">no memory protection in this lab's default setup</text></svg><figcaption>The kubelet turns three of the four numbers into cgroup files. The memory request is used by the scheduler and the kubelet instead.</figcaption></figure>
 
@@ -726,7 +721,6 @@ It's the same `sleep`. On the node it has an ordinary PID and a long cgroup path
 > [!KEY]
 > `requests.cpu` → `cpu.weight`, `limits.cpu` → `cpu.max`, `limits.memory` → `memory.max`. The memory request is for scheduling and eviction, not kernel protection.
 
-*Next question: that path was long. What are all those folders?*
 
 ---
 
@@ -757,7 +751,6 @@ On GKE, EKS and most other clusters, the tree is the same but starts at `/sys/fs
 > [!KEY]
 > cgroups nest, and a child is also subject to the limits set on its parents.
 
-*Next question: we know where `cpu.weight` and `cpu.max` live. What does the kernel actually do with them?*
 
 ---
 
@@ -830,7 +823,7 @@ sleep 10
 for p in weight-low weight-high; do kubectl -n lab exec $p -- grep usage_usec /sys/fs/cgroup/cpu.stat; done
 ```
 
-Subtract the first number from the second for each pod and divide by 10,000 to get millicores. On my 10-CPU setup the bigger request got between **8.0 and 8.8 times** more CPU across runs (8966m vs 1013m in the latest). That's close to the 8× ratio of the requests, but not to 84 ÷ 17, which is only about 4.9. The next box explains why. Either way, treat it as a measurement, not a guarantee: the real split also depends on whatever else is competing on the node.
+Subtract the first number from the second for each pod and divide by 10,000 to get millicores. On my 10-CPU setup the bigger request got **8.2 times** more CPU: 8807m vs 1073m, the whole node between them. That's close to the 8× ratio of the requests, but not to 84 ÷ 17, which is only about 4.9. The next box explains why. Either way, treat it as a measurement, not a guarantee: the real split also depends on whatever else is competing on the node.
 
 > [!DEEPER]
 > **Where do 17 and 84 come from?**
@@ -875,7 +868,6 @@ Subtract the first number from the second for each pod and divide by 10,000 to g
 > [!KEY]
 > A CPU request is your share of CPU when groups compete. When CPUs are idle, it does nothing.
 
-*Next question: if requests only share, what do limits do?*
 
 ---
 
@@ -977,12 +969,11 @@ kubectl -n lab exec cpu-limited -- cat /sys/fs/cgroup/cpu.stat
 | `nr_throttled` | In how many of those it ran out of quota and had to wait |
 | `throttled_usec` | Total time spent throttled |
 
-Between the two reads, `nr_periods` and `nr_throttled` both go up by about 100: throttled in almost every period. The unlimited pod's `nr_throttled` stays at `0`. Over a longer sample:
+Between the two reads, `nr_periods` and `nr_throttled` both go up by about 100: throttled in almost every period. The unlimited pod's `nr_throttled` stays at `0`. On my run, measured over 5 seconds on the node:
 
 ```
-pod             periods   throttled   CPU used (millicores)
-cpu-limited     250       249         200
-cpu-unlimited   -         0           several thousand
+cpu-limited     throttled in 65 of 65 periods, 201m of CPU
+cpu-unlimited   never throttled
 ```
 
 To watch throttling as it happens, open a second terminal while the pods run:
@@ -1005,7 +996,6 @@ Every second it prints the limit from `cpu.max`, the CPU used and the throttled 
 > [!KEY]
 > A CPU limit never kills. It makes you wait, even on an idle node, and every thread in the container spends the same budget.
 
-*Next question: we now have everything we need to explain the outage.*
 
 ---
 
@@ -1098,7 +1088,7 @@ And for the probes:
 - **Use a `startupProbe` for slow warmups**, so liveness can't kill a pod that's only slow because it's throttled while booting.
 - **Watch for readiness churn** (pods flipping between ready and not ready) next to the throttle ratio. Churn with no restarts is the quiet version of this outage.
 
-**Try it yourself.** [Lab 15](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/15-the-outage) recreates this outage on a laptop: three replicas of a small web service with a 500m CPU limit and liveness and readiness probes, hit by bursts of requests. On my run, within 90 seconds the pods were throttled in more than 9 of every 10 periods, the slowest requests took over 6 seconds, every pod had restarted two or three times, and two of the three were out of the Service. Raising the limit to 2 CPUs brought restarts to zero and the slowest request down to about half a second.
+**Try it yourself.** [Lab 15](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/15-the-outage) recreates this outage on a laptop: three replicas of a small web service with a 500m CPU request and limit and liveness and readiness probes, hit by bursts of requests. On my run, a pod's average CPU came out at **384m against a 500m request: 77%**, the same "below 80% of request" picture as our outage. Yet the kernel had throttled it in **790 of 843 periods**. Within 90 seconds the slowest requests took over 4 seconds, and every pod had restarted two or three times. Raising the limit to 2 CPUs brought restarts to zero and the slowest request down to about half a second.
 
 #### Should you even set CPU limits?
 
@@ -1193,7 +1183,6 @@ oom_group_kill 2
 > [!KEY]
 > At `memory.max` the kernel reclaims what it can first. If that isn't enough, it OOM-kills: exit code 137, no warning.
 
-*Next question: if the kernel reclaims "what it can", what can it actually reclaim?*
 
 ---
 
@@ -1224,7 +1213,7 @@ kubectl -n lab exec mem-lab -- grep -E '^(anon|file|inactive_file) ' /sys/fs/cgr
 
 <details class="predict"><summary><span class="predict-tag">Predict first</span> The container has a 128Mi limit and you just read 192 MiB of files through it. Was it OOM-killed?</summary><div class="predict-answer"><p>No. It was all file cache, which the kernel can drop whenever it needs room.</p></div></details>
 
-On my run, `memory.current` read **125 MiB**, almost exactly the limit, of which **123 MiB was `file`** and **0 was `anon`**. `memory.events` showed `max 1810` (the limit was hit over and over) and `oom_kill 0`. Every time, the kernel dropped some old file cache and carried on. The container is "at its limit", and perfectly fine.
+On my run, `memory.current` read **125 MiB**, almost exactly the limit, of which **122 MiB was `file`** and **under 1 MiB was `anon`**. The pod's `memory.events` showed `max 1814` (the limit was hit over and over) and `oom_kill 0`. Every time, the kernel dropped some old file cache and carried on. The container is "at its limit", and perfectly fine.
 
 Now allocate memory that can't be dropped. The lab's `alloc` command grabs memory in steps and never lets go:
 
@@ -1262,7 +1251,7 @@ Usually one of three reasons, and now you can tell them apart:
 > - `memory.high`: above it, the kernel slows the cgroup down and reclaims hard, but doesn't kill.
 > - `memory.min`: memory the kernel protects for this cgroup even when the whole machine is short.
 >
-> By default Kubernetes sets neither (they read `max` and `0`). The `MemoryQoS` feature, still alpha, sets `memory.min` from the request and `memory.high` a little below the limit, so pods slow down before they get killed.
+> By default Kubernetes sets neither (they read `max` and `0`). The `MemoryQoS` feature can: it's beta and switched on by default since Kubernetes 1.37, but on its own it still writes neither file. You opt in through the kubelet's config. `memoryReservationPolicy: TieredReservation` protects Guaranteed pods' requests with `memory.min` (and Burstable pods' with the softer `memory.low`), and setting `memoryThrottlingFactor` gives Burstable and BestEffort containers a `memory.high` below their limit, so they slow down before they get killed. That's why the lab, on 1.37, still shows `memory.min` as `0`.
 
 
 *Lab:* [17-not-all-memory-is-equal](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/17-not-all-memory-is-equal). Check what you built with `make check LAB=17`.
@@ -1270,7 +1259,6 @@ Usually one of three reasons, and now you can tell them apart:
 > [!KEY]
 > File cache is counted but can be dropped. Memory a program allocates can't, and that's what gets OOM-killed. Watch the working set, not `memory.current`.
 
-*Next question: so far each container hit its own limit. What if the whole node runs out?*
 
 ---
 
@@ -1404,13 +1392,13 @@ Every cgroup has `cpu.pressure`, `memory.pressure` and `io.pressure`, and the no
 ```bash
 kubectl -n lab apply -f labs/19-metrics-and-psi/pods.yaml
 kubectl -n lab wait --for=condition=Ready pod/psi-cpu pod/psi-memory
-sleep 20
+sleep 30
 kubectl -n lab exec psi-cpu -- cat /sys/fs/cgroup/cpu.pressure
 ```
 
 ```
-some avg10=75.19 avg60=24.03 avg300=5.60 total=17362896
-full avg10=0.15 avg60=0.07 avg300=0.01 total=209848
+some avg10=59.96 avg60=24.36 avg300=6.05 total=18884381
+full avg10=3.74 avg60=1.52 avg300=0.38 total=1359356
 ```
 
 | Part | Meaning |
@@ -1420,7 +1408,7 @@ full avg10=0.15 avg60=0.07 avg300=0.01 total=209848
 | `avg10`, `avg60`, `avg300` | Averages over 10 seconds, 1 minute and 5 minutes, in percent |
 | `total` | Total waiting time, in microseconds |
 
-`psi-cpu` runs twice as many busy threads as the node has CPUs, so over the last 10 seconds at least one of its threads was waiting for a CPU 75% of the time. When a pod is slow but its CPU and memory graphs look fine, check pressure. Rising `memory.pressure` is often the earliest warning you'll get before an OOM kill. Newer Kubernetes versions can export these numbers too (the `KubeletPSI` feature).
+`psi-cpu` runs twice as many busy threads as the node has CPUs, so over the last 10 seconds at least one of its threads was waiting for a CPU 60% of the time. When a pod is slow but its CPU and memory graphs look fine, check pressure. Rising `memory.pressure` is often the earliest warning you'll get before an OOM kill. Since Kubernetes 1.36, the kubelet exports these numbers as stable metrics too, for nodes, pods and containers, through its Summary API and its `/metrics/cadvisor` endpoint.
 
 
 *Lab:* [19-metrics-and-psi](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/19-metrics-and-psi). Check what you built with `make check LAB=19`.
@@ -1458,7 +1446,7 @@ The PID limit matters more than it looks: every process and thread needs a PID, 
 
 *Question: if limits are just numbers in files, can we change them on a live pod?*
 
-Here's the proof that ties the whole post together. Since Kubernetes 1.33 (where in-place resize is on by default), you can change a running pod's CPU and memory **in place**, with no restart. Remember chapter 8, where you changed `cpu.max` with `echo` while a process was running? That's all this is.
+Here's the proof that ties the whole post together. Since Kubernetes 1.33, where in-place resize became beta and on by default (it's been stable since 1.35), you can change a running pod's CPU and memory **in place**, with no restart. Remember chapter 8, where you changed `cpu.max` with `echo` while a process was running? That's all this is.
 
 <figure class="sketch anim"><svg viewBox="0 0 760 250" role="img" aria-label="In-place resize turns the cgroup dial on a running pod"><title>In-place resize turns the cgroup dial on a running pod</title><path class="s b" d="M127.6 59.3Q150.7 49.9 163.5 49.8Q176.2 49.7 188.2 54.2Q200.2 58.7 209.6 67.2Q218.9 75.8 226.2 86.1Q233.4 96.4 236.1 108.6Q238.7 120.9 238.7 133.4Q238.6 145.8 233.2 157.0Q227.8 168.2 221.3 178.9Q214.8 189.6 204.2 196.4Q193.5 203.2 181.3 205.8Q169.1 208.3 156.7 208.0Q144.3 207.8 132.2 204.3Q120.1 200.9 110.7 192.4Q101.3 183.9 93.1 174.2Q84.9 164.4 81.4 151.9Q77.9 139.5 78.8 126.7Q79.7 113.8 86.0 102.8Q92.3 91.9 99.9 82.4Q107.5 72.9 117.3 65.6Q127.2 58.3 139.0 54.8"/><path class="s b" d="M137.0 51.5Q163.3 49.7 176.2 52.2Q189.1 54.6 200.3 61.4Q211.5 68.2 218.7 78.9Q226.0 89.6 232.1 101.0Q238.2 112.3 238.1 125.2Q238.0 138.2 235.1 150.7Q232.3 163.2 224.2 173.2Q216.1 183.1 207.0 192.3Q197.8 201.5 185.4 206.4Q173.1 211.3 160.1 208.9Q147.1 206.5 134.5 203.7Q121.9 200.8 112.6 191.8Q103.4 182.7 95.6 172.6Q87.8 162.5 85.0 150.0Q82.3 137.5 81.2 124.4Q80.1 111.3 85.6 99.2Q91.0 87.1 99.4 76.8Q107.8 66.5 120.1 61.5Q132.3 56.6 144.8 52.7Q157.2 48.8 170.3 50.6"/><g class="anim-knob"><path class="s r" d="M159.3 130.7Q160.6 96.2 159.9 61.1M160.2 128.4Q160.0 95.9 160.5 60.7"/></g><ellipse class="f r" cx="160" cy="130" rx="8" ry="8"/><path class="s" d="M155.3 123.6Q157.6 122.7 158.8 122.2Q160.0 121.7 161.2 122.2Q162.4 122.6 163.5 123.1Q164.6 123.7 165.5 124.5Q166.5 125.3 167.0 126.4Q167.5 127.5 167.7 128.8Q168.0 130.0 167.8 131.2Q167.6 132.4 167.1 133.6Q166.5 134.7 165.6 135.6Q164.7 136.5 163.6 137.0Q162.5 137.5 161.2 137.7Q160.0 137.8 158.8 137.8Q157.5 137.7 156.4 137.1Q155.3 136.5 154.4 135.6Q153.5 134.7 152.9 133.7Q152.2 132.6 152.2 131.3Q152.3 130.0 152.4 128.8Q152.5 127.6 153.0 126.4Q153.5 125.3 154.5 124.5Q155.4 123.7 156.4 123.0"/><path class="s" d="M153.6 134.6Q152.5 132.3 152.1 131.0Q151.7 129.7 152.2 128.5Q152.7 127.3 153.2 126.0Q153.7 124.8 154.7 124.0Q155.7 123.1 156.9 122.6Q158.1 122.0 159.4 122.0Q160.8 121.9 162.0 122.4Q163.2 122.8 164.4 123.4Q165.5 124.1 166.4 125.1Q167.2 126.1 167.4 127.4Q167.6 128.7 167.9 130.0Q168.1 131.3 167.6 132.5Q167.2 133.8 166.3 134.7Q165.4 135.7 164.4 136.6Q163.5 137.5 162.1 137.7Q160.8 137.8 159.6 137.7Q158.3 137.5 157.1 137.1Q155.9 136.7 154.9 135.9Q153.9 135.1 153.3 134.0Q152.8 132.8 152.4 131.6"/><text x="85" y="60" text-anchor="middle" class="m" style="font-size:18px">200m</text><text x="250" y="140" text-anchor="middle" class="m" style="font-size:18px">500m</text><text x="160" y="235" text-anchor="middle" class="code">cpu.max: 20000 → 50000</text><text x="320" y="80" text-anchor="start" class="code">kubectl patch pod … --subresource resize</text><text x="320" y="125" text-anchor="start" style="font-size:20px">the kubelet turns the dial on the live container</text><text x="320" y="160" text-anchor="start" class="g" style="font-size:20px">restartCount stays 0, same container ID</text><text x="320" y="195" text-anchor="start" class="m" style="font-size:18px">(Kubernetes 1.33 and newer)</text></svg><figcaption>In-place resize: change the numbers while the process keeps running.</figcaption></figure>
 
@@ -1503,8 +1491,8 @@ Reading about throttling and knowing it when you see it are different skills. Th
 | # | The ticket | Where the answer is |
 |:-:|---|---|
 | 1 | "Checkout is slow, but the CPU graph is under its limit" | Chapters 14 and 15 |
-| 3 | "OOMKilled, but the dashboard never went above half" | Chapters 16 and 17 |
-| 4 | "Pending for ages, the node's memory is almost empty" | Chapters 9 and 18 |
+| 2 | "OOMKilled, but the dashboard never went above half" | Chapters 16 and 17 |
+| 3 | "Pending for ages, the node's memory is almost empty" | Chapters 9 and 18 |
 
 ```bash
 make incident-1                       # the scene, what the dashboard shows, then the ticket
@@ -1519,7 +1507,7 @@ Try to solve each one with only `kubectl`, `cat` and the files from this post be
 The kernel enforces the box, but the program inside should know how big the box is:
 
 - **Java:** container support is on by default in JDK 10+ and 8u191+. Size the heap with `-XX:MaxRAMPercentage` rather than a fixed `-Xmx`.
-- **Go:** from Go 1.25, `GOMAXPROCS` follows the cgroup CPU limit. On older versions, use `go.uber.org/automaxprocs`, or Go will run one thread per host core and get throttled.
+- **Go:** from Go 1.25, `GOMAXPROCS` follows the container's CPU limit (rounded up, so 2.5 CPUs gives 3) and is re-checked if the limit changes. It ignores the CPU request, so with no limit it still uses every host core. On older versions, use `go.uber.org/automaxprocs`, or set `GOMAXPROCS` yourself.
 - **Node.js:** set `--max-old-space-size` below the memory limit, leaving room for buffers.
 
 ### Cheat sheet
