@@ -571,7 +571,7 @@
   ],
   "experience": [
     {
-      "role": "SDE 3, DevOps (Cloud & Developer Experience)",
+      "role": "SDE 3, DevOps (Cloud, Developer Experience & Security)",
       "org": "Porter",
       "period": "Oct 2024 to present",
       "domain": "Tech-based logistics"
@@ -653,5 +653,25 @@
     "ArgoCD",
     "Helm",
     "Terraform"
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Computer Applications (BCA)",
+      "school": "Baselios Poulose II Catholicos College, Piravom, Ernakulam",
+      "board": "Mahatma Gandhi University",
+      "period": "2016 to 2019"
+    },
+    {
+      "degree": "Higher Secondary (Class 12)",
+      "school": "Girideepam Bethany Central School",
+      "board": "CBSE",
+      "period": "2013 to 2015"
+    },
+    {
+      "degree": "Secondary School (Class 10)",
+      "school": "Girideepam Bethany Central School",
+      "board": "CBSE",
+      "period": "2013"
+    }
   ]
 }

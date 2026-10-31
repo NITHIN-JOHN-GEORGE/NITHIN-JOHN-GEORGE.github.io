@@ -232,6 +232,21 @@ function postRow(p) {
 
 // ---------- pages ----------
 
+function eduTimeline() {
+  return `<ol class="xtl xtl-edu">
+    ${(site.education || [])
+      .map((x) => {
+        const [from, to] = x.period.split(/\s+to\s+/);
+        return `<li class="xtl-item reveal">
+      <div class="xtl-date mono"><span>${e(from)}</span><span class="xtl-to">${e(to || '')}</span></div>
+      <div class="xtl-node" aria-hidden="true"></div>
+      <div class="glass xtl-card"><h3>${e(x.degree)}</h3><p class="xtl-org">${e(x.school)}</p>${x.board ? `<p class="xtl-domain">${e(x.board)}</p>` : ''}</div>
+    </li>`;
+      })
+      .join('\n    ')}
+  </ol>`;
+}
+
 function expTimeline() {
   return `<ol class="xtl">
     ${site.experience
@@ -416,6 +431,11 @@ function aboutSections() {
 <section class="wrap section" id="experience">
   <div class="section-head reveal"><h2 class="section-h">Experience</h2><p class="muted">From system administration to platform engineering.</p></div>
   ${expTimeline()}
+</section>
+
+<section class="wrap section" id="education">
+  <div class="section-head reveal"><h2 class="section-h">Education</h2></div>
+  ${eduTimeline()}
 </section>
 
 <section class="wrap section" id="certifications">
