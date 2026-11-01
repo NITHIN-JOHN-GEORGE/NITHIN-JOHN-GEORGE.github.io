@@ -534,30 +534,16 @@ function commentsHtml() {
   if (!c.repoId || !c.categoryId) return '';
   return `<section class="comments" aria-label="Comments">
     <h2 class="comments-h">Comments</h2>
-    <p class="muted comments-note">Sign in with GitHub to comment.</p>
+    <p class="muted comments-note">Sign in with GitHub to react or comment.</p>
     <script src="https://giscus.app/client.js"
       data-repo="${e(c.repo)}" data-repo-id="${e(c.repoId)}"
       data-category="${e(c.category)}" data-category-id="${e(c.categoryId)}"
-      data-mapping="pathname" data-strict="0" data-reactions-enabled="0" data-emit-metadata="0"
+      data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0"
       data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy"
       crossorigin="anonymous" async></script>
   </section>`;
 }
 
-
-// No-sign-in emoji reactions (counts come from a Cloudflare Worker; see workers/reactions/).
-// Hidden until the counts load, so nothing broken shows if the Worker is unreachable.
-function reactionsHtml(slug) {
-  const r = site.reactions || {};
-  if (!r.endpoint || !(r.items || []).length) return '';
-  return `<section class="reactions" data-endpoint="${e(r.endpoint)}" data-post="${e(slug)}" hidden>
-    <h2 class="comments-h">Did this help?</h2>
-    <p class="muted comments-note reactions-note">React with one click. No sign-in needed.</p>
-    <div class="reactions-row">${r.items
-      .map((i) => `<button type="button" class="reaction" data-id="${e(i.id)}" aria-pressed="false"><span class="reaction-emoji" aria-hidden="true">${i.emoji}</span><span class="reaction-count">0</span><span class="reaction-label">${e(i.label)}</span></button>`)
-      .join('')}</div>
-  </section>`;
-}
 
 // An old address for a post: send the reader on, keeping any #section in the link.
 function redirectPage(to) {
@@ -581,7 +567,6 @@ function postPage(p) {
     <p class="post-meta mono">${fmtDate(p.date)} · ${p.minutes} min read${p.tags.length ? ' · ' + p.tags.map(e).join(', ') : ''}</p>
     ${p.sample ? '<div class="callout callout-note"><p class="callout-title">Sample</p><p>This is a sample post. Delete <code>content/blog/welcome-to-this-site.md</code> when you publish a real one.</p></div>' : ''}
     <div class="prose">${p.html}</div>
-    ${reactionsHtml(p.slug)}
     ${commentsHtml()}
   </article>
   <aside class="article-side">${tocHtml(p.toc)}</aside>
