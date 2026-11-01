@@ -3,6 +3,8 @@ title: "Cgroups: A Deep Dive into Resource Management in Kubernetes – Part 1: 
 date: 2026-10-28
 summary: Part 1 of 3. The Linux you need to understand Kubernetes resources: processes and threads, /proc and /sys, building a cgroup by hand, and following one pod's YAML down to the kernel's files.
 tags: [linux, kubernetes, cgroups]
+slug: cgroups-deep-dive-kubernetes-part-1
+aliases: [cgroups-deep-dive-kubernetes]
 ---
 
 On a day when nothing had shipped and traffic was flat, one of our backend services quietly started restarting itself. A few times a day, at no time we could predict, its health probes would time out. Failed liveness probes got the pods restarted, and failed readiness probes pulled them out of rotation. The services calling it saw timeouts and p99 latency spikes.

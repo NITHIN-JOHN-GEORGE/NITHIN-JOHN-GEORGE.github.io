@@ -59,9 +59,11 @@ function loadPosts() {
   for (const f of readdirSync(dir).filter((n) => n.endsWith('.md'))) {
     const { data, body } = readMd(join(dir, f));
     if (data.draft && !SHOW_DRAFTS) continue;
-    const slug = basename(f, '.md');
+    // A post can set its own address (slug:) and keep old ones working (aliases: [old-slug]).
+    const slug = data.slug || basename(f, '.md');
     const post = {
       slug,
+      aliases: Array.isArray(data.aliases) ? data.aliases : [],
       title: data.title || slug,
       date: String(data.date || '1970-01-01'),
       summary: data.summary || '',
@@ -557,6 +559,19 @@ function reactionsHtml(slug) {
   </section>`;
 }
 
+// An old address for a post: send the reader on, keeping any #section in the link.
+function redirectPage(to) {
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Moved</title>
+<link rel="canonical" href="${site.url}${to}">
+<meta name="robots" content="noindex">
+<meta http-equiv="refresh" content="0; url=${to}">
+<script>location.replace(${JSON.stringify(to)} + location.hash);</script>
+</head><body><p>This page has moved to <a href="${to}">${to}</a>.</p></body></html>
+`;
+}
+
 function postPage(p) {
   const body = `
 <div class="wrap article-layout">
@@ -706,6 +721,7 @@ for (const p of posts) {
   if (p.external) continue;
   write(`blog/${p.slug}/index.html`, postPage(p));
   paths.push(`/blog/${p.slug}/`);
+  for (const a of p.aliases) write(`blog/${a}/index.html`, redirectPage(url(`/blog/${p.slug}/`)));
 }
 
 if (books.length) write('handbooks/index.html', handbooksIndex(books));
