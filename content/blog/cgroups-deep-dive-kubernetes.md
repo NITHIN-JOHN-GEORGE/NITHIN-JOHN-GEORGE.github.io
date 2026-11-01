@@ -42,9 +42,6 @@ The post is in six parts, and each one builds on the last:
 
 Every chapter starts with a question, explains it with a sketch, lets you try it, and ends with **one line to remember**. Boxes marked **Going deeper** hold the extra detail. Skip them on a first read; nothing later depends on them.
 
-> [!TIP]
-> **Short on time?** Read these five chapters for the core story, about 15 minutes: [5](#5-your-first-look-at-cpumax-and-cpuweight) (the files), [13](#13-cpu-requests-become-weights) (requests), [14](#14-cpu-limits-become-a-budget-throttling) (limits and throttling), [15](#15-the-outage-explained) (the outage, explained) and [17](#17-not-all-memory-is-equal) (why memory graphs mislead). Come back for the rest when you want the whole picture.
-
 > [!TLDR]
 > - A cgroup is a folder in `/sys/fs/cgroup`. Its files are limits the kernel enforces.
 > - Your `resources:` block becomes numbers in those files: requests become `cpu.weight`, limits become `cpu.max` and `memory.max`.
