@@ -679,5 +679,40 @@
     "repoId": "R_kgDOKsY-nA",
     "category": "Announcements",
     "categoryId": "DIC_kwDOKsY-nM4DKJ3B"
+  },
+  "reactions": {
+    "endpoint": "https://reactions.nithinjohngeorge.com/reactions",
+    "items": [
+      {
+        "id": "clap",
+        "emoji": "👏",
+        "label": "Clap"
+      },
+      {
+        "id": "love",
+        "emoji": "❤️",
+        "label": "Love it"
+      },
+      {
+        "id": "idea",
+        "emoji": "💡",
+        "label": "Learned something"
+      },
+      {
+        "id": "mindblown",
+        "emoji": "🤯",
+        "label": "Mind blown"
+      },
+      {
+        "id": "fire",
+        "emoji": "🔥",
+        "label": "Fire"
+      },
+      {
+        "id": "bookmark",
+        "emoji": "🔖",
+        "label": "Saving this"
+      }
+    ]
   }
 }

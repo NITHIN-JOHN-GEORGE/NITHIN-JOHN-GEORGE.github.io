@@ -448,4 +448,43 @@
       tiles.forEach(function (el) { el.classList.toggle('is-hidden', g !== 'all' && el.getAttribute('data-group') !== g); });
     });
   });
+
+  // No-sign-in emoji reactions at the end of a post.
+  var box = document.querySelector('.reactions');
+  if (box && window.fetch) {
+    var endpoint = box.getAttribute('data-endpoint');
+    var post = box.getAttribute('data-post');
+    var mine = {};
+    try { mine = JSON.parse(localStorage.getItem('reacted:' + post) || '{}'); } catch (e) {}
+    var render = function (counts) {
+      box.querySelectorAll('.reaction').forEach(function (b) {
+        var id = b.getAttribute('data-id');
+        b.querySelector('.reaction-count').textContent = counts[id] || 0;
+        b.setAttribute('aria-pressed', mine[id] ? 'true' : 'false');
+        b.classList.toggle('on', !!mine[id]);
+      });
+    };
+    fetch(endpoint + '?post=' + encodeURIComponent(post))
+      .then(function (r) { return r.ok ? r.json() : Promise.reject(); })
+      .then(function (counts) {
+        render(counts);
+        box.hidden = false;
+        box.querySelectorAll('.reaction').forEach(function (b) {
+          b.addEventListener('click', function () {
+            var id = b.getAttribute('data-id');
+            if (mine[id]) return;
+            mine[id] = 1;
+            try { localStorage.setItem('reacted:' + post, JSON.stringify(mine)); } catch (e) {}
+            counts[id] = (counts[id] || 0) + 1;
+            render(counts);
+            box.querySelector('.reactions-note').textContent = 'Thanks! You can pick more than one.';
+            fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ post: post, emoji: id }) })
+              .then(function (r) { return r.ok ? r.json() : null; })
+              .then(function (fresh) { if (fresh) { counts = fresh; render(counts); } })
+              .catch(function () {});
+          });
+        });
+      })
+      .catch(function () {});
+  }
 })();

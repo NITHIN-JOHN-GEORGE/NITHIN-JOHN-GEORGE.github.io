@@ -679,6 +679,8 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .prose li::marker { color: var(--accent); font-weight: 700; }
 .prose .table-wrap { margin: 1.6em 0; }
 .prose th { font-family: 'Fira Code', monospace; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+/* code in a header (file and folder names) keeps its real case: /proc, not /PROC */
+.prose th code { text-transform: none; letter-spacing: 0; }
 .prose td { line-height: 1.55; }
 .prose tbody tr:hover td { background: var(--panel-2); }
 .prose .code { margin: 1.4em 0; }
@@ -742,3 +744,16 @@ body.home { background: radial-gradient(1200px 600px at 15% -10%, rgba(96,165,25
 .comments { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
 .comments-h { font-size: 1.2rem; margin: 0 0 0.3rem; }
 .comments-note { font-size: 0.85rem; margin: 0 0 1rem; }
+
+/* No-sign-in emoji reactions above the comments */
+.reactions { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+.reactions + .comments { margin-top: 2rem; padding-top: 0; border-top: 0; }
+.reactions-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.reaction { display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--panel); color: var(--text); font: inherit; font-size: 0.92rem; cursor: pointer; transition: border-color .15s, transform .1s; }
+.reaction:hover { border-color: var(--accent); }
+.reaction:active { transform: scale(0.96); }
+.reaction-emoji { font-size: 1.15rem; line-height: 1; }
+.reaction-count { font-variant-numeric: tabular-nums; color: var(--muted); }
+.reaction-label { font-size: 0.82rem; color: var(--muted); }
+.reaction.on { border-color: var(--accent); cursor: default; }
+.reaction.on .reaction-count, .reaction.on .reaction-label { color: var(--accent); }
