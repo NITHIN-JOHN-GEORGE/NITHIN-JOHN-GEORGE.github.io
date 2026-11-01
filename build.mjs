@@ -523,6 +523,24 @@ function tocHtml(toc) {
     .join('')}</ul></nav>`;
 }
 
+
+// Comments and reactions on blog posts, via giscus (GitHub Discussions).
+// Shown only once content/site.json has comments.repoId and comments.categoryId.
+function commentsHtml() {
+  const c = site.comments || {};
+  if (!c.repoId || !c.categoryId) return '';
+  return `<section class="comments" aria-label="Comments">
+    <h2 class="comments-h">Comments and reactions</h2>
+    <p class="muted comments-note">Sign in with GitHub to react or comment.</p>
+    <script src="https://giscus.app/client.js"
+      data-repo="${e(c.repo)}" data-repo-id="${e(c.repoId)}"
+      data-category="${e(c.category)}" data-category-id="${e(c.categoryId)}"
+      data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0"
+      data-input-position="top" data-theme="preferred_color_scheme" data-lang="en" data-loading="lazy"
+      crossorigin="anonymous" async></script>
+  </section>`;
+}
+
 function postPage(p) {
   const body = `
 <div class="wrap article-layout">
@@ -532,6 +550,7 @@ function postPage(p) {
     <p class="post-meta mono">${fmtDate(p.date)} · ${p.minutes} min read${p.tags.length ? ' · ' + p.tags.map(e).join(', ') : ''}</p>
     ${p.sample ? '<div class="callout callout-note"><p class="callout-title">Sample</p><p>This is a sample post. Delete <code>content/blog/welcome-to-this-site.md</code> when you publish a real one.</p></div>' : ''}
     <div class="prose">${p.html}</div>
+    ${commentsHtml()}
   </article>
   <aside class="article-side">${tocHtml(p.toc)}</aside>
 </div>`;

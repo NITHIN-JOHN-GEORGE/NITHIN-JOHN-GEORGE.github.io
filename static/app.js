@@ -9,8 +9,23 @@
       var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       root.setAttribute('data-theme', next);
       try { localStorage.setItem('theme', next); } catch (e) {}
+      syncGiscus();
     });
   }
+
+  // Keep the giscus comments widget in the site's light/dark theme.
+  function giscusTheme() {
+    var t = root.getAttribute('data-theme');
+    if (t === 'dark' || t === 'light') return t;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function syncGiscus() {
+    var f = document.querySelector('iframe.giscus-frame');
+    if (f && f.contentWindow) f.contentWindow.postMessage({ giscus: { setConfig: { theme: giscusTheme() } } }, 'https://giscus.app');
+  }
+  window.addEventListener('message', function (ev) {
+    if (ev.origin === 'https://giscus.app') syncGiscus();
+  });
 
   // copy buttons on code blocks
   document.querySelectorAll('.code-copy').forEach(function (btn) {
