@@ -61,6 +61,8 @@ Before we touch Kubernetes, we need to understand the machine it runs on. Everyt
 
 ### 1. What happens when you run a program?
 
+*[🧪 Lab 01](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/01-processes-and-threads)*
+
 A **program** is just a file on disk, for example `/usr/bin/python3`. It doesn't do anything until you run it.
 
 When you run it, Linux loads it into memory and starts it. That running copy is a **process**. Run the same program twice and you get two processes. Each one gets a number, its **PID** (process ID), so the system can tell them apart.
@@ -86,7 +88,6 @@ Since every request goes through the kernel, the kernel is the one place where l
 
 <figure class="sketch "><svg viewBox="0 0 760 270" role="img" aria-label="Threads take turns on a CPU core"><title>Threads take turns on a CPU core</title><defs><clipPath id="ccq1"><rect x="480" y="80" width="230" height="100"/></clipPath></defs><text x="20" y="32" text-anchor="start" style="font-size:20px">four threads want to run, but one core runs one thread at a time</text><path class="s y" d="M63.4 153.5Q52.5 147.9 46.8 145.2Q41.0 142.4 38.8 138.4Q36.6 134.4 36.2 130.2Q35.9 126.0 39.3 122.3Q42.8 118.6 47.1 115.4Q51.5 112.2 57.5 109.9Q63.5 107.7 70.4 106.3Q77.2 104.9 84.5 105.0Q91.9 105.1 99.3 105.8Q106.7 106.4 112.5 109.0Q118.3 111.6 123.4 114.7Q128.5 117.7 130.9 121.7Q133.2 125.6 132.6 129.7Q132.0 133.8 129.5 137.6Q127.0 141.3 122.9 144.7Q118.9 148.0 112.7 150.2Q106.4 152.3 99.7 154.1Q93.0 155.9 85.5 155.5Q78.1 155.2 71.1 153.9Q64.1 152.7 57.3 150.9"/><path class="s y" d="M39.4 140.4Q35.5 131.9 36.8 127.6Q38.0 123.3 41.8 119.6Q45.6 115.9 50.9 113.0Q56.3 110.0 62.9 107.9Q69.5 105.9 77.1 104.7Q84.6 103.6 92.4 104.4Q100.1 105.3 106.8 107.4Q113.5 109.5 118.4 112.7Q123.3 115.9 127.0 119.5Q130.8 123.1 131.7 127.3Q132.6 131.4 130.4 135.4Q128.2 139.4 124.5 143.0Q120.8 146.6 115.0 149.3Q109.1 152.0 102.0 153.7Q94.9 155.3 87.1 155.5Q79.3 155.8 71.8 154.7Q64.2 153.6 57.5 151.3Q50.7 149.1 46.8 145.4Q42.9 141.7 40.9 137.7Q38.9 133.7 38.6 129.5"/><text x="85" y="136" text-anchor="middle" style="font-size:17px">thread B</text><path class="s y" d="M215.3 155.5Q200.2 155.8 193.1 154.7Q185.9 153.5 179.9 151.2Q174.0 148.9 168.4 146.1Q162.8 143.3 160.3 139.5Q157.7 135.6 157.3 131.5Q156.8 127.4 158.6 123.4Q160.4 119.4 164.4 115.8Q168.3 112.3 174.9 110.3Q181.6 108.3 188.3 106.7Q195.0 105.1 202.4 104.7Q209.8 104.2 217.2 105.0Q224.6 105.9 230.8 108.2Q237.0 110.6 241.7 113.7Q246.5 116.9 248.9 120.7Q251.3 124.5 251.6 128.5Q251.9 132.5 251.0 136.6Q250.1 140.7 246.1 144.3Q242.0 147.9 235.6 150.2Q229.2 152.5 222.2 153.9Q215.2 155.3 207.8 155.3"/><path class="s y" d="M167.1 114.9Q177.3 108.5 184.5 107.0Q191.8 105.4 199.4 104.8Q207.1 104.1 214.9 104.6Q222.8 105.1 229.1 107.7Q235.4 110.3 240.7 113.4Q246.1 116.4 248.7 120.4Q251.2 124.4 252.0 128.6Q252.7 132.8 251.2 137.0Q249.7 141.2 244.7 144.5Q239.8 147.9 233.9 150.8Q228.1 153.8 220.3 154.6Q212.5 155.5 204.7 155.5Q196.9 155.5 189.4 154.3Q181.9 153.1 175.9 150.4Q169.8 147.7 165.2 144.2Q160.7 140.8 159.3 136.6Q157.9 132.4 158.9 128.3Q159.9 124.2 162.2 120.3Q164.5 116.3 170.0 113.4Q175.5 110.5 182.0 108.3"/><text x="205" y="136" text-anchor="middle" style="font-size:17px">thread C</text><path class="s y" d="M285.2 114.8Q295.4 108.6 302.3 106.8Q309.3 105.1 316.8 104.5Q324.3 103.9 331.6 104.7Q339.0 105.4 345.8 107.1Q352.6 108.8 357.7 111.7Q362.8 114.6 366.0 118.2Q369.2 121.8 371.1 125.7Q373.1 129.6 372.2 133.7Q371.3 137.7 367.5 141.2Q363.7 144.8 359.0 148.0Q354.3 151.2 347.4 152.9Q340.6 154.7 333.1 155.2Q325.7 155.7 318.1 155.6Q310.5 155.5 304.4 153.0Q298.3 150.6 292.8 147.9Q287.2 145.3 283.7 141.8Q280.1 138.3 278.3 134.3Q276.4 130.4 278.2 126.4Q279.9 122.5 282.2 118.5Q284.4 114.5 290.7 112.2"/><path class="s y" d="M279.5 138.1Q276.2 129.7 278.3 125.6Q280.5 121.5 284.3 117.9Q288.1 114.3 293.2 111.1Q298.3 107.9 305.5 106.1Q312.8 104.3 320.7 104.1Q328.6 103.9 336.4 104.7Q344.3 105.4 350.5 108.1Q356.7 110.7 361.6 114.0Q366.6 117.2 369.4 121.1Q372.1 125.1 371.7 129.3Q371.3 133.5 370.1 137.7Q368.9 141.9 363.3 144.9Q357.7 147.9 351.6 150.3Q345.4 152.7 338.3 154.6Q331.3 156.5 323.4 156.0Q315.5 155.4 308.5 153.7Q301.5 151.9 294.7 149.7Q287.9 147.6 284.7 143.6Q281.6 139.7 279.4 135.7Q277.3 131.7 278.7 127.6"/><text x="325" y="136" text-anchor="middle" style="font-size:17px">thread D</text><text x="205" y="185" text-anchor="middle" class="m" style="font-size:17px">waiting in line</text><path class="s a" d="M398.8 130.8Q435.0 128.5 470.5 130.6M398.6 131.2Q435.0 131.6 468.7 129.3"/><path class="s a" d="M470.1 129.7Q465.0 132.2 460.7 134.0M470.5 130.2Q465.6 132.7 460.3 135.0"/><path class="s a" d="M469.7 130.4Q465.2 127.4 460.5 125.4M470.1 130.5Q465.1 127.3 459.7 124.9"/><path class="h b" clip-path="url(#ccq1)" d="M393.1 181.0Q435.7 129.8 480.9 78.1M402.8 183.1Q446.8 130.4 490.4 79.1M412.0 182.6Q455.3 130.2 499.6 79.0M420.6 180.8Q463.8 130.2 508.2 78.1M429.8 182.4Q472.3 129.4 515.8 77.3M437.7 182.6Q480.3 129.7 525.0 78.2M447.0 181.5Q491.5 130.7 534.8 77.9M456.7 182.2Q499.4 130.0 542.4 77.2M465.9 181.9Q510.6 130.5 552.6 77.7M474.3 182.7Q518.4 129.7 562.9 78.4M484.9 183.0Q527.5 129.8 569.6 77.4M492.2 182.1Q537.3 131.3 578.6 76.9M501.7 180.9Q545.6 130.5 588.7 79.0M510.4 181.4Q554.5 130.3 597.4 78.7M519.1 180.8Q561.9 128.4 607.6 77.3M528.5 181.1Q573.5 130.6 617.5 78.9M538.3 182.4Q581.8 129.3 627.2 79.0M549.0 181.0Q592.3 129.2 635.0 77.0M557.3 181.7Q602.0 130.3 643.8 77.2M567.7 182.7Q612.1 130.3 655.4 77.3M575.4 182.8Q619.9 130.4 662.7 77.7M585.3 181.1Q630.1 130.4 673.4 78.5M593.4 181.9Q638.5 130.5 681.8 78.1M603.3 181.9Q646.3 130.6 688.7 77.8M613.8 181.5Q657.6 131.3 700.5 79.0M621.7 182.8Q665.1 128.9 708.4 78.3M630.9 183.2Q676.0 131.6 716.8 78.2M639.6 183.0Q683.1 130.5 726.7 78.3M649.0 181.8Q690.7 129.4 735.3 77.6M657.9 182.9Q701.2 129.6 744.4 76.9M666.9 181.5Q710.2 129.7 753.5 78.0M675.4 182.6Q719.6 130.0 761.8 77.1M684.9 183.0Q728.2 129.7 770.9 77.7M693.7 181.3Q738.2 130.9 780.5 77.0M700.8 182.6Q744.3 128.9 788.4 77.1"/><path class="s b" d="M480.2 80.8Q594.4 83.0 710.3 79.7M480.7 80.3Q595.3 79.1 711.0 79.8"/><path class="s b" d="M710.7 80.3Q710.8 130.1 708.6 181.6M708.9 78.4Q709.8 130.4 711.2 180.1"/><path class="s b" d="M711.3 178.5Q594.9 178.9 479.6 180.8M709.1 179.4Q594.6 178.9 479.0 178.7"/><path class="s b" d="M479.1 180.8Q482.3 129.9 480.2 81.2M480.9 181.5Q480.1 130.2 480.5 80.0"/><text x="595" y="118" text-anchor="middle" class="big" style="font-size:22px">CPU core</text><text x="595" y="152" text-anchor="middle" style="font-size:18px">running: thread A</text><text x="595" y="215" text-anchor="middle" class="a" style="font-size:17px">the kernel's scheduler hands out turns</text><text x="595" y="240" text-anchor="middle" class="a" style="font-size:17px">of a few milliseconds each</text></svg><figcaption>A core runs one thread at a time. The scheduler switches between them so fast that they all seem to run at once.</figcaption></figure>
 
-*Lab:* [01-processes-and-threads](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/01-processes-and-threads). Check what you built with `make check LAB=01`.
 
 > [!KEY]
 > Programs run as processes, processes run as threads, and the kernel decides which thread gets each CPU core and how much memory everyone gets.
@@ -95,6 +96,8 @@ Since every request goes through the kernel, the kernel is the one place where l
 ---
 
 ### 2. Everything in Linux is a file
+
+*[🧪 Lab 02](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/02-everything-is-a-file)*
 
 This is the idea that makes the rest of the post possible.
 
@@ -142,7 +145,6 @@ These special folders are called **virtual filesystems**. Two of them matter for
 
 <figure class="sketch "><svg viewBox="0 0 760 260" role="img" aria-label="Reading a kernel file asks the kernel a question"><title>Reading a kernel file asks the kernel a question</title><defs><clipPath id="cck1"><rect x="20" y="80" width="220" height="70"/></clipPath><clipPath id="cck2"><rect x="585" y="70" width="160" height="90"/></clipPath></defs><path class="h a" clip-path="url(#cck1)" d="M-40.9 152.2Q-11.1 114.5 20.0 78.0M-32.6 151.6Q-2.4 114.3 29.2 78.1M-22.3 152.9Q10.3 115.9 40.1 77.9M-11.7 152.7Q21.0 115.7 49.3 77.5M-1.6 151.0Q29.1 115.3 59.6 77.0M9.7 152.0Q38.0 114.1 70.4 77.4M19.5 150.9Q49.2 114.6 81.2 77.0M30.6 152.8Q59.5 114.3 90.6 77.5M40.0 151.0Q69.0 114.4 101.3 79.0M48.3 151.1Q79.6 114.8 110.8 77.3M60.0 152.3Q91.0 115.9 120.9 78.3M68.5 152.8Q100.7 115.9 131.1 79.2M78.2 152.2Q108.7 114.3 138.7 77.5M87.6 152.0Q118.1 114.1 148.9 78.3M97.5 152.7Q127.1 114.8 158.7 78.0M107.6 151.8Q137.7 114.5 167.4 77.3M117.9 152.7Q147.1 114.4 178.3 76.8M128.6 151.7Q159.0 115.5 189.7 78.5M137.6 151.7Q168.1 115.4 198.6 78.2M147.1 151.0Q179.0 115.7 208.5 78.0M158.4 151.1Q188.2 115.3 217.6 78.9M167.9 152.3Q197.9 113.8 228.7 78.9M178.1 152.4Q206.9 113.9 237.5 77.2M186.2 151.8Q218.2 115.8 246.7 78.5M197.2 151.6Q227.1 114.7 257.3 79.0M205.8 152.8Q237.6 115.7 267.1 77.9M215.9 150.9Q246.1 115.4 275.1 77.5M225.1 152.4Q256.0 114.8 286.7 79.0M234.9 151.5Q266.3 115.3 297.3 78.1"/><path class="s a" d="M18.5 80.2Q129.9 81.9 240.4 81.5M18.5 79.2Q129.7 79.7 240.4 81.5"/><path class="s a" d="M238.9 78.5Q241.1 115.4 239.3 150.8M240.8 80.3Q240.4 114.7 241.6 150.8"/><path class="s a" d="M238.7 148.7Q129.7 149.3 20.4 151.5M241.0 151.5Q129.7 150.0 21.4 148.8"/><path class="s a" d="M18.5 149.1Q19.1 115.6 20.1 79.5M21.3 149.6Q21.4 115.0 19.6 81.0"/><text x="130" y="112" text-anchor="middle" class="code">cat /proc/meminfo</text><text x="130" y="136" text-anchor="middle" class="m" style="font-size:16px">you ask</text><path class="s" d="M244.3 114.5Q287.0 117.4 329.5 114.1M244.4 114.4Q287.5 116.4 331.5 113.5"/><path class="s" d="M330.5 115.6Q324.7 117.1 320.2 120.5M329.4 115.0Q325.1 117.2 320.6 120.3"/><path class="s" d="M330.0 114.6Q325.2 112.6 319.6 110.0M330.3 115.0Q325.1 112.2 320.2 109.9"/><path class="s" d="M334.6 50.6Q429.6 49.5 525.5 50.3M335.1 49.8Q430.2 48.7 525.3 49.1"/><path class="s" d="M524.0 50.1Q523.2 115.2 525.3 180.3M526.0 49.8Q524.2 115.0 525.7 179.0"/><path class="s" d="M525.8 180.0Q429.6 180.3 335.0 180.4M525.4 180.5Q430.2 180.1 334.3 180.5"/><path class="s" d="M334.4 179.6Q335.1 115.3 334.1 49.5M335.5 180.0Q333.6 115.3 335.8 49.7"/><text x="430" y="80" text-anchor="middle" class="code">/proc/meminfo</text><text x="430" y="110" text-anchor="middle" class="r" style="font-size:18px">size: 0 bytes</text><text x="430" y="140" text-anchor="middle" class="m" style="font-size:16px">nothing stored here</text><path class="s" d="M529.0 116.5Q553.4 114.6 580.3 113.5M526.5 116.5Q554.2 117.3 578.7 114.2"/><path class="s" d="M580.0 114.9Q575.2 118.1 570.7 119.3M579.4 115.4Q574.9 117.5 570.7 119.9"/><path class="s" d="M580.8 115.7Q575.6 111.9 569.7 110.7M579.7 115.3Q574.6 113.4 570.9 109.7"/><path class="h b" clip-path="url(#cck2)" d="M507.8 162.7Q544.7 113.8 584.2 67.2M516.4 161.0Q555.7 115.8 593.1 68.4M525.8 162.8Q563.7 114.5 604.1 67.8M534.4 161.5Q570.9 113.6 612.3 67.3M542.4 162.8Q581.5 114.3 620.4 67.8M551.6 162.0Q591.2 114.7 631.2 69.2M562.0 160.8Q601.3 115.8 638.7 67.6M568.5 161.4Q607.0 114.1 647.1 69.0M577.9 161.8Q615.6 114.7 654.8 68.4M584.4 160.9Q624.4 114.5 663.5 67.9M594.1 161.2Q631.5 114.4 672.9 67.1M603.7 162.7Q642.4 115.1 682.4 68.3M614.0 160.9Q653.8 115.8 691.5 68.5M620.7 162.1Q660.4 114.4 699.7 67.7M631.4 161.3Q669.8 115.1 708.0 68.6M640.6 161.6Q679.0 115.4 717.6 67.9M647.7 162.1Q688.6 115.6 726.4 68.3M657.9 161.5Q697.1 115.3 737.3 68.5M667.7 161.1Q706.3 115.0 745.1 69.0M675.5 163.0Q714.1 114.0 755.4 67.2M685.1 161.3Q723.7 114.9 764.2 67.2M695.1 162.9Q734.1 116.2 772.0 67.2M702.4 162.3Q742.4 115.1 780.7 67.9M712.2 162.1Q751.6 115.6 790.2 68.9M720.6 161.7Q757.9 114.7 796.5 69.2M727.0 161.4Q767.5 115.5 806.7 68.2M737.4 163.0Q775.3 114.0 814.9 68.8"/><path class="s b" d="M583.7 70.9Q665.1 68.2 746.2 69.6M585.0 69.4Q665.4 69.4 745.6 69.4"/><path class="s b" d="M746.6 68.5Q744.6 114.7 743.9 160.6M743.7 69.2Q745.3 115.0 743.6 159.8"/><path class="s b" d="M744.6 158.5Q665.2 158.9 585.3 159.2M746.0 158.7Q664.4 159.7 586.2 158.9"/><path class="s b" d="M583.6 161.6Q586.9 115.0 586.1 69.0M583.7 161.2Q585.5 115.3 585.7 70.9"/><text x="665" y="108" text-anchor="middle" class="big" style="font-size:20px">the kernel</text><text x="665" y="136" text-anchor="middle" style="font-size:17px">works it out</text><text x="380" y="225" text-anchor="middle" class="g" style="font-size:19px">nothing on disk; the answer is made when you ask</text></svg><figcaption>Files in /proc and /sys aren't stored anywhere. Reading one asks the kernel; writing one changes a live setting.</figcaption></figure>
 
-*Lab:* [02-everything-is-a-file](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/02-everything-is-a-file). Check what you built with `make check LAB=02`.
 
 > [!KEY]
 > On Linux, the kernel shows its information and its settings as files. Read a file to ask it something, write a file to change something.
@@ -151,6 +153,8 @@ These special folders are called **virtual filesystems**. Two of them matter for
 ---
 
 ### 3. `/proc`: what every process is doing right now
+
+*[🧪 Lab 03](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/03-proc)*
 
 `/proc` is the kernel's live report on **processes**. Every running process gets its own folder, named after its PID:
 
@@ -199,7 +203,6 @@ cat /proc/self/cgroup
 
 Every process belongs to a **cgroup**, and this file says which one. Inside our container it's simply `/`. We'll see why in chapter 7. For now, note that the kernel tracks it for every process.
 
-*Lab:* [03-proc](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/03-proc). Check what you built with `make check LAB=03`.
 
 > [!KEY]
 > `/proc` is a live report on every process, one folder per PID, and it includes which cgroup each process lives in.
@@ -208,6 +211,8 @@ Every process belongs to a **cgroup**, and this file says which one. Inside our 
 ---
 
 ### 4. `/sys`: the kernel's settings panel
+
+*[🧪 Lab 04](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/04-sys-and-sys-fs-cgroup)*
 
 If `/proc` is mainly about **processes**, `/sys` is about **the kernel's own components and settings**: CPUs, disks, network cards, and the systems that manage them.
 
@@ -289,7 +294,6 @@ Two folders, two jobs. It's easy to mix them up, so here they are side by side:
 
 When you want to know **what a process is doing**, look in `/proc`. When you want to know **what it's allowed to do**, look in `/sys/fs/cgroup`.
 
-*Lab:* [04-sys-and-sys-fs-cgroup](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/04-sys-and-sys-fs-cgroup). Check what you built with `make check LAB=04`.
 
 > [!KEY]
 > `/sys` holds the kernel's settings, one value per file, and `/sys/fs/cgroup` is the part that controls how much CPU and memory each group of processes may use.
@@ -298,6 +302,8 @@ When you want to know **what a process is doing**, look in `/proc`. When you wan
 ---
 
 ### 5. Your first look at `cpu.max` and `cpu.weight`
+
+*[🧪 Lab 05](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/05-cpu-max-and-cpu-weight)*
 
 Now open the panel. Inside our container:
 
@@ -332,12 +338,33 @@ cat /sys/fs/cgroup/memory.max
 
 **There are your Docker flags, written as kernel settings.**
 
-**`cpu.max` = `50000 100000`.** Two numbers, both in **microseconds** (millionths of a second):
+**`cpu.max` = `50000 100000`.** It's written as `quota period`, and both numbers are in **microseconds** (millionths of a second).
 
-- `100000` µs = **100 ms**. This is the *period*: the kernel counts CPU use in 100 ms windows.
-- `50000` µs = **50 ms**. This is the *quota*: how much CPU time the group may use in each window.
+- **Period** (`100000` µs = **100 ms**). The kernel doesn't track CPU use forever. It cuts time into short windows and checks each one separately. One window is the period, 100 ms by default. Every 100 ms a fresh window starts and the count goes back to zero.
+- **Quota** (`50000` µs = **50 ms**). How much CPU time the group may use inside one window. It's a budget that refills at the start of every period.
 
-So: *"at most 50 ms of CPU in every 100 ms"*, which is half a CPU. That's `--cpus=0.5`. If there were no limit, the file would read `max 100000`.
+So `50000 100000` means *"in every 100 ms window, you may use 50 ms of CPU time"*. 50 ms out of every 100 ms is half of one CPU's time: that's `--cpus=0.5`. Docker keeps the period at 100 ms and sets the quota to your `--cpus` value × the period:
+
+| `--cpus` | Quota, in microseconds | `cpu.max` | Meaning |
+|---|---|---|---|
+| 0.5 | 0.5 × 100000 = 50000 | `50000 100000` | half a CPU |
+| 1 | 100000 | `100000 100000` | one full CPU |
+| 2 | 200000 | `200000 100000` | two full CPUs |
+
+A quota can be bigger than the period because the group can run on several cores at once: 200 ms of CPU time in a 100 ms window means two cores busy for the whole window.
+
+And when the quota runs out before the window ends, the group waits for the next window, even if the machine has idle CPUs:
+
+```
+one period (100 ms)
+|■■■■■■■■■■■■■■■■■■■■■■■■■|.........................|
+ runs: 50 ms of quota        waits: quota used up
+                                          next period starts, quota refills
+```
+
+That waiting is called **throttling**, and Part 2 is all about it.
+
+If there were no limit, the file would read `max 100000`.
 
 **`memory.max` = `134217728`.** This is in **bytes**: 128 × 1024 × 1024 = 134,217,728. That's `--memory=128m`. The group may never hold more than this.
 
@@ -392,7 +419,6 @@ Those are the PIDs in this group: `1` is your shell, and the other is the `cat` 
 > [!NOTE]
 > **One file, two directions.** `cat` reads a setting. `echo` changes it, and the kernel applies the new value immediately, with no restart. Docker mounts this folder read-only inside a container (that's the `ro` in the `mount` output), so in the next section we'll do the writing on a lab node instead.
 
-*Lab:* [05-cpu-max-and-cpu-weight](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/05-cpu-max-and-cpu-weight). Check what you built with `make check LAB=05`.
 
 > [!KEY]
 > `cpu.max` is a hard CPU budget per 100 ms, `cpu.weight` is a share when CPUs are busy, `memory.max` is a byte ceiling, and `cgroup.procs` lists who they apply to.
@@ -401,6 +427,8 @@ Those are the PIDs in this group: `1` is your shell, and the other is the `cat` 
 ---
 
 ### 6. Why CPU limits slow you down but memory limits kill you
+
+*[🧪 Lab 06](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/06-cpu-waits-memory-kills)*
 
 The kernel can make CPU "wait" but kills for memory because the two resources behave differently.
 
@@ -417,7 +445,6 @@ That's why:
 
 Almost everything in the rest of this series follows from this difference.
 
-*Lab:* [06-cpu-waits-memory-kills](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/06-cpu-waits-memory-kills). Check what you built with `make check LAB=06`.
 
 > [!KEY]
 > CPU can be delayed, so limits cause waiting (throttling). Memory can't be, so limits end in OOM kills.
@@ -426,6 +453,8 @@ Almost everything in the rest of this series follows from this difference.
 ---
 
 ### 7. So what is a container?
+
+*[🧪 Lab 07](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/07-what-is-a-container)*
 
 Now we can answer this properly. **The Linux kernel has no such thing as a "container".** No container object exists anywhere in the kernel. A container is an ordinary process with a few kernel features wrapped around it:
 
@@ -459,7 +488,6 @@ The cgroup namespace makes that folder **look like the top** from inside the con
 
 <figure class="sketch "><svg viewBox="0 0 760 290" role="img" aria-label="A cgroup namespace shortens the paths a process sees"><title>A cgroup namespace shortens the paths a process sees</title><text x="20" y="34" text-anchor="start" style="font-size:21px">the same container cgroup, seen from two places</text><path class="s b" d="M19.9 55.4Q380.2 52.9 740.7 54.9M19.7 55.8Q379.5 54.9 740.1 55.6"/><path class="s b" d="M740.8 54.7Q739.9 105.3 739.0 155.0M740.0 55.2Q740.3 105.1 739.7 153.9"/><path class="s b" d="M739.5 155.9Q380.4 157.0 20.1 154.0M740.4 154.0Q380.1 154.0 20.3 155.7"/><path class="s b" d="M20.5 154.2Q21.4 105.0 20.8 55.7M19.2 155.3Q18.4 104.9 21.1 55.1"/><text x="36" y="82" text-anchor="start" class="m" style="font-size:17px">on the node (docker exec under-the-hood-worker …)</text><text x="36" y="110" text-anchor="start" class="code">/sys/fs/cgroup/kubelet.slice/kubelet-kubepods.slice/</text><text x="36" y="134" text-anchor="start" class="code">   …-burstable.slice/…-pod&lt;uid&gt;.slice/cri-containerd-&lt;id&gt;.scope/cpu.max</text><path class="s a" d="M21.1 190.5Q380.0 188.8 738.9 191.1M19.0 190.4Q379.6 190.0 739.2 190.7"/><path class="s a" d="M738.9 188.8Q741.5 227.4 741.0 266.1M741.0 190.9Q741.7 228.0 739.6 265.5"/><path class="s a" d="M740.8 265.9Q380.4 265.2 19.7 265.5M739.8 265.4Q379.7 267.0 20.2 264.4"/><path class="s a" d="M19.6 264.2Q20.7 227.3 19.2 190.8M21.1 264.3Q21.2 227.7 19.3 189.3"/><text x="36" y="216" text-anchor="start" class="m" style="font-size:17px">inside the container (kubectl exec &lt;pod&gt; …)</text><text x="36" y="244" text-anchor="start" class="code">/sys/fs/cgroup/cpu.max</text><path class="s" d="M599.9 156.6Q601.0 171.6 598.5 186.1M601.2 159.4Q599.7 172.5 600.3 185.2"/><path class="s" d="M599.2 186.3Q597.0 181.2 594.6 176.3M599.8 185.7Q596.9 181.1 594.8 175.5"/><path class="s" d="M599.3 185.6Q602.7 180.9 605.1 175.7M599.4 185.6Q602.4 181.3 605.2 176.1"/><text x="612" y="178" text-anchor="start" style="font-size:17px">same file</text></svg><figcaption>A cgroup namespace changes the paths a process sees; it doesn't set the resource limit.</figcaption></figure>
 
-*Lab:* [07-what-is-a-container](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/07-what-is-a-container). Check what you built with `make check LAB=07`.
 
 > [!KEY]
 > A container is ordinary processes with namespaces (what they see) and cgroups (what they get). Inside one, `/sys/fs/cgroup` shows only its own cgroup.
@@ -475,6 +503,18 @@ You now know enough to follow everything else:
 - A **container** is processes inside namespaces and cgroups.
 
 So far we've only *read* these files. In the next section we write them.
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [01](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/01-processes-and-threads) | See processes and threads on a real machine | 5 min | `make check LAB=01` |
+| [02](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/02-everything-is-a-file) | Read the kernel's live files | 5 min | `make check LAB=02` |
+| [03](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/03-proc) | Read a process's details from `/proc` | 5 min | `make check LAB=03` |
+| [04](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/04-sys-and-sys-fs-cgroup) | Find where resource limits live | 5 min | `make check LAB=04` |
+| [05](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/05-cpu-max-and-cpu-weight) | Turn Docker flags into `cpu.max` and `memory.max` | 5 min | `make check LAB=05` |
+| [06](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/06-cpu-waits-memory-kills) | Watch a CPU limit slow a program, and a memory limit kill one | 5 min | `make check LAB=06` |
+| [07](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/07-what-is-a-container) | Look inside a container: namespaces and cgroups | 10 min | `make check LAB=07` |
 
 ---
 
@@ -505,7 +545,7 @@ Because a kind node is just a Docker container, it has its own real cgroup tree 
 
 **Two ways to look inside.** You'll use these two commands all the time:
 
-- `kubectl exec <pod> -- <command>` runs a command **inside a container**. It sees only its own cgroup (chapter 7), so `kubectl exec <pod> -- cat /sys/fs/cgroup/cpu.max` shows exactly that container's CPU limit.
+- `kubectl exec <pod> -- <command>` runs a command **inside a container**. It sees only [its own cgroup](#7-so-what-is-a-container), so `kubectl exec <pod> -- cat /sys/fs/cgroup/cpu.max` shows exactly that container's CPU limit.
 - `docker exec under-the-hood-worker <command>` runs a command **on the node**. From there you see the whole tree, including the folders for pods and QoS classes. On a real cluster this is the same as SSH-ing into the node.
 
 Every chapter has a **Try it yourself** section with the exact commands and my output, and a **Lab** link to the matching folder in the repo, numbered like the chapters. Each lab's README walks through the same steps, and `make check LAB=<number>` tells you whether what you built behaves as described. (Chapters 1 to 7 are labs 01 to 07, which need only Docker.)
@@ -514,7 +554,7 @@ Every chapter has a **Try it yourself** section with the exact commands and my o
 
 ### 8. Build a cgroup by hand
 
-*Question: if cgroups are just files, can we make one ourselves?*
+*Question: if cgroups are just files, can we make one ourselves?* · [🧪 Lab 08](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/08-build-a-cgroup-by-hand)
 
 Yes. If you can make a cgroup with `mkdir` and `echo`, you'll recognise everything Kubernetes does later.
 
@@ -571,7 +611,7 @@ That's the shell's PID on the node (yours will differ), now inside the box.
 
 **Writing a PID into `cgroup.procs` is how a process joins a cgroup.** There's no other way, and it's exactly what a container runtime does for every container it starts.
 
-<details class="predict"><summary><span class="predict-tag">Predict first</span> The loop wants a whole CPU, and the box allows a fifth. Does the kernel slow it down or kill it?</summary><div class="predict-answer"><p>It slows it down. CPU is time, so the kernel makes the loop wait (chapter 6). Nothing is killed.</p></div></details>
+<details class="predict"><summary><span class="predict-tag">Predict first</span> The loop wants a whole CPU, and the box allows a fifth. Does the kernel slow it down or kill it?</summary><div class="predict-answer"><p>It slows it down. CPU is time, so <a href="#6-why-cpu-limits-slow-you-down-but-memory-limits-kill-you">the kernel makes the loop wait</a>. Nothing is killed.</p></div></details>
 
 **Step 4: watch the kernel enforce it.** `cpu.stat` keeps running totals. Read it, wait five seconds, read it again:
 
@@ -606,7 +646,7 @@ That's 2,567,074 more in about five seconds: half a CPU. No restart, no API call
 
 Hold on to that. In [chapter 21](/blog/cgroups-deep-dive-kubernetes-part-3/#21-finale-resize-a-running-pod) you'll do the same thing to a running Kubernetes pod with one `kubectl` command, and its container won't restart either, for exactly this reason.
 
-<details class="predict"><summary><span class="predict-tag">Predict first</span> Same idea for memory: a 50 MiB box and a program that keeps growing. Will the kernel just slow it down too?</summary><div class="predict-answer"><p>No. Memory is space, not time. Once reclaim can't free enough, the kernel kills the process (chapter 6).</p></div></details>
+<details class="predict"><summary><span class="predict-tag">Predict first</span> Same idea for memory: a 50 MiB box and a program that keeps growing. Will the kernel just slow it down too?</summary><div class="predict-answer"><p>No. Memory is space, not time. Once reclaim can't free enough, <a href="#6-why-cpu-limits-slow-you-down-but-memory-limits-kill-you">the kernel kills the process</a>.</p></div></details>
 
 **And memory?** Make a second box with a 50 MiB limit, and run a shell that keeps doubling a string, so its memory doubles every step:
 
@@ -637,11 +677,16 @@ docker exec under-the-hood-worker sh -c 'kill -9 $(cat /sys/fs/cgroup/lab-cpu/cg
 ```
 
 
-*Lab:* [08-build-a-cgroup-by-hand](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/08-build-a-cgroup-by-hand). Check what you built with `make check LAB=08`.
 
 > [!KEY]
 > A cgroup is a folder. Its files are dials the kernel enforces, and a process joins it by writing its PID into `cgroup.procs`.
 
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [08](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/08-build-a-cgroup-by-hand) | Build a cgroup by hand, then change it live | 10 min | `make check LAB=08` |
 
 ---
 
@@ -655,7 +700,7 @@ Kubernetes never touches your running process. It never slows your app down and 
 
 <a id="9-the-four-checkpoints"></a>
 
-*Question: what happens to your `resources:` block between `kubectl apply` and a running process?*
+*Question: what happens to your `resources:` block between `kubectl apply` and a running process?* · [🧪 Lab 09](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/09-four-checkpoints)
 
 Between `kubectl apply` and your app running, your pod passes four checkpoints. Each one reads a different part of your YAML, makes one decision and, when the answer is no, fails in its own recognisable way:
 
@@ -729,14 +774,13 @@ So when a pod misbehaves, the most useful first question is **"which checkpoint 
 |---|---|---|
 | `Error from server (Forbidden): … exceeded quota` | API server | `kubectl describe quota`, `kubectl describe limitrange` |
 | `Pending`, with `FailedScheduling … Insufficient cpu` | Scheduler | the pod's events, and the nodes' allocatable resources |
-| `Evicted: The node was low on resource: memory` | Kubelet | `kubectl describe node`, and the pod's memory request ([chapter 18](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short)) |
-| `OOMKilled`, exit code 137 | Kernel | `memory.events` in the pod's cgroup ([chapter 16](/blog/cgroups-deep-dive-kubernetes-part-3/#16-memory-limits-and-the-oom-killer)) |
-| Slow responses, a high throttle count | Kernel | `cpu.stat` in the pod's cgroup ([chapter 14](/blog/cgroups-deep-dive-kubernetes-part-2/#14-cpu-limits-become-a-budget-throttling)) |
+| `Evicted: The node was low on resource: memory` | Kubelet | `kubectl describe node`, and [the pod's memory request](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short) |
+| `OOMKilled`, exit code 137 | Kernel | [`memory.events`](/blog/cgroups-deep-dive-kubernetes-part-3/#16-memory-limits-and-the-oom-killer) in the pod's cgroup |
+| Slow responses, a high throttle count | Kernel | [`cpu.stat`](/blog/cgroups-deep-dive-kubernetes-part-2/#14-cpu-limits-become-a-budget-throttling) in the pod's cgroup |
 
 > [!DEEPER]
 > **The rules at the door.** Three Kubernetes objects act at checkpoints 1 and 2, and none of them touches a cgroup. A **ResourceQuota** is a namespace's total budget, like the one above. A **LimitRange** sets default and maximum requests and limits per container, and fills them in if you leave `resources:` out. A **PriorityClass** says which pods matter more: if a high-priority pod doesn't fit, the scheduler can **preempt** (evict) lower-priority pods to make room. The lab has a hands-on extra for each: `labs/E1-resourcequota`, `labs/E2-limitrange` and `labs/E3-priority-and-preemption`.
 
-*Lab:* [09-four-checkpoints](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/09-four-checkpoints). Check what you built with `make check LAB=09`.
 
 > [!KEY]
 > Kubernetes decides and configures; the kernel enforces. How a pod fails tells you which checkpoint stopped it.
@@ -746,7 +790,7 @@ So when a pod misbehaves, the most useful first question is **"which checkpoint 
 
 ### 10. Follow one pod down to the kernel
 
-*Question: where exactly do `250m`, `500m` and `128Mi` end up?*
+*Question: where exactly do `250m`, `500m` and `128Mi` end up?* · [🧪 Lab 10](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/10-follow-one-pod-down)
 
 We'll use one pod for the rest of this section:
 
@@ -770,7 +814,7 @@ Kubernetes never writes your container's cgroup files itself. Your numbers are p
 2. **containerd** writes those numbers, with everything else about the container, into one JSON file, `config.json`, under `linux.resources`. Its format is set by the Open Container Initiative, so it's called the **OCI runtime spec**, and any OCI runtime can read it.
 3. **runc** reads `config.json`, asks systemd to create the container's cgroup, writes your numbers into its files (`cpu.max`, `cpu.weight`, `memory.max`), starts your app inside it, and exits. A small helper, `containerd-shim`, stays behind as your app's parent.
 
-The kubelet does create one cgroup itself: the pod's folder, which holds all of the pod's containers ([chapter 11](#11-where-every-pod-lives-the-cgroup-tree)).
+The kubelet does create one cgroup itself: [the pod's folder](#11-where-every-pod-lives-the-cgroup-tree), which holds all of the pod's containers.
 
 `config.json` describes the whole container: the command to run, the image's root filesystem, the namespaces, the capabilities. For this series only one part matters, `linux.resources`. Here's what it holds for our pod, and where runc puts each number:
 
@@ -785,7 +829,7 @@ The whole trip, in one table:
 | `requests.cpu: 250m` | `shares 256` | `cpu.weight` = `35` | A share of CPU, only when groups compete |
 | `requests.memory: 64Mi` | *not there* | `memory.min` = `0` | **No kernel protection** |
 
-That last row surprises almost everyone I show this to. The memory request never even reaches `config.json`. By default, Kubernetes uses it to pick a node and, later, to decide who to evict first when the node runs short ([chapter 18](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short)), but it doesn't ask the kernel to protect that memory. Since Kubernetes 1.37 the `MemoryQoS` feature can change that, but only if you opt in; [chapter 17](/blog/cgroups-deep-dive-kubernetes-part-3/#17-not-all-memory-is-equal) covers it.
+That last row surprises almost everyone I show this to. The memory request never even reaches `config.json`. By default, Kubernetes uses it to pick a node and, later, to decide [who to evict first when the node runs short](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short), but it doesn't ask the kernel to protect that memory. Since Kubernetes 1.37 the `MemoryQoS` feature can change that, but only if you opt in; [chapter 17](/blog/cgroups-deep-dive-kubernetes-part-3/#17-not-all-memory-is-equal) covers it.
 
 **Try it yourself.** Now check every step on a real pod. Create it and grab its container ID:
 
@@ -811,7 +855,7 @@ docker exec under-the-hood-worker crictl inspect $CID \
 "limit": 134217728,
 ```
 
-The same numbers as the sketch. `cgroupsPath` says where the container's cgroup goes: inside its pod's folder. `shares: 256` is the 250m request in an older unit called *CPU shares* ([chapter 13](/blog/cgroups-deep-dive-kubernetes-part-2/#13-cpu-requests-become-weights) explains it).
+The same numbers as the sketch. `cgroupsPath` says where the container's cgroup goes: inside its pod's folder. `shares: 256` is the 250m request in an older unit called [*CPU shares*](/blog/cgroups-deep-dive-kubernetes-part-2/#13-cpu-requests-become-weights).
 
 **Step 2, systemd.** One detail the sketch skips: on nodes that use the systemd cgroup driver (most do, including this one), runc doesn't make the folder itself. It asks systemd to create it as a *scope*, systemd's name for a group of processes started by someone else:
 
@@ -871,10 +915,9 @@ sleep
 0::/
 ```
 
-It's the same `sleep`. On the node it has an ordinary PID and a long cgroup path. Inside the pod, the PID namespace makes it PID 1 and the cgroup namespace makes its cgroup look like `/` (chapter 7).
+It's the same `sleep`. On the node it has an ordinary PID and a long cgroup path. Inside the pod, the PID namespace makes it PID 1 and the [cgroup namespace](#7-so-what-is-a-container) makes its cgroup look like `/`.
 
 
-*Lab:* [10-follow-one-pod-down](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/10-follow-one-pod-down). Check what you built with `make check LAB=10`.
 
 > [!KEY]
 > `requests.cpu` → `cpu.weight`, `limits.cpu` → `cpu.max`, `limits.memory` → `memory.max`. The memory request is for scheduling and eviction, not kernel protection.
@@ -884,7 +927,7 @@ It's the same `sleep`. On the node it has an ordinary PID and a long cgroup path
 
 ### 11. Where every pod lives: the cgroup tree
 
-*Question: why is a container's cgroup buried so deep?*
+*Question: why is a container's cgroup buried so deep?* · [🧪 Lab 11](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/11-the-cgroup-tree)
 
 Containers don't land just anywhere. The kubelet builds a tree, and the runtime adds each container's box at the bottom: one box for all pods, a box per **QoS class** (a label Kubernetes gives each pod, Guaranteed, Burstable or BestEffort, based on its requests and limits; [chapter 18](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short)), a box per pod, and a box per container.
 
@@ -915,13 +958,20 @@ This tree is also why a container's cgroup path is so long. Here's the `follow-m
             cpu.max                                   50000 100000
 ```
 
-From inside the container, all of that is hidden. The cgroup namespace (chapter 7) makes the container's own folder look like the top, so the very same file is simply `/sys/fs/cgroup/cpu.max`, with the same `50000 100000` inside.
+From inside the container, all of that is hidden. The [cgroup namespace](#7-so-what-is-a-container) makes the container's own folder look like the top, so the very same file is simply `/sys/fs/cgroup/cpu.max`, with the same `50000 100000` inside.
 
 
-*Lab:* [11-the-cgroup-tree](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/11-the-cgroup-tree), which also shows the QoS `oom_score_adj` values from [chapter 18](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short). Check what you built with `make check LAB=11`.
 
 > [!KEY]
 > cgroups nest, and a child is also subject to the limits set on its parents.
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [09](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/09-four-checkpoints) | Get stopped at each checkpoint | 10 min | `make check LAB=09` |
+| [10](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/10-follow-one-pod-down) | Follow one pod's numbers down to the kernel | 10 min | `make check LAB=10` |
+| [11](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/11-the-cgroup-tree) | Walk the cgroup tree and the QoS classes | 10 min | `make check LAB=11` |
 
 ---
 

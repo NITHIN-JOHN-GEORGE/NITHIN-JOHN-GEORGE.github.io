@@ -31,11 +31,11 @@ To follow along, [set up the lab](/blog/cgroups-deep-dive-kubernetes-part-1/#set
 
 ## Memory limits
 
-CPU can make you wait. Memory can't ([chapter 6](/blog/cgroups-deep-dive-kubernetes-part-1/#6-why-cpu-limits-slow-you-down-but-memory-limits-kill-you)), so it fails in a completely different way.
+CPU can make you wait. [Memory can't](/blog/cgroups-deep-dive-kubernetes-part-1/#6-why-cpu-limits-slow-you-down-but-memory-limits-kill-you), so it fails in a completely different way.
 
 ### 16. Memory limits and the OOM killer
 
-*Question: what happens when a container reaches `memory.max`?*
+*Question: what happens when a container reaches `memory.max`?* · [🧪 Lab 16](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/16-memory-limits-and-oom)
 
 Kubernetes didn't kill your OOMKilled pod. The Linux kernel did, because of one number in one file: `memory.max`.
 
@@ -90,12 +90,11 @@ oom_group_kill 2
 | `oom` | Times reclaim wasn't enough |
 | `oom_kill` | Processes the kernel killed |
 | `oom_group_kill` | Times it killed a whole container at once |
-| `low`, `high` | Softer limits Kubernetes doesn't set by default (chapter 17) |
+| `low`, `high` | [Softer limits](#17-not-all-memory-is-equal) Kubernetes doesn't set by default |
 
 `oom_group_kill` shows up because, on cgroups v2, the kubelet sets `memory.oom.group = 1` on each container by default (since Kubernetes 1.28): if one process has to die, the whole container goes, so nothing is left half-alive.
 
 
-*Lab:* [16-memory-limits-and-oom](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/16-memory-limits-and-oom). Check what you built with `make check LAB=16`.
 
 > [!KEY]
 > At `memory.max` the kernel reclaims what it can first. If that isn't enough, it OOM-kills: exit code 137, no warning.
@@ -105,7 +104,7 @@ oom_group_kill 2
 
 ### 17. Not all memory is equal
 
-*Question: how can a pod be OOM-killed while the dashboard said it had room to spare?*
+*Question: how can a pod be OOM-killed while the dashboard said it had room to spare?* · [🧪 Lab 17](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/17-not-all-memory-is-equal)
 
 This answers the promise from the start of the series. The key is that a cgroup's memory comes in two kinds.
 
@@ -171,11 +170,17 @@ Usually one of three reasons, and now you can tell them apart:
 > By default Kubernetes sets neither (they read `max` and `0`). The `MemoryQoS` feature can: it's beta and switched on by default since Kubernetes 1.37, but on its own it still writes neither file. You opt in through the kubelet's config. `memoryReservationPolicy: TieredReservation` protects Guaranteed pods' requests with `memory.min` (and Burstable pods' with the softer `memory.low`), and setting `memoryThrottlingFactor` gives Burstable and BestEffort containers a `memory.high` below their limit, so they slow down before they get killed. That's why the lab, on 1.37, still shows `memory.min` as `0`.
 
 
-*Lab:* [17-not-all-memory-is-equal](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/17-not-all-memory-is-equal). Check what you built with `make check LAB=17`.
 
 > [!KEY]
 > File cache is counted but can be dropped. Memory a program allocates can't, and that's what gets OOM-killed. Watch the working set, not `memory.current`.
 
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [16](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/16-memory-limits-and-oom) | Trigger an OOM kill and read `memory.events` | 5 min | `make check LAB=16` |
+| [17](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/17-not-all-memory-is-equal) | Compare file cache with memory a program holds | 10 min | `make check LAB=17` |
 
 ---
 
@@ -183,7 +188,7 @@ Usually one of three reasons, and now you can tell them apart:
 
 ### 18. When the whole node runs short
 
-*Question: who gets removed when a node runs low on memory?*
+*Question: who gets removed when a node runs low on memory?* · [🧪 Lab 18](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/18-node-pressure-eviction)
 
 The other way to run out is for the whole node to get low on memory, because many pods use more than they requested. Three mechanisms decide what happens then.
 
@@ -216,7 +221,7 @@ Kubernetes sorts every pod into one of three Quality of Service classes, worked 
 | **Burstable** | Some requests or limits, but not Guaranteed |
 | **BestEffort** | Nothing set at all |
 
-The class shows up in two places. In the tree, each class gets its own box ([chapter 11](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree)). And on every process, as a number the kernel reads when the *whole machine* is out of memory:
+The class shows up in two places. In the tree, each class gets [its own box](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree). And on every process, as a number the kernel reads when the *whole machine* is out of memory:
 
 <figure class="sketch "><svg viewBox="0 0 760 270" role="img" aria-label="QoS classes affect OOM protection"><title>QoS classes affect OOM protection</title><defs><clipPath id="cqo1"><rect x="25" y="40" width="210" height="150"/></clipPath><clipPath id="cqo2"><rect x="275" y="40" width="210" height="150"/></clipPath><clipPath id="cqo3"><rect x="525" y="40" width="210" height="150"/></clipPath></defs><path class="s" d="M40.0 229.7Q380.4 230.9 721.6 229.3M39.4 229.3Q379.7 227.9 718.7 229.4"/><path class="s" d="M719.3 229.5Q715.3 232.6 710.2 234.6M719.4 230.4Q715.0 231.8 710.5 234.6"/><path class="s" d="M720.5 230.5Q715.1 227.5 710.8 224.8M719.8 229.4Q715.2 227.7 710.3 224.6"/><text x="40" y="258" text-anchor="start" class="r" style="font-size:20px">least protected</text><text x="720" y="258" text-anchor="end" class="g" style="font-size:20px">most protected</text><path class="h r" clip-path="url(#cqo1)" d="M-105.4 191.1Q-40.1 115.5 25.0 38.0M-94.3 190.9Q-26.9 116.4 36.4 37.1M-81.5 192.6Q-17.1 114.2 49.1 37.5M-68.3 191.0Q-5.3 114.1 60.5 38.0M-57.6 191.2Q7.1 113.6 73.3 37.9M-46.4 192.4Q20.6 115.5 85.4 36.8M-33.4 192.2Q32.5 115.8 97.9 37.3M-22.3 191.3Q42.6 114.1 108.9 38.6M-9.4 192.5Q54.4 114.3 121.2 38.3M2.0 190.9Q66.6 114.4 133.3 37.2M13.4 191.9Q80.5 116.4 144.1 37.6M24.8 192.4Q91.1 115.3 156.2 37.8M37.0 191.7Q101.4 114.5 166.7 37.5M50.2 192.1Q115.1 114.4 180.7 38.0M62.8 191.4Q127.5 115.4 193.5 38.8M73.9 191.0Q138.0 114.2 204.3 38.1M85.6 191.6Q151.3 114.8 217.6 37.3M97.2 191.3Q162.8 114.8 227.5 37.1M110.2 190.9Q175.7 114.9 239.9 37.5M121.7 191.2Q187.6 115.4 251.3 38.3M133.2 193.1Q198.7 115.2 263.8 38.8M145.4 193.1Q210.2 114.7 275.9 36.9M158.1 193.0Q221.4 114.9 288.4 37.4M167.2 192.4Q232.6 113.5 299.7 38.1M178.9 193.2Q243.5 114.0 309.2 37.2M192.6 192.0Q256.1 113.6 322.1 38.3M203.7 191.5Q270.4 115.9 334.1 37.6M215.6 191.3Q279.7 115.5 345.6 37.2M227.3 191.4Q291.3 114.3 355.9 38.0"/><path class="s r" d="M25.1 39.5Q130.0 40.2 234.0 40.1M23.4 41.5Q130.1 40.3 235.6 41.1"/><path class="s r" d="M236.5 41.3Q233.2 114.6 233.6 190.4M235.5 39.8Q234.4 115.1 234.2 191.2"/><path class="s r" d="M236.3 189.6Q129.7 189.5 25.2 188.7M236.4 188.9Q130.4 192.5 25.6 189.7"/><path class="s r" d="M23.7 189.5Q24.0 114.5 23.9 39.7M24.9 188.9Q25.7 115.5 25.2 38.5"/><text x="130" y="80" text-anchor="middle" class="big">BestEffort</text><text x="130" y="115" text-anchor="middle" style="font-size:19px">no requests, no limits</text><text x="130" y="160" text-anchor="middle" class="code">oom_score_adj 1000</text><path class="h y" clip-path="url(#cqo2)" d="M144.5 193.0Q209.9 115.4 274.1 37.5M157.3 193.1Q221.4 115.5 287.1 38.7M169.0 192.4Q232.4 114.0 297.6 37.5M179.2 191.8Q244.6 115.0 309.8 38.7M189.8 191.5Q256.7 115.9 322.0 39.1M203.3 192.0Q266.9 114.5 332.4 39.0M213.5 192.0Q281.1 116.0 344.9 38.3M228.2 192.8Q292.0 115.0 357.0 38.8M240.2 191.4Q304.2 114.8 369.9 38.4M251.9 191.6Q317.1 115.7 380.7 39.1M263.9 193.1Q326.8 113.6 392.6 38.4M275.4 192.2Q339.8 113.6 406.7 37.5M288.8 192.7Q353.3 115.1 418.3 38.7M298.9 192.8Q364.8 114.9 430.1 37.7M312.9 192.9Q378.4 115.8 442.5 38.7M325.8 192.6Q390.8 115.2 455.1 37.1M337.4 192.8Q403.9 116.0 469.7 38.1M349.8 192.4Q416.2 115.3 480.9 36.8M362.2 192.3Q428.3 115.0 493.8 37.8M374.3 191.3Q441.0 115.5 505.3 38.1M387.6 193.2Q453.1 114.9 517.4 37.2M398.8 191.9Q464.4 114.2 530.7 38.2M410.7 192.9Q477.4 115.6 541.7 38.4M423.3 191.6Q487.7 114.3 554.5 38.7M434.3 192.8Q500.5 116.5 564.9 37.8M446.1 192.0Q511.5 114.8 577.3 37.2M457.2 191.0Q521.4 113.9 588.9 36.9M469.9 191.0Q534.2 114.2 599.6 37.0M481.3 192.8Q546.2 113.6 613.3 37.1"/><path class="s y" d="M275.2 40.2Q379.8 41.6 484.3 40.1M275.0 38.4Q379.5 41.9 484.3 39.0"/><path class="s y" d="M484.7 41.0Q484.4 115.2 486.0 190.6M484.1 40.3Q486.9 115.4 486.3 189.4"/><path class="s y" d="M484.5 189.1Q379.8 190.3 276.4 189.6M484.1 189.7Q379.9 187.3 276.6 189.8"/><path class="s y" d="M275.3 188.9Q272.9 114.9 274.4 38.8M273.8 188.8Q274.1 115.4 273.8 39.7"/><text x="380" y="80" text-anchor="middle" class="big">Burstable</text><text x="380" y="115" text-anchor="middle" style="font-size:19px">some requests or limits</text><text x="380" y="160" text-anchor="middle" class="code">2 … 999</text><path class="h g" clip-path="url(#cqo3)" d="M395.6 191.5Q461.5 116.0 524.7 37.4M407.1 192.3Q471.4 114.6 536.6 37.6M419.1 192.9Q483.8 114.4 549.7 37.5M429.5 192.3Q495.0 114.9 560.2 38.1M442.5 192.2Q507.7 114.9 573.9 37.6M454.3 192.8Q520.5 115.0 584.6 37.1M465.6 192.3Q532.2 116.3 596.6 37.5M478.6 191.8Q544.3 115.6 607.0 38.1M489.5 191.0Q555.7 115.3 619.8 38.1M503.7 191.2Q567.6 114.5 632.7 38.3M512.7 192.0Q580.0 116.4 645.1 38.3M525.2 192.3Q591.3 115.7 655.3 38.1M538.2 192.4Q601.5 114.0 666.8 37.9M549.2 191.5Q615.0 115.3 679.0 38.0M561.6 192.9Q626.1 115.1 690.5 38.1M573.9 193.0Q639.8 115.8 703.0 37.5M585.3 192.1Q649.7 113.9 716.1 37.2M599.2 191.8Q663.7 114.6 729.1 38.1M610.0 191.0Q677.7 116.1 740.8 38.7M621.9 191.8Q687.0 113.7 754.2 37.6M634.0 191.4Q699.6 114.9 764.7 37.8M645.6 192.8Q711.5 114.6 777.2 37.3M658.4 191.7Q722.7 114.1 787.9 38.8M668.8 191.5Q735.3 115.3 800.8 38.6M682.5 193.0Q746.9 115.6 812.4 38.4M693.8 191.5Q758.3 114.1 823.9 37.8M707.5 191.6Q773.3 116.3 838.3 38.1M717.6 191.8Q782.8 115.0 848.2 37.1M729.8 192.9Q794.7 116.0 858.2 38.0"/><path class="s g" d="M524.6 38.8Q629.7 38.0 734.8 40.6M525.9 40.6Q630.2 38.9 734.9 39.5"/><path class="s g" d="M735.0 40.7Q735.7 114.4 734.8 190.0M736.2 40.8Q732.5 114.9 733.9 189.7"/><path class="s g" d="M736.0 188.5Q629.7 190.0 525.3 188.4M733.7 188.6Q629.4 190.2 525.7 188.6"/><path class="s g" d="M524.1 189.7Q523.7 115.1 525.7 40.2M524.3 189.0Q526.5 114.6 526.0 40.3"/><text x="630" y="80" text-anchor="middle" class="big">Guaranteed</text><text x="630" y="115" text-anchor="middle" style="font-size:19px">requests = limits</text><text x="630" y="160" text-anchor="middle" class="code">-997</text><text x="380" y="20" text-anchor="middle" class="m" style="font-size:16px">example values from this lab</text></svg><figcaption>QoS affects OOM protection and eviction behaviour. Burstable scores vary with the memory request.</figcaption></figure>
 
@@ -272,10 +277,15 @@ The two calm pods kept running. Roughly, the kubelet ranks pods by (1) whether t
 | **What you see** | `OOMKilled`, exit code 137, container restarts | `Evicted`, pod `Failed`, not restarted here |
 | **Who is chosen** | A process in the cgroup over its limit | Ranked by usage vs request, and priority |
 
-*Lab:* [18-node-pressure-eviction](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/18-node-pressure-eviction) (needs `make cluster PROFILE=pressure`). Check what you built with `make check LAB=18`.
 
 > [!KEY]
 > When the whole node runs short, the kubelet evicts first and the kernel kills last. Pods using more than they requested, especially BestEffort ones, are at the greatest risk.
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [18](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/18-node-pressure-eviction) | Watch the kubelet evict a pod (needs `make cluster PROFILE=pressure`) | 10 min | `make check LAB=18` |
 
 ---
 
@@ -283,7 +293,7 @@ The two calm pods kept running. Roughly, the kubelet ranks pods by (1) whether t
 
 ### 19. Seeing memory in production
 
-*Question: which memory numbers should I watch, and which ones lie?*
+*Question: which memory numbers should I watch, and which ones lie?* · [🧪 Lab 19](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/19-metrics-and-psi)
 
 Like CPU in [Part 2](/blog/cgroups-deep-dive-kubernetes-part-2/#watching-cpu-in-production), every memory file has a Prometheus metric, exported by cAdvisor in the kubelet:
 
@@ -313,10 +323,15 @@ full avg10=6.35 avg60=2.42 avg300=0.59 total=1967529
 
 `some` and `full` are the same because the pod has one busy process: whenever it waited, *everything* in the pod waited. About 6% of the last 10 seconds was lost to reclaim, and it hasn't been OOM-killed, because file cache can always be dropped. Memory that a program allocates can't, so for a leaking process, rising `memory.pressure` is often the earliest warning you'll get before an OOM kill.
 
-*Lab:* [19-metrics-and-psi](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/19-metrics-and-psi). Check what you built with `make check LAB=19`.
 
 > [!KEY]
 > Watch the working set against the limit, `oom_kill` counts and `memory.pressure`. `memory.current` and the usage metric include cache, and will mislead you.
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [19](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/19-metrics-and-psi) | Read the metrics and the pressure files | 10 min | `make check LAB=19` |
 
 ---
 
@@ -324,7 +339,7 @@ full avg10=6.35 avg60=2.42 avg300=0.59 total=1967529
 
 ### 20. The other limits, briefly
 
-*Question: is it only CPU and memory?*
+*Question: is it only CPU and memory?* · [🧪 Lab 20](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/20-pids-and-disk)
 
 CPU and memory get all the attention, but a few more limits are worth knowing:
 
@@ -339,7 +354,6 @@ CPU and memory get all the attention, but a few more limits are worth knowing:
 The PID limit matters more than it looks: every process and thread needs a PID, and a node only has so many. One runaway pod spawning processes (a *fork bomb*) can use them all, and then nothing on the node can start, not even the kubelet. And the last row is a common surprise: there is **no cgroup for disk space**. The kubelet adds up what each pod has written (logs, its writable layer and `emptyDir` volumes) and evicts it when it goes over.
 
 
-*Lab:* [20-pids-and-disk](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/20-pids-and-disk) (needs `make cluster PROFILE=pids`). Check what you built with `make check LAB=20`.
 
 > [!KEY]
 > PIDs are capped by a cgroup. Disk space isn't: the kubelet measures it and evicts.
@@ -348,7 +362,7 @@ The PID limit matters more than it looks: every process and thread needs a PID, 
 
 ### 21. Finale: resize a running pod
 
-*Question: if limits are just numbers in files, can we change them on a live pod?*
+*Question: if limits are just numbers in files, can we change them on a live pod?* · [🧪 Lab 21](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/21-in-place-resize)
 
 Here's the proof that ties the whole series together. Since Kubernetes 1.33, where in-place resize became beta and on by default (it's been stable since 1.35), you can change a running pod's CPU and memory **in place**, with no restart. Remember [chapter 8](/blog/cgroups-deep-dive-kubernetes-part-1/#8-build-a-cgroup-by-hand), where you changed `cpu.max` with `echo` while a process was running? That's all this is.
 
@@ -379,10 +393,16 @@ restarts=0
 The kubelet asked the runtime to rewrite the files of the live container. Same container, same process, new numbers. This was my favourite moment building the lab, because it's the clearest proof that `resources:` really is just a few numbers in a few files.
 
 
-*Lab:* [21-in-place-resize](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/21-in-place-resize). Check what you built with `make check LAB=21`.
 
 > [!KEY]
 > Resize rewrites the cgroup files of a live container. No restart, because there's nothing to restart: it's just a file.
+
+#### The labs for this stage
+
+| Lab | What you'll do | Time | Check your work |
+|---|---|---|---|
+| [20](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/20-pids-and-disk) | Hit the process limit (needs `make cluster PROFILE=pids`) | 10 min | `make check LAB=20` |
+| [21](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/21-in-place-resize) | Resize a running pod | 5 min | `make check LAB=21` |
 
 ---
 
@@ -426,7 +446,7 @@ The kernel enforces the box, but the program inside should know how big the box 
 | `podPidsLimit` | Kernel | `pids.max` |
 | `limits.ephemeral-storage` | Kubelet | Measures disk use and evicts. Not a cgroup |
 
-Three Kubernetes features often mentioned alongside these don't touch cgroups at all, so I've left them out of this series: **ResourceQuota** (a namespace's total budget), **LimitRange** (default and maximum requests per container) and **PriorityClass** (who gets scheduled, and who's evicted, first). They're checked by the API server and the scheduler ([chapter 9](/blog/cgroups-deep-dive-kubernetes-part-1/#9-the-four-checkpoints)). The lab has a hands-on extra for each: `labs/E1-resourcequota`, `labs/E2-limitrange` and `labs/E3-priority-and-preemption`.
+Three Kubernetes features often mentioned alongside these don't touch cgroups at all, so I've left them out of this series: **ResourceQuota** (a namespace's total budget), **LimitRange** (default and maximum requests per container) and **PriorityClass** (who gets scheduled, and who's evicted, first). They're checked by [the API server and the scheduler](/blog/cgroups-deep-dive-kubernetes-part-1/#9-the-four-checkpoints). The lab has a hands-on extra for each: `labs/E1-resourcequota`, `labs/E2-limitrange` and `labs/E3-priority-and-preemption`.
 
 ### Takeaways
 
