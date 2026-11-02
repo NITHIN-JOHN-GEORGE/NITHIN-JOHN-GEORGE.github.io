@@ -77,62 +77,48 @@ A request does **not** reserve a core. When the node is quiet it does nothing at
 
 <figure class="sketch anim"><svg viewBox="0 0 760 250" role="img" aria-label="CPU requests influence how contended CPU is shared"><title>CPU requests influence how contended CPU is shared</title><defs><clipPath id="cwt1"><rect x="180" y="65" width="62" height="40"/></clipPath><clipPath id="cwt2"><rect x="180" y="135" width="508" height="40"/></clipPath></defs><text x="20" y="32" text-anchor="start" style="font-size:22px">A request influences your CPU share when groups compete</text><text x="20" y="90" text-anchor="start" style="font-size:20px">request 100m</text><text x="20" y="160" text-anchor="start" style="font-size:20px">request 800m</text><g class="anim-grow"><path class="h a" clip-path="url(#cwt1)" d="M146.1 106.2Q162.1 84.6 179.4 62.2M150.0 106.5Q168.4 85.6 185.3 63.8M157.8 107.7Q172.6 83.5 192.4 63.8M164.2 107.0Q182.4 85.8 198.8 63.2M168.3 107.8Q186.2 84.5 204.7 64.2M176.1 106.9Q193.4 84.8 209.6 62.3M181.4 106.1Q198.3 84.5 216.4 62.4M187.5 108.1Q203.5 83.9 221.6 63.5M194.8 107.3Q209.7 84.2 228.0 62.8M201.6 106.7Q219.6 85.6 236.0 62.1M208.0 107.2Q225.6 85.0 242.7 62.7M214.6 106.1Q230.9 84.3 248.3 62.0M220.3 106.6Q238.0 84.7 254.2 61.8M227.7 106.0Q243.5 83.9 262.1 62.7M235.2 107.0Q249.8 83.8 268.8 63.4M240.3 106.4Q255.7 84.3 274.9 63.8"/><path class="s a" d="M179.3 64.1Q210.8 65.1 241.5 63.5M180.3 63.4Q210.5 64.9 242.9 64.0"/><path class="s a" d="M241.3 64.8Q242.1 84.8 240.8 106.2M241.4 64.6Q243.8 84.6 240.5 103.8"/><path class="s a" d="M243.6 103.5Q210.9 106.1 180.1 103.8M242.1 103.8Q210.8 104.1 178.4 104.2"/><path class="s a" d="M179.6 104.5Q180.9 85.0 181.0 64.1M180.1 106.3Q181.0 85.6 179.8 65.2"/></g><g class="anim-grow d2"><path class="h b" clip-path="url(#cwt2)" d="M144.3 176.1Q163.3 155.7 180.1 133.7M150.3 175.9Q168.5 154.3 184.9 133.5M157.3 176.8Q174.9 156.0 191.6 133.8M162.5 178.2Q179.9 154.1 197.6 132.4M168.9 176.6Q186.3 154.4 205.3 132.4M176.8 177.0Q194.6 156.3 210.4 132.9M183.0 176.3Q200.2 155.0 218.0 131.9M189.2 177.9Q205.7 154.3 224.4 133.1M196.2 178.1Q213.1 154.5 230.0 133.9M201.6 178.0Q219.7 155.4 235.8 133.0M207.7 177.6Q224.5 153.9 242.2 132.3M213.5 176.0Q230.9 155.9 248.7 134.0M220.0 177.2Q238.1 156.0 253.8 132.1M226.3 177.0Q243.3 155.4 261.5 133.9M231.6 178.0Q250.1 155.8 266.4 134.1M237.2 176.0Q255.8 155.6 272.2 132.8M243.9 177.2Q262.8 155.6 279.5 132.0M250.6 176.3Q265.7 154.0 285.3 132.5M254.0 176.0Q273.3 155.8 289.4 132.3M259.6 177.2Q276.4 153.4 295.9 133.4M265.8 175.9Q284.9 155.8 301.7 133.0M272.5 176.8Q290.6 155.9 306.9 132.5M279.4 176.0Q296.8 154.9 314.0 132.2M284.9 176.5Q304.1 156.4 319.4 132.9M291.3 176.4Q308.9 155.4 325.2 132.7M296.5 177.8Q313.9 155.5 330.4 132.8M300.2 178.0Q317.0 153.6 334.7 132.7M307.7 177.3Q325.3 155.8 343.4 133.7M314.5 177.3Q332.0 155.7 348.2 131.8M320.5 176.8Q337.2 154.4 355.9 133.2M327.1 177.5Q344.6 155.7 361.8 133.9M332.4 177.0Q349.8 154.9 368.3 131.9M337.5 177.7Q356.3 155.9 372.9 133.2M343.5 176.8Q360.8 155.0 377.1 133.5M350.2 176.1Q367.5 155.4 385.2 132.0M356.3 177.0Q373.8 155.6 389.9 133.7M363.5 177.9Q378.7 154.3 397.2 131.9M370.3 176.2Q385.9 154.3 404.6 133.5M375.3 177.4Q391.6 155.3 409.0 133.2M378.6 177.1Q396.6 155.1 413.7 133.2M385.7 177.4Q400.9 154.1 420.8 132.1M390.4 177.1Q408.5 155.0 426.5 133.5M396.4 177.3Q413.5 154.0 431.4 132.5M402.5 177.4Q420.9 155.5 438.6 132.4M409.6 177.7Q426.6 154.7 444.6 131.8M416.0 177.5Q433.7 154.9 450.3 132.1M421.9 176.7Q439.7 155.2 457.9 133.4M429.6 177.5Q446.1 154.6 464.4 133.5M437.5 177.6Q453.7 154.5 472.2 133.9M441.8 177.2Q461.2 156.1 478.0 132.5M449.6 176.7Q466.2 154.5 483.1 132.5M455.3 177.3Q473.8 154.9 490.4 132.1M461.4 176.2Q480.0 155.8 496.9 133.7M468.2 178.1Q487.1 156.0 502.8 132.2M476.4 177.0Q493.9 155.4 509.6 132.0M483.5 177.8Q498.3 153.8 518.1 133.3M488.7 176.0Q505.4 156.0 522.9 132.4M492.9 176.0Q511.2 155.7 527.4 133.4M498.8 176.6Q516.1 153.7 533.5 132.0M504.9 177.4Q522.6 154.8 541.7 132.9M510.9 176.5Q528.6 154.7 546.9 133.0M517.6 177.3Q533.4 154.0 551.9 132.7M522.0 176.3Q540.1 155.2 558.7 134.0M528.7 177.8Q547.7 156.1 564.1 133.0M535.5 176.9Q552.2 154.6 570.1 132.3M540.7 176.6Q560.0 155.7 576.8 132.4M545.9 177.4Q563.0 154.2 582.4 132.4M552.3 176.9Q569.3 154.8 586.6 132.8M556.1 177.8Q573.5 154.2 590.8 132.8M563.6 176.6Q579.3 154.7 597.4 132.8M568.4 176.9Q584.9 154.7 602.0 133.9M574.1 176.9Q590.9 154.4 609.5 133.6M580.0 177.9Q597.0 155.0 614.5 132.8M585.5 176.0Q601.7 154.9 619.4 132.8M591.8 178.1Q610.7 155.6 626.5 133.4M598.2 177.6Q614.4 155.3 631.4 133.9M603.4 176.4Q619.9 154.0 639.3 132.3M608.8 176.1Q625.9 154.3 645.7 134.0M616.2 176.9Q632.6 154.7 651.2 132.0M622.5 177.9Q640.7 155.9 656.6 132.1M625.9 178.1Q644.7 155.4 661.2 133.3M632.8 176.0Q649.9 154.7 667.2 131.9M641.1 176.9Q656.9 154.4 674.2 132.0M645.3 177.3Q664.4 155.9 681.5 134.1M651.4 177.0Q670.0 156.1 685.8 132.7M656.7 176.9Q674.7 154.6 693.4 133.8M664.0 176.6Q680.2 155.2 696.6 133.1M668.6 176.3Q686.8 155.0 703.9 133.6M676.1 177.2Q691.8 155.1 710.2 132.6M680.7 177.4Q696.4 154.3 715.9 132.8M686.2 177.7Q703.1 154.6 721.9 131.9"/><path class="s b" d="M179.8 135.5Q434.3 134.5 687.3 135.5M181.2 135.0Q433.9 132.9 688.5 135.5"/><path class="s b" d="M686.8 136.2Q687.4 154.8 688.9 175.5M688.1 134.9Q686.9 154.6 688.5 176.2"/><path class="s b" d="M689.2 175.2Q433.8 175.8 180.3 176.3M686.7 175.2Q433.4 173.5 180.0 176.5"/><path class="s b" d="M179.9 174.9Q178.5 155.6 179.8 134.3M180.0 176.6Q178.4 154.6 181.5 134.4"/></g><text x="255" y="92" text-anchor="start" class="m" style="font-size:18px">≈ 1 part</text><text x="700" y="210" text-anchor="end" class="m" style="font-size:18px">≈ 8 parts</text><text x="20" y="238" text-anchor="start" class="m" style="font-size:16px">observed in one lab run on a 10-CPU node: 8.2x · results vary with what else is competing</text></svg><figcaption>A CPU request isn't a reserved core. It's your slice of the pizza when everyone is hungry.</figcaption></figure>
 
-**Try it yourself.** Start two greedy pods with no CPU limits. Each runs one busy loop per CPU on the node, so together they want twice what exists. `weight-low` requests `100m`, `weight-high` requests `800m`:
+**Try it yourself.** Start two greedy pods with no CPU limits. Each runs one busy loop per CPU on the node, so together they want twice what exists. `weight-low` requests `100m`; `weight-high` requests `800m`, eight times more:
 
 ```bash
 kubectl -n lab apply -f labs/13-requests-become-weights/pods.yaml
 kubectl -n lab wait --for=condition=Ready pod/weight-low pod/weight-high
-kubectl -n lab exec weight-low  -- cat /sys/fs/cgroup/cpu.weight
-kubectl -n lab exec weight-high -- cat /sys/fs/cgroup/cpu.weight
-```
-
-```
-17
-84
 ```
 
 <details class="predict"><summary><span class="predict-tag">Predict first</span> Both pods want every CPU on the node. One requests <code>100m</code>, the other <code>800m</code>. How will the CPU be split?</summary><div class="predict-answer"><p>Neither pod is capped, so neither gets "its request". They split the node by weight, and the bigger request takes most of the CPU. Measure it below.</p></div></details>
 
-To see who actually wins, compare `usage_usec` for both pods over 10 seconds:
+To see who wins, measure how much CPU each pod uses in 10 seconds. This reads each pod's CPU counter twice and prints the difference in millicores:
 
 ```bash
-for p in weight-low weight-high; do kubectl -n lab exec $p -- grep usage_usec /sys/fs/cgroup/cpu.stat; done
+l1=$(kubectl -n lab exec weight-low  -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
+h1=$(kubectl -n lab exec weight-high -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
 sleep 10
-for p in weight-low weight-high; do kubectl -n lab exec $p -- grep usage_usec /sys/fs/cgroup/cpu.stat; done
+l2=$(kubectl -n lab exec weight-low  -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
+h2=$(kubectl -n lab exec weight-high -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
+echo "weight-low: $(( (l2 - l1) / 10000 ))m   weight-high: $(( (h2 - h1) / 10000 ))m"
 ```
 
-Subtract the first number from the second for each pod and divide by 10,000 to get millicores. On my 10-CPU setup the bigger request got **8.2 times** more CPU: 8807m vs 1073m, the whole node between them. That's close to the 8× ratio of the requests, but not to 84 ÷ 17, which is only about 4.9. The next box explains why. Either way, treat it as a measurement, not a guarantee: the real split also depends on whatever else is competing on the node.
+```
+weight-low: 1060m   weight-high: 9103m
+```
+
+The pod that asked for 8× more got about **8.6× more**, and together they used the whole 10-CPU node. **When everyone is busy, CPU is split in proportion to the requests.** Anything else busy on the node takes its share too, so treat the exact numbers as a measurement, not a promise.
 
 > [!DEEPER]
-> **Where do 17 and 84 come from?**
+> **How a request becomes a weight**
 >
-> Your request goes through two conversions:
+> The kernel doesn't know what millicores are. Your request reaches it as a `cpu.weight`, in two steps:
 >
-> 1. The kubelet turns millicores into **CPU shares**, the unit from cgroups v1: shares are millicores × 1024 ÷ 1000. So 100m is 102 shares, 250m is 256, 800m is 819. (That's the `shares: 256` from [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel).)
-> 2. The runtime (runc or crun) turns shares into a cgroup v2 **weight**.
+> 1. The kubelet turns millicores into **CPU shares**, an older unit from cgroups v1: shares = millicores × 1024 ÷ 1000. So 100m becomes 102 shares and 800m becomes 819. (That's where the `shares: 256` in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) came from.)
+> 2. Shares are then turned into a **weight**, a number from 1 to 10,000. The exact formula depends on which program writes the file and on its version, and it has changed recently. So don't try to memorise weights. What decides the split is the **ratio** between the groups that compete.
 >
-> Step 2 changed recently. Older runtimes used a straight line, which you'll still find in many blog posts:
+> There's one twist. A pod has two levels of cgroup ([chapter 11](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree)), and each level has its own `cpu.weight`:
 >
-> ```
-> weight = 1 + (shares − 2)
->              × 9999 / 262142
-> ```
+> | cgroup | Who writes its `cpu.weight` | What it decides |
+> |---|---|---|
+> | The pod's | the kubelet | how pods share the node |
+> | Each container's | the container runtime | how containers share their pod |
 >
-> It had a real problem: a pod requesting a whole CPU got a weight of only 39, while ordinary system services get the default of 100, so Kubernetes workloads lost out whenever the node was busy. Newer runtimes (runc 1.3.2+, crun 1.23+) use a curve instead, chosen so that one CPU lands at about 100.
->
-> | Request | Shares | Old | New |
-> |---|---|---|---|
-> | 100m | 102 | 4 | **17** |
-> | 250m | 256 | 10 | **35** |
-> | 800m | 819 | 32 | **84** |
-> | 2 | 2048 | 79 | **174** |
->
-> If your numbers match the "old" column, your node's runtime is older. Either way, what decides the split is the *ratio* between the groups that are competing.
-
-> [!DEEPER]
-> **Why 8× and not 84 ÷ 17?**
->
-> Remember the tree from [chapter 11](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree): each container sits inside its pod's cgroup. Each pod here has one busy container, so the competition actually happens one level up, between the two **pod** cgroups. Their `cpu.weight` is set by the kubelet itself, not the runtime, and on this node it still uses the old straight-line formula:
+> Here are both, for the two lab pods. First the pod level, read on the node:
 >
 > ```bash
 > for p in weight-low weight-high; do
@@ -145,8 +131,21 @@ Subtract the first number from the second for each pod and divide by 10,000 to g
 > weight-high pod cgroup: 32
 > ```
 >
-> 4 and 32 are exactly the "old formula" column above, and 32 ÷ 4 = 8. The containers' own weights, 17 and 84, only decide how CPU is shared between containers *inside the same pod*. So when you want to know how pods split a busy node, read the pod cgroup's `cpu.weight`, not the container's.
-
+> Then the container level, read from inside each container:
+>
+> ```bash
+> kubectl -n lab exec weight-low  -- cat /sys/fs/cgroup/cpu.weight
+> kubectl -n lab exec weight-high -- cat /sys/fs/cgroup/cpu.weight
+> ```
+>
+> ```
+> 17
+> 84
+> ```
+>
+> The pod weights, **4 and 32, are 8× apart, just like the requests**, and they're what decided the split you measured. The container weights, 17 and 84, come from a different conversion, and they only matter between containers in the same pod. (The weight of 35 in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) was a container's.) So to know how pods will split a busy node, read the **pod** cgroup's `cpu.weight`.
+>
+> Why did the conversion change? Under the old one, a pod requesting a whole CPU got a weight of only 39, while ordinary system services get the default of 100, so Kubernetes workloads lost out whenever the node was busy. Newer runtimes use a curve that puts one CPU at about 100.
 
 *Lab:* [13-requests-become-weights](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/13-requests-become-weights). Check what you built with `make check LAB=13`.
 
