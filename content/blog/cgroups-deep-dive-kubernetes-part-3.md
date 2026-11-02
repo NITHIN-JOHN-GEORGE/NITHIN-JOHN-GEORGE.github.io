@@ -35,7 +35,7 @@ CPU can make you wait. [Memory can't](/blog/cgroups-deep-dive-kubernetes-part-1/
 
 ### 16. Memory limits and the OOM killer
 
-*Question: what happens when a container reaches `memory.max`?* · [🧪 Lab 16](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/16-memory-limits-and-oom)
+*Question: what happens when a container reaches `memory.max`?*
 
 Kubernetes didn't kill your OOMKilled pod. The Linux kernel did, because of one number in one file: `memory.max`.
 
@@ -104,7 +104,7 @@ oom_group_kill 2
 
 ### 17. Not all memory is equal
 
-*Question: how can a pod be OOM-killed while the dashboard said it had room to spare?* · [🧪 Lab 17](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/17-not-all-memory-is-equal)
+*Question: how can a pod be OOM-killed while the dashboard said it had room to spare?*
 
 This answers the promise from the start of the series. The key is that a cgroup's memory comes in two kinds.
 
@@ -188,7 +188,7 @@ Usually one of three reasons, and now you can tell them apart:
 
 ### 18. When the whole node runs short
 
-*Question: who gets removed when a node runs low on memory?* · [🧪 Lab 18](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/18-node-pressure-eviction)
+*Question: who gets removed when a node runs low on memory?*
 
 The other way to run out is for the whole node to get low on memory, because many pods use more than they requested. Three mechanisms decide what happens then.
 
@@ -293,7 +293,7 @@ The two calm pods kept running. Roughly, the kubelet ranks pods by (1) whether t
 
 ### 19. Seeing memory in production
 
-*Question: which memory numbers should I watch, and which ones lie?* · [🧪 Lab 19](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/19-metrics-and-psi)
+*Question: which memory numbers should I watch, and which ones lie?*
 
 Like CPU in [Part 2](/blog/cgroups-deep-dive-kubernetes-part-2/#watching-cpu-in-production), every memory file has a Prometheus metric, exported by cAdvisor in the kubelet:
 
@@ -339,7 +339,7 @@ full avg10=6.35 avg60=2.42 avg300=0.59 total=1967529
 
 ### 20. The other limits, briefly
 
-*Question: is it only CPU and memory?* · [🧪 Lab 20](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/20-pids-and-disk)
+*Question: is it only CPU and memory?*
 
 CPU and memory get all the attention, but a few more limits are worth knowing:
 
@@ -362,7 +362,7 @@ The PID limit matters more than it looks: every process and thread needs a PID, 
 
 ### 21. Finale: resize a running pod
 
-*Question: if limits are just numbers in files, can we change them on a live pod?* · [🧪 Lab 21](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/21-in-place-resize)
+*Question: if limits are just numbers in files, can we change them on a live pod?*
 
 Here's the proof that ties the whole series together. Since Kubernetes 1.33, where in-place resize became beta and on by default (it's been stable since 1.35), you can change a running pod's CPU and memory **in place**, with no restart. Remember [chapter 8](/blog/cgroups-deep-dive-kubernetes-part-1/#8-build-a-cgroup-by-hand), where you changed `cpu.max` with `echo` while a process was running? That's all this is.
 

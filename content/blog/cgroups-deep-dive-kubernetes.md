@@ -61,8 +61,6 @@ Before we touch Kubernetes, we need to understand the machine it runs on. Everyt
 
 ### 1. What happens when you run a program?
 
-*[🧪 Lab 01](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/01-processes-and-threads)*
-
 A **program** is just a file on disk, for example `/usr/bin/python3`. It doesn't do anything until you run it.
 
 When you run it, Linux loads it into memory and starts it. That running copy is a **process**. Run the same program twice and you get two processes. Each one gets a number, its **PID** (process ID), so the system can tell them apart.
@@ -96,8 +94,6 @@ Since every request goes through the kernel, the kernel is the one place where l
 ---
 
 ### 2. Everything in Linux is a file
-
-*[🧪 Lab 02](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/02-everything-is-a-file)*
 
 This is the idea that makes the rest of the post possible.
 
@@ -154,8 +150,6 @@ These special folders are called **virtual filesystems**. Two of them matter for
 
 ### 3. `/proc`: what every process is doing right now
 
-*[🧪 Lab 03](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/03-proc)*
-
 `/proc` is the kernel's live report on **processes**. Every running process gets its own folder, named after its PID:
 
 ```bash
@@ -211,8 +205,6 @@ Every process belongs to a **cgroup**, and this file says which one. Inside our 
 ---
 
 ### 4. `/sys`: the kernel's settings panel
-
-*[🧪 Lab 04](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/04-sys-and-sys-fs-cgroup)*
 
 If `/proc` is mainly about **processes**, `/sys` is about **the kernel's own components and settings**: CPUs, disks, network cards, and the systems that manage them.
 
@@ -302,8 +294,6 @@ When you want to know **what a process is doing**, look in `/proc`. When you wan
 ---
 
 ### 5. Your first look at `cpu.max` and `cpu.weight`
-
-*[🧪 Lab 05](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/05-cpu-max-and-cpu-weight)*
 
 Now open the panel. Inside our container:
 
@@ -428,8 +418,6 @@ Those are the PIDs in this group: `1` is your shell, and the other is the `cat` 
 
 ### 6. Why CPU limits slow you down but memory limits kill you
 
-*[🧪 Lab 06](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/06-cpu-waits-memory-kills)*
-
 The kernel can make CPU "wait" but kills for memory because the two resources behave differently.
 
 **CPU is time.** If a group has used its budget, the kernel can tell it to wait. Its threads pause and then continue in the next window. Nothing is lost; it just takes longer. This waiting is called **throttling**.
@@ -453,8 +441,6 @@ Almost everything in the rest of this series follows from this difference.
 ---
 
 ### 7. So what is a container?
-
-*[🧪 Lab 07](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/07-what-is-a-container)*
 
 Now we can answer this properly. **The Linux kernel has no such thing as a "container".** No container object exists anywhere in the kernel. A container is an ordinary process with a few kernel features wrapped around it:
 
@@ -554,7 +540,7 @@ Every chapter has a **Try it yourself** section with the exact commands and my o
 
 ### 8. Build a cgroup by hand
 
-*Question: if cgroups are just files, can we make one ourselves?* · [🧪 Lab 08](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/08-build-a-cgroup-by-hand)
+*Question: if cgroups are just files, can we make one ourselves?*
 
 Yes. If you can make a cgroup with `mkdir` and `echo`, you'll recognise everything Kubernetes does later.
 
@@ -700,7 +686,7 @@ Kubernetes never touches your running process. It never slows your app down and 
 
 <a id="9-the-four-checkpoints"></a>
 
-*Question: what happens to your `resources:` block between `kubectl apply` and a running process?* · [🧪 Lab 09](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/09-four-checkpoints)
+*Question: what happens to your `resources:` block between `kubectl apply` and a running process?*
 
 Between `kubectl apply` and your app running, your pod passes four checkpoints. Each one reads a different part of your YAML, makes one decision and, when the answer is no, fails in its own recognisable way:
 
@@ -790,7 +776,7 @@ So when a pod misbehaves, the most useful first question is **"which checkpoint 
 
 ### 10. Follow one pod down to the kernel
 
-*Question: where exactly do `250m`, `500m` and `128Mi` end up?* · [🧪 Lab 10](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/10-follow-one-pod-down)
+*Question: where exactly do `250m`, `500m` and `128Mi` end up?*
 
 We'll use one pod for the rest of this section:
 
@@ -927,7 +913,7 @@ It's the same `sleep`. On the node it has an ordinary PID and a long cgroup path
 
 ### 11. Where every pod lives: the cgroup tree
 
-*Question: why is a container's cgroup buried so deep?* · [🧪 Lab 11](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/11-the-cgroup-tree)
+*Question: why is a container's cgroup buried so deep?*
 
 Containers don't land just anywhere. The kubelet builds a tree, and the runtime adds each container's box at the bottom: one box for all pods, a box per **QoS class** (a label Kubernetes gives each pod, Guaranteed, Burstable or BestEffort, based on its requests and limits; [chapter 18](/blog/cgroups-deep-dive-kubernetes-part-3/#18-when-the-whole-node-runs-short)), a box per pod, and a box per container.
 
