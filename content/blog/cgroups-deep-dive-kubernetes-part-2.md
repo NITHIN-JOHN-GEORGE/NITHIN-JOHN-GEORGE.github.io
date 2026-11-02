@@ -106,53 +106,18 @@ weight-low: 1060m   weight-high: 9103m
 > [!DEEPER]
 > **How a request becomes a weight**
 >
-> The kernel doesn't know what millicores are. Your request reaches it as a `cpu.weight`, in two steps:
+> The kernel doesn't know what millicores are. Kubernetes first turns your request into **CPU shares** (millicores × 1024 ÷ 1000; that's the `shares: 256` in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel)), and shares are then turned into a `cpu.weight`. Two things are worth knowing.
 >
-> 1. The kubelet turns millicores into **CPU shares**, an older unit from cgroups v1: shares = millicores × 1024 ÷ 1000. So 100m becomes 102 shares and 800m becomes 819. (That's where the `shares: 256` in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) came from.)
-> 2. Shares are then turned into a **weight**, a number from 1 to 10,000. The exact formula depends on which program writes the file and on its version, and it has changed recently. So don't try to memorise weights. What decides the split is the **ratio** between the groups that compete.
+> **1. Every pod gets two weights, not one.** The pod has its own cgroup, and each container has one inside it ([chapter 11](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree)). Each gets a `cpu.weight`, written by a different program with a different formula. A weight is just a number from 1 to 10,000, with no unit. On its own it means nothing; only how it compares with its neighbours matters. 32 next to 4 means "eight times as much". For our two pods:
 >
-> There's one twist. A pod has two levels of cgroup ([chapter 11](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree)), and each level has its own `cpu.weight`:
+> | `cpu.weight` of | `weight-low` `100m` | `weight-high` `800m` | Written by | Decides |
+> |---|---|---|---|---|
+> | Pod's cgroup | 4 | 32 | the kubelet | how pods share the node |
+> | Container's cgroup | 17 | 84 | the runtime | how containers share their pod |
 >
-> | cgroup | Who writes its `cpu.weight` | What it decides |
-> |---|---|---|
-> | The pod's | the kubelet | how pods share the node |
-> | Each container's | the container runtime | how containers share their pod |
+> **2. Pods compete at the pod level.** So the split you measured follows 4 and 32: exactly 8×, like the requests. The container weights, 17 and 84, only matter between containers inside the same pod. (The 35 in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) was a container's weight too.) To predict how pods will share a busy node, read the **pod** cgroup's `cpu.weight`. Lab 13 prints both.
 >
-> Here are both, for the two lab pods. First the pod level, read on the node:
->
-> ```bash
-> for p in weight-low weight-high; do
->   echo "$p pod cgroup: $(docker exec under-the-hood-worker cat $(./scripts/pod-cgroup.sh $p)/cpu.weight)"
-> done
-> ```
->
-> ```
-> weight-low pod cgroup: 4
-> weight-high pod cgroup: 32
-> ```
->
-> Then the container level, read from inside each container:
->
-> ```bash
-> kubectl -n lab exec weight-low  -- cat /sys/fs/cgroup/cpu.weight
-> kubectl -n lab exec weight-high -- cat /sys/fs/cgroup/cpu.weight
-> ```
->
-> ```
-> 17
-> 84
-> ```
->
-> Why two different pairs of numbers? Because two different programs did the converting, with two different formulas:
->
-> | Level | Written by | Formula | 100m | 800m | Ratio |
-> |---|---|---|---|---|---|
-> | Pod | the kubelet | a straight line | 4 | 32 | 8× |
-> | Container | the runtime | a newer curve | 17 | 84 | about 5× |
->
-> The straight line keeps the ratio of the requests exactly, and the pod level is where these two pods compete. That's why the split you measured follows the pod weights: about 8×, not 5×. The container weights only matter between containers inside the same pod. (The weight of 35 in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) was a container's.) So to know how pods will split a busy node, read the **pod** cgroup's `cpu.weight`.
->
-> Why did runtimes move to a curve? On the straight line, small requests get tiny weights: a whole CPU comes out at only 39, while any cgroup that isn't given a weight gets the default of 100. The curve is chosen so one CPU lands at about 100, in line with everything else on the machine.
+> *Why are the container numbers different?* The kubelet uses a straight-line formula that gives small weights: even a whole CPU comes out at only 39, below the default of 100. Container runtimes recently switched to a curve that puts one CPU at about 100.
 
 *Lab:* [13-requests-become-weights](https://github.com/NITHIN-JOHN-GEORGE/kubernetes-resources-under-the-hood/tree/main/labs/13-requests-become-weights). Check what you built with `make check LAB=13`.
 
