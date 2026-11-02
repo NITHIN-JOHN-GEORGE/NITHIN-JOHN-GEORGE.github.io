@@ -101,59 +101,78 @@ A weight has no unit. On its own it means nothing; only how it compares with oth
 
 <figure class="sketch "><svg viewBox="0 0 760 440" role="img" aria-label="How a CPU request becomes a weight and a share of a busy CPU"><title>How a CPU request becomes a weight and a share of a busy CPU</title><defs><clipPath id="cwm1"><rect x="449" y="54" width="112" height="52"/></clipPath><clipPath id="cwm2"><rect x="449" y="164" width="112" height="52"/></clipPath><clipPath id="cwm3"><rect x="30" y="312" width="76" height="46"/></clipPath><clipPath id="cwm4"><rect x="106" y="312" width="604" height="46"/></clipPath></defs><text x="672" y="48" text-anchor="middle" class="m" style="font-size:15px">when both are busy</text><text x="95" y="30" text-anchor="middle" class="m" style="font-size:17px">you write</text><text x="300" y="30" text-anchor="middle" class="m" style="font-size:17px">CPU shares</text><text x="505" y="30" text-anchor="middle" class="m" style="font-size:17px">cpu.weight</text><text x="672" y="30" text-anchor="middle" class="m" style="font-size:17px">CPU it gets</text><path class="s a" d="M29.6 53.8Q95.2 53.1 160.8 53.7M30.4 54.1Q94.7 54.0 160.4 53.9"/><path class="s a" d="M159.1 53.3Q159.8 79.8 159.9 106.2M160.5 53.0Q159.4 80.3 160.8 106.0"/><path class="s a" d="M159.1 105.2Q94.7 105.9 30.6 105.7M159.4 105.3Q95.4 105.2 30.9 106.0"/><path class="s a" d="M30.8 105.0Q29.8 79.7 29.9 53.7M30.6 106.3Q31.5 80.1 30.7 54.6"/><text x="95" y="88" text-anchor="middle" class="big" style="font-size:24px">100m</text><path class="s" d="M164.7 81.0Q201.0 77.8 236.9 81.6M165.9 80.7Q201.7 81.2 239.2 79.4"/><path class="s" d="M237.4 79.6Q232.6 81.7 228.8 85.6M237.8 79.9Q233.5 82.8 227.7 84.1"/><path class="s" d="M237.8 80.4Q233.5 77.0 228.4 75.5M238.5 80.2Q233.1 78.2 227.6 75.9"/><text x="201" y="66" text-anchor="middle" class="m" style="font-size:12px">×1024÷1000</text><path class="s" d="M243.5 53.3Q300.0 54.4 356.4 53.7M243.2 54.2Q300.2 52.6 357.5 54.6"/><path class="s" d="M357.3 54.0Q356.7 80.3 357.7 106.6M356.1 53.1Q356.6 79.8 356.0 106.4"/><path class="s" d="M356.4 106.9Q300.2 107.0 242.7 105.2M357.6 105.8Q300.1 105.9 243.2 105.3"/><path class="s" d="M243.7 106.6Q242.5 79.8 242.8 54.6M242.2 106.4Q242.5 79.8 242.6 53.1"/><text x="300" y="88" text-anchor="middle" class="big" style="font-size:24px">102</text><path class="s" d="M361.2 81.0Q403.0 78.3 444.9 78.7M362.4 78.5Q403.5 79.3 443.2 80.7"/><path class="s" d="M444.0 79.5Q439.2 82.9 434.6 84.1M443.8 80.4Q439.1 81.8 433.6 84.8"/><path class="s" d="M443.3 80.6Q438.6 78.4 434.0 74.5M444.3 79.5Q438.5 78.2 434.1 75.2"/><text x="403" y="66" text-anchor="middle" class="m" style="font-size:12px">straight line</text><path class="h a" clip-path="url(#cwm1)" d="M404.3 108.1Q425.8 79.3 449.4 53.1M414.2 107.6Q438.1 81.0 460.7 51.6M423.7 107.2Q445.8 79.6 470.4 51.5M434.7 107.6Q458.7 81.6 479.1 52.7M445.1 107.9Q467.4 80.9 488.1 51.5M453.1 108.7Q476.5 80.4 498.6 50.8M462.4 108.9Q484.5 79.0 508.2 52.8M472.7 108.5Q494.8 79.6 516.7 51.2M483.4 106.9Q504.6 79.5 527.1 51.9M492.7 109.1Q513.7 79.1 538.7 52.8M502.7 108.7Q523.2 78.8 547.4 51.0M512.0 106.8Q534.4 80.2 556.2 52.1M520.9 106.9Q543.9 79.7 567.8 52.9M530.2 106.9Q553.9 80.3 576.9 51.6M542.6 108.3Q564.1 80.0 586.6 53.1M551.1 108.0Q572.4 79.2 595.5 52.1"/><path class="s a" d="M449.9 53.9Q505.1 53.3 561.8 53.5M449.8 54.6Q504.8 54.6 560.8 54.9"/><path class="s a" d="M561.8 54.0Q562.0 79.6 561.3 106.8M561.8 54.5Q561.8 80.2 560.7 105.3"/><path class="s a" d="M561.9 106.8Q505.0 105.5 449.3 106.1M561.9 106.3Q505.3 105.6 448.1 106.3"/><path class="s a" d="M448.0 105.2Q448.7 80.4 450.0 53.9M448.0 105.0Q450.1 80.3 449.4 54.3"/><text x="505" y="88" text-anchor="middle" class="big" style="font-size:26px">4</text><path class="s" d="M565.3 78.9Q582.5 79.4 600.8 79.5M564.8 81.4Q582.4 78.7 598.8 80.7"/><path class="s" d="M600.7 80.7Q595.1 82.2 589.3 85.0M599.8 80.4Q595.4 82.4 589.5 84.0"/><path class="s" d="M600.6 79.8Q595.6 76.8 590.3 74.7M599.4 80.5Q594.8 77.9 589.9 75.3"/><text x="608" y="87" text-anchor="start" class="big" style="font-size:18px">4 ÷ 36 = 1/9</text><path class="s b" d="M30.2 164.5Q94.7 163.1 159.5 164.1M29.6 163.7Q94.8 163.3 160.7 165.0"/><path class="s b" d="M160.6 163.8Q161.5 190.3 160.9 216.3M159.5 164.9Q160.8 189.7 159.6 215.1"/><path class="s b" d="M160.3 215.9Q94.8 215.0 30.7 215.7M160.0 216.2Q95.3 216.1 29.6 217.0"/><path class="s b" d="M29.7 215.6Q30.4 190.3 30.6 164.0M29.5 216.8Q31.5 190.1 29.0 163.7"/><text x="95" y="198" text-anchor="middle" class="big" style="font-size:24px">800m</text><path class="s" d="M163.5 189.1Q201.7 189.3 237.7 191.2M165.3 189.3Q201.4 192.3 236.6 189.9"/><path class="s" d="M238.3 189.9Q232.4 191.7 227.8 194.1M237.8 189.5Q232.9 192.0 228.2 195.0"/><path class="s" d="M238.7 190.1Q233.2 187.7 228.8 184.6M237.4 189.9Q233.7 186.5 227.9 185.3"/><text x="201" y="176" text-anchor="middle" class="m" style="font-size:12px">×1024÷1000</text><path class="s" d="M243.1 164.9Q300.0 165.1 357.0 163.3M242.3 164.4Q300.4 164.7 356.8 163.5"/><path class="s" d="M356.3 163.0Q356.7 189.8 358.0 216.1M356.0 163.4Q356.5 189.7 356.9 216.5"/><path class="s" d="M356.6 215.6Q300.2 214.2 242.8 216.2M357.2 216.8Q300.2 217.6 242.7 216.2"/><path class="s" d="M242.9 215.5Q243.1 189.9 243.4 164.4M243.6 216.2Q244.4 190.2 243.2 164.5"/><text x="300" y="198" text-anchor="middle" class="big" style="font-size:24px">819</text><path class="s" d="M363.1 188.6Q403.6 190.4 444.1 191.3M360.8 191.1Q402.5 192.4 442.7 188.8"/><path class="s" d="M443.3 189.7Q439.1 192.4 434.8 194.7M444.1 190.7Q439.3 192.7 433.5 194.9"/><path class="s" d="M443.4 189.3Q439.0 187.9 433.7 185.9M444.6 190.1Q438.6 188.5 433.9 185.7"/><text x="403" y="176" text-anchor="middle" class="m" style="font-size:12px">straight line</text><path class="h b" clip-path="url(#cwm2)" d="M404.3 217.4Q425.4 189.2 449.4 162.4M413.2 217.5Q436.7 190.3 458.1 161.2M423.8 217.5Q446.1 189.2 468.8 161.4M432.7 217.3Q457.2 190.7 478.2 161.4M443.0 218.4Q465.8 190.1 486.9 161.9M453.7 218.2Q475.3 189.5 498.3 162.1M462.2 218.6Q484.0 189.4 506.7 161.2M471.5 218.0Q495.6 191.1 516.7 161.2M481.8 218.1Q505.2 189.8 528.2 161.0M493.3 218.3Q515.7 189.9 537.6 163.1M504.3 217.4Q525.3 189.4 548.6 161.5M514.4 218.8Q537.2 190.5 559.4 162.9M522.8 216.9Q546.6 190.1 568.6 162.2M532.0 218.9Q555.8 189.9 577.5 163.1M542.9 217.3Q568.0 191.3 590.2 162.4M552.6 218.8Q575.4 189.3 597.5 162.5"/><path class="s b" d="M448.7 163.2Q504.9 164.3 560.5 164.7M448.9 163.2Q504.7 164.9 561.7 164.4"/><path class="s b" d="M560.2 163.9Q560.1 190.2 561.6 215.2M561.0 163.8Q560.0 189.7 560.3 216.3"/><path class="s b" d="M560.2 216.9Q505.3 214.2 449.5 215.5M561.6 215.4Q505.0 215.4 449.3 215.8"/><path class="s b" d="M450.0 215.4Q448.4 189.7 448.0 163.9M449.9 216.1Q450.0 189.9 448.6 164.2"/><text x="505" y="198" text-anchor="middle" class="big" style="font-size:26px">32</text><path class="s" d="M565.0 190.1Q583.3 189.0 601.0 190.0M567.3 191.4Q582.9 189.6 600.8 191.0"/><path class="s" d="M599.2 189.5Q594.8 192.2 590.1 195.1M599.7 189.7Q594.5 191.9 590.3 194.2"/><path class="s" d="M599.8 189.9Q595.2 187.7 590.3 185.7M599.7 190.0Q594.9 187.8 589.6 184.8"/><text x="608" y="197" text-anchor="start" class="big" style="font-size:18px">32 ÷ 36 = 8/9</text><text x="505" y="246" text-anchor="middle" style="font-size:17px">total weight: 4 + 32 = 36. each pod gets its weight ÷ 36</text><text x="30" y="296" text-anchor="start" style="font-size:18px">so when both pods want every CPU, the node is split like this:</text><path class="h a" clip-path="url(#cwm3)" d="M-10.9 360.7Q9.4 334.7 30.6 310.9M0.8 358.9Q19.4 334.7 39.2 310.3M8.6 359.1Q27.4 334.4 47.9 310.5M16.8 360.0Q37.1 334.4 58.4 310.4M28.0 361.0Q47.9 336.0 66.2 310.4M35.6 359.0Q56.8 335.6 76.9 309.2M46.6 359.5Q65.2 334.4 85.0 309.1M54.9 360.5Q75.8 335.5 94.7 308.9M64.6 359.7Q84.6 334.9 103.9 310.0M74.4 359.9Q92.7 334.0 113.3 310.0M83.9 360.3Q102.1 333.8 122.4 310.3M91.6 360.6Q110.8 334.3 131.8 309.9M101.3 359.8Q123.0 336.6 140.8 309.6"/><path class="s a" d="M30.9 311.1Q68.3 310.9 106.8 312.9M30.5 312.3Q68.2 310.8 105.2 312.3"/><path class="s a" d="M106.2 312.1Q106.1 335.4 105.4 359.0M105.8 311.7Q107.0 335.2 105.8 357.6"/><path class="s a" d="M105.2 358.5Q68.1 358.1 30.8 358.8M105.3 357.6Q68.0 358.4 30.5 357.5"/><path class="s a" d="M29.1 358.9Q30.5 335.4 29.9 312.0M30.2 357.7Q30.4 334.8 29.4 311.9"/><path class="h b" clip-path="url(#cwm4)" d="M65.8 361.0Q84.6 333.8 106.8 310.5M74.5 360.5Q92.6 333.6 114.4 310.6M82.7 360.5Q103.6 336.1 123.2 309.7M93.1 360.3Q113.2 335.5 131.9 310.7M100.7 359.7Q120.5 334.3 141.7 310.8M110.4 359.9Q130.8 335.8 150.8 308.9M116.9 360.0Q138.1 335.6 158.0 310.2M125.9 359.0Q147.7 336.1 166.9 310.0M136.7 360.9Q157.7 336.2 176.6 310.9M146.9 359.5Q166.0 334.5 184.8 309.5M153.7 359.9Q172.8 333.6 194.3 310.6M162.2 360.9Q182.3 335.0 202.0 309.7M172.6 359.1Q193.1 335.4 211.2 310.3M180.6 359.4Q200.5 334.5 222.1 309.8M189.8 359.6Q211.2 335.6 230.2 309.0M200.6 359.9Q220.4 335.5 239.4 308.9M209.6 359.2Q229.9 335.2 249.6 310.3M219.6 360.6Q240.4 336.2 258.8 310.2M228.6 359.1Q248.7 335.6 268.0 311.0M238.3 360.1Q257.8 335.5 276.4 308.8M246.8 360.3Q265.9 334.7 285.9 310.1M256.0 358.9Q275.8 334.6 295.1 309.7M265.7 360.3Q287.1 336.0 305.0 310.3M276.6 359.7Q296.8 335.6 315.4 309.0M284.6 359.1Q304.5 334.7 324.3 310.2M295.2 359.7Q315.8 336.2 334.6 311.1M302.6 359.8Q322.1 334.9 342.3 309.1M311.4 361.0Q331.7 335.9 351.9 309.2M319.9 360.1Q342.2 335.9 360.3 310.9M330.2 360.3Q351.3 336.3 371.1 310.2M338.7 359.6Q358.8 334.5 380.5 308.9M347.1 359.0Q367.6 334.5 389.0 310.8M358.0 360.3Q377.0 334.1 397.0 309.5M366.3 359.6Q385.6 334.3 406.8 311.0M374.9 359.3Q396.0 335.8 414.7 310.4M384.4 361.1Q403.9 334.1 424.3 311.1M394.1 360.7Q415.1 335.1 434.3 310.2M401.8 359.0Q421.8 334.6 442.5 309.8M412.2 359.7Q433.3 335.8 452.1 310.7M422.0 359.6Q443.2 335.5 461.3 309.0M431.0 360.8Q452.9 335.7 471.9 311.1M441.4 360.9Q458.6 334.2 481.0 311.0M449.2 360.6Q467.6 334.2 488.5 310.9M457.5 360.7Q476.9 334.4 497.5 309.4M467.5 361.1Q486.1 334.0 507.4 309.8M476.3 360.2Q496.3 334.8 517.5 309.5M484.3 360.7Q506.0 335.9 525.5 309.3M495.6 359.3Q514.9 334.8 534.0 310.0M502.5 360.9Q522.8 334.2 542.5 311.1M512.1 359.2Q533.6 335.8 551.9 308.8M521.0 360.5Q541.9 335.5 561.2 310.1M531.8 359.6Q549.6 334.1 570.9 310.4M539.3 360.6Q559.6 334.9 580.5 310.7M548.4 359.3Q568.4 334.5 590.5 310.0M559.3 360.0Q579.9 335.4 599.4 309.8M566.7 360.9Q586.2 334.1 606.7 308.8M576.5 361.0Q596.5 335.5 616.8 310.5M584.8 359.4Q604.6 335.2 624.3 310.3M593.8 360.0Q611.5 334.1 632.2 309.0M602.3 360.6Q623.4 335.6 641.7 309.6M610.4 360.4Q631.8 335.8 651.8 310.9M619.7 359.0Q639.2 333.9 659.7 311.0M629.7 358.9Q649.8 334.9 670.1 310.4M640.0 359.7Q658.4 333.9 680.0 309.4M649.1 359.2Q668.6 334.2 689.9 310.8M657.2 359.8Q678.5 335.6 697.4 311.0M667.5 360.1Q686.4 334.8 705.9 309.7M674.0 358.9Q696.3 335.4 715.4 310.8M686.0 360.1Q705.4 335.2 725.6 309.5M692.5 358.9Q714.1 335.5 731.8 309.7M700.6 359.4Q721.3 334.6 740.8 310.3"/><path class="s b" d="M105.5 311.8Q407.7 311.8 711.0 312.4M105.6 311.1Q408.0 311.8 710.8 312.1"/><path class="s b" d="M709.6 312.9Q710.2 334.8 709.1 358.7M710.3 311.0Q709.7 335.4 709.9 357.5"/><path class="s b" d="M710.4 358.5Q407.9 357.3 105.3 357.8M709.5 358.8Q407.9 358.1 106.7 357.9"/><path class="s b" d="M105.9 358.3Q105.3 334.9 106.0 312.8M105.7 357.6Q104.6 335.2 105.1 312.8"/><text x="68.0" y="342" text-anchor="middle" class="big" style="font-size:18px">1/9</text><text x="408.0" y="342" text-anchor="middle" class="big" style="font-size:20px">8/9</text><text x="30" y="390" text-anchor="start" class="m" style="font-size:16px">on 10 CPUs: 1/9 ≈ 1.1 CPUs and 8/9 ≈ 8.9 CPUs. measured in the lab: 1060m and 9103m</text><text x="30" y="414" text-anchor="start" class="m" style="font-size:16px">if the node isn't busy, there's nothing to split: each pod just takes what it needs</text></svg><figcaption>A request isn't a reserved core. It becomes a weight, and the weight is your slice when everyone is hungry.</figcaption></figure>
 
-**Try it yourself.** Start two greedy pods with no CPU limits. Each runs one busy loop per CPU on the node, so together they want twice what exists. `weight-low` requests `100m`; `weight-high` requests `800m`, eight times more:
+#### The container's weight is different
+
+Each pod has **two** weights: one for the pod's cgroup, and one for [each container inside it](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree). They're written by two different programs, with two different formulas:
+
+| `cpu.weight` of | `weight-low` `100m` | `weight-high` `800m` | Written by | Decides |
+|---|---|---|---|---|
+| the pod's cgroup | 4 | 32 | the kubelet, with the straight line | how pods share the node |
+| the container's cgroup | 17 | 84 | the runtime, with a curve | how containers share their pod |
+
+Newer runtimes (runc and crun) use a curve instead of the straight line, so that one full CPU lands at about 100, the default weight for everything else on the machine:
+
+```
+weight = 10 ^ ((log₂(shares)² + 125 × log₂(shares)) ÷ 612 − 7/34)     (rounded up)
+```
+
+On the straight line, a whole CPU only gets 39. The curve squeezes ratios, though: 84 ÷ 17 is only about 5×.
+
+Pods compete with each other at the **pod** level, so it's the pod weights, 4 and 32, that decide how two pods share a busy node. The container weights only matter between containers in the same pod; the 35 in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) was one of those. So to predict how pods will share a busy node, read the **pod's** `cpu.weight`. Lab 13 prints both.
+
+#### Try it yourself: compare CPU shares under contention
+
+You'll run two CPU-hungry pods with no CPU limits. Each starts one busy loop per CPU on the node, so together they ask for more CPU than the node can provide. `weight-low` requests `100m`. `weight-high` requests `800m`.
 
 ```bash
 kubectl -n lab apply -f labs/13-requests-become-weights/pods.yaml
 kubectl -n lab wait --for=condition=Ready pod/weight-low pod/weight-high
 ```
 
-<details class="predict"><summary><span class="predict-tag">Predict first</span> Both pods want every CPU on the node. One requests <code>100m</code>, the other <code>800m</code>. How will the CPU be split?</summary><div class="predict-answer"><p>Neither pod is capped, so neither gets "its request". They split the node by weight, and the bigger request takes most of the CPU. Measure it below.</p></div></details>
+<details class="predict"><summary><span class="predict-tag">Predict first</span> When both pods are competing for CPU, which one do you expect to get more CPU time? About how many times more?</summary><div class="predict-answer"><p><code>weight-high</code>, by about 8×. Its pod weight is 32 and <code>weight-low</code>'s is 4, and 32 ÷ 4 = 8. Read the weights below, then measure.</p></div></details>
 
-Now measure how much CPU each pod gets in 10 seconds. This reads each pod's CPU counter twice and prints the difference in millicores:
+First, read each **pod's** `cpu.weight`. It's on the node, in the pod's cgroup:
 
 ```bash
-l1=$(kubectl -n lab exec weight-low  -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
-h1=$(kubectl -n lab exec weight-high -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
+for pod in weight-low weight-high; do
+  echo "$pod: $(docker exec under-the-hood-worker cat $(./scripts/pod-cgroup.sh $pod)/cpu.weight)"
+done
+```
+
+```
+weight-low: 4
+weight-high: 32
+```
+
+The weights show the relative priority of these pod cgroups when they compete with each other. They are not CPU amounts or reserved cores. 32 ÷ 4 = 8, so if the weights decide, `weight-high` should get about 8× the CPU.
+
+Now measure CPU time over 10 seconds:
+
+```bash
+low_before=$(kubectl -n lab exec weight-low -- awk '$1=="usage_usec"{print $2}' /sys/fs/cgroup/cpu.stat)
+high_before=$(kubectl -n lab exec weight-high -- awk '$1=="usage_usec"{print $2}' /sys/fs/cgroup/cpu.stat)
+
 sleep 10
-l2=$(kubectl -n lab exec weight-low  -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
-h2=$(kubectl -n lab exec weight-high -- awk '/usage_usec/{print $2}' /sys/fs/cgroup/cpu.stat)
-echo "weight-low: $(( (l2 - l1) / 10000 ))m   weight-high: $(( (h2 - h1) / 10000 ))m"
+
+low_after=$(kubectl -n lab exec weight-low -- awk '$1=="usage_usec"{print $2}' /sys/fs/cgroup/cpu.stat)
+high_after=$(kubectl -n lab exec weight-high -- awk '$1=="usage_usec"{print $2}' /sys/fs/cgroup/cpu.stat)
+
+echo "weight-low:  $(( (low_after - low_before) / 10000 ))m"
+echo "weight-high: $(( (high_after - high_before) / 10000 ))m"
 ```
 
+Example from one 10-CPU run:
+
 ```
-weight-low: 1060m   weight-high: 9103m
+weight-low:  1060m
+weight-high: 9103m
 ```
 
-**8× the request got about 8.6× the CPU**, and between them they used the whole 10-CPU node. That's the rule:
+In this run, the pod with an `800m` request used about 8.6 times as much CPU as the pod with a `100m` request. The exact values vary with the node and other CPU workloads.
 
-> When the CPU is busy, it's shared in proportion to requests.
-
-Anything else busy on the node takes its share too, so treat the exact numbers as a measurement, not a promise.
-
-> [!DEEPER]
-> **The container's weight is different**
->
-> Each pod has **two** weights: one for the pod's cgroup, and one for [each container inside it](/blog/cgroups-deep-dive-kubernetes-part-1/#11-where-every-pod-lives-the-cgroup-tree). They're written by two different programs, with two different formulas:
->
-> | `cpu.weight` of | `weight-low` `100m` | `weight-high` `800m` | Written by | Decides |
-> |---|---|---|---|---|
-> | the pod's cgroup | 4 | 32 | the kubelet, with the straight line | how pods share the node |
-> | the container's cgroup | 17 | 84 | the runtime, with a curve | how containers share their pod |
->
-> Newer runtimes (runc and crun) use a curve instead of the straight line, so that one full CPU lands at about 100, the default weight for everything else on the machine:
->
-> ```
-> weight = 10 ^ ((log₂(shares)² + 125 × log₂(shares)) ÷ 612 − 7/34)     (rounded up)
-> ```
->
-> On the straight line, a whole CPU only gets 39. The curve squeezes ratios, though: 84 ÷ 17 is only about 5×.
->
-> Pods compete with each other at the **pod** level, so your measured split followed 4 and 32, not 17 and 84. The container weights only matter between containers in the same pod; the 35 in [chapter 10](/blog/cgroups-deep-dive-kubernetes-part-1/#10-follow-one-pod-down-to-the-kernel) was one of those. To predict how pods will share a busy node, read the **pod's** `cpu.weight`. Lab 13 prints both.
+**What to take away:** a CPU request doesn't reserve that amount of CPU. When these pods compete, their pod weights decide how the available CPU time is shared between them; other workloads on the node also affect what each pod receives.
 
 
-> [!KEY]
-> A CPU request becomes a weight: your share of CPU when pods compete, and nothing when the CPU is idle.
 
 
 #### The labs for this stage
