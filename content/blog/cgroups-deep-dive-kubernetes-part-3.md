@@ -300,7 +300,7 @@ From [chapter 17](#17-not-all-memory-is-equal): `container_memory_usage_bytes` i
 
 #### Memory pressure
 
-[Part 2](/blog/cgroups-deep-dive-kubernetes-part-2/#pressure-how-long-things-waited) introduced pressure: not how *busy* something is, but how long things *waited*. For memory, waiting means stalling while the kernel reclaims memory to make room. The lab's `psi-memory` pod rereads a 192 MiB file inside a 64Mi limit, so the kernel keeps throwing its cache away and reading it back:
+[Part 2](/blog/cgroups-deep-dive-kubernetes-part-2/#pressure-how-long-tasks-wait) introduced pressure: not how *busy* something is, but how long things *waited*. For memory, waiting means stalling while the kernel reclaims memory to make room. The lab's `psi-memory` pod rereads a 192 MiB file inside a 64Mi limit, so the kernel keeps throwing its cache away and reading it back:
 
 ```bash
 kubectl -n lab exec psi-memory -- cat /sys/fs/cgroup/memory.pressure
