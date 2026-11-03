@@ -189,7 +189,7 @@ ${body}
 </main>
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <p>© ${new Date().getUTCFullYear()} ${e(site.name)} · Built with plain Markdown and a small Node script</p>
+    <p>© ${new Date().getUTCFullYear()} ${e(site.name)}</p>
     <p class="footer-links">
       <a href="${e(site.links.github)}" rel="noopener">GitHub</a>
       <a href="${e(site.links.linkedin)}" rel="noopener">LinkedIn</a>
@@ -498,7 +498,7 @@ function blogIndex(posts, books) {
     <p class="eyebrow mono reveal">~/blog</p>
     <h1 class="reveal">Notes from <span class="grad">running platforms</span></h1>
     <p class="lead reveal">Engineering handbooks and blog posts on platform engineering, Kubernetes, infrastructure and Linux.</p>
-    <p class="wr-count mono reveal">${books.length ? `${books.length} handbook${books.length === 1 ? '' : 's'} · ` : ''}${posts.length} post${posts.length === 1 ? '' : 's'} · <a href="${url('/feed.xml')}">RSS</a></p>
+    <p class="wr-count mono reveal">${books.length ? `${books.length} handbook${books.length === 1 ? '' : 's'} · ` : ''}${posts.length} post${posts.length === 1 ? '' : 's'}</p>
   </header>
 
   <div class="wr-filters reveal" role="group" aria-label="Filter posts and handbooks">
